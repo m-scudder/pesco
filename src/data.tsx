@@ -53,13 +53,14 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const requested=useRef(0);
  const importing=useRef(false);
  const pendingBusy=useRef(false);
+ const verifiedUser=useRef<string|null>(null);
  const [pending,setPending]=useState<PendingExpense[]>([]);
  const [queueError,setQueueError]=useState<string|null>(null);
  useEffect(()=>{
   let active=true;
   if(!user){setHousehold(null);setCloudExpenses([]);return}
   AsyncStorage.getItem('pesco:household-cache:'+user.id).then(raw=>{
-   if(!raw||!active)return;
+   if(!raw||!active||verifiedUser.current===user.id)return;
    const saved=JSON.parse(raw) as {household:Household|null;expenses:Expense[]};
    if(saved.household&&Array.isArray(saved.expenses)){
     setHousehold(old=>old??saved.household);
@@ -150,6 +151,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
    const rows=membership?await fetchCloudExpenses('household',membership.id,100):[];
    await AsyncStorage.setItem('pesco:household-cache:'+user.id,JSON.stringify({household:membership,expenses:rows}));
    if(request===requested.current){
+    verifiedUser.current=user.id;
     setHousehold(membership);setCloudExpenses(rows);setSyncError(null);setCloudReady(true);
    }
   }catch(e){
@@ -161,6 +163,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
 
  useEffect(()=>{
   requested.current++;
+  verifiedUser.current=null;
   setHousehold(null);setCloudExpenses([]);setCloudReady(false);setSyncError(null);
   if(!user)return;
   void refresh();
