@@ -15,9 +15,15 @@ export function AuthProvider({children}:{children:React.ReactNode}){
   try{
    const {data,error:readError}=await supabase.auth.getSession();
    if(readError)throw readError;
-   if(data.session){setSession(data.session);return}
+   if(data.session){
+    const {data:validated,error:validationError}=await supabase.auth.getUser();
+    if(!validationError&&validated.user){setSession(data.session);return}
+    // Do not silently erase a possibly recoverable local session.
+    throw validationError??new Error('Unable to validate the saved session');
+   }
    const result=await supabase.auth.signInAnonymously();
    if(result.error)throw result.error;
+   if(!result.data.session)throw new Error('Anonymous sign-in returned no session');
    setSession(result.data.session);
   }catch(err){setError(err instanceof Error?err.message:String(err))}
   finally{setReady(true)}
