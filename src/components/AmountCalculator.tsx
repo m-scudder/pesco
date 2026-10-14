@@ -14,9 +14,9 @@ export function AmountCalculator({value,onChange,onDone}:{value:string;onChange:
   if(label==='Done'){
    if(state.error)return;
    // Resolve pending arithmetic on Done as well as '='.
-   const completed=pressCalculator(state,'=');
+   const completed=state.operator&&state.startNew?{...state,accumulator:null,operator:null}:pressCalculator(state,'=');
    if(completed.error){setState(completed);return}
-   onChange(completed.display);
+   onChange(String(Number(completed.display)));
    onDone();return;
   }
   const next=pressCalculator(state,label==='−'?'-':label);
