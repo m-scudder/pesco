@@ -101,7 +101,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
    return;
   }
   const now=new Date().toISOString();
-  setLocalExpenses(prev=>[{...draft,id:now+'-'+Math.random().toString(36).slice(2),ownerId:user?.id??'local-user',createdAt:now,updatedAt:now},...prev]);
+  setLocalExpenses(prev=>[{...draft,id:now+'-'+Math.random().toString(36).slice(2),ownerId:'local-user',createdAt:now,updatedAt:now},...prev]);
  },[household,refresh,user?.id]);
 
  const update=useCallback(async(id:string,draft:ExpenseDraft)=>{
