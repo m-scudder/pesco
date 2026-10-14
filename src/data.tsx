@@ -10,9 +10,23 @@ import {supabase} from './lib/supabase';
 export const CATEGORIES=['Groceries','Food & Drinks','Shopping','Utilities','Rent','Transport','Health','Entertainment','Education','Travel','Other'] as const;
 export type Expense={id:string;scope:Scope;amountPaise:number;category:string;note:string;date:string;createdAt:string;updatedAt:string;ownerId:string};
 export type ExpenseDraft=Pick<Expense,'scope'|'amountPaise'|'category'|'note'|'date'>;
+export type RecurringRule={id:string;amountPaise:number;category:string;note:string;day:number;startsOn:string;active:boolean};
 type Budgets={household:number|null;personal:number|null};
+function recurringDates(rule:RecurringRule,today:string):string[]{
+ const output:string[]=[];
+ const [year,month]=rule.startsOn.slice(0,7).split('-').map(Number);
+ const [lastYear,lastMonth]=today.slice(0,7).split('-').map(Number);
+ const end=lastYear*12+lastMonth;
+ for(let cursor=year*12+month;cursor<=end&&output.length<120;cursor++){
+  const y=Math.floor((cursor-1)/12),m=(cursor-1)%12+1;
+  const lastDay=new Date(y,m,0).getDate();
+  const date=String(y).padStart(4,'0')+'-'+String(m).padStart(2,'0')+'-'+String(Math.min(rule.day,lastDay)).padStart(2,'0');
+  if(date>=rule.startsOn&&date<=today)output.push(date);
+ }
+ return output;
+}
 type Store={
- loaded:boolean;expenses:Expense[];budgets:Budgets;household:Household|null;syncing:boolean;syncError:string|null;
+ loaded:boolean;expenses:Expense[];recurringRules:RecurringRule[];addRecurring:(draft:Omit<RecurringRule,'id'|'active'>)=>void;setRecurringActive:(id:string,active:boolean)=>void;deleteRecurring:(id:string)=>void;budgets:Budgets;household:Household|null;syncing:boolean;syncError:string|null;
  localHouseholdCount:number;currentUserId:string|null;
  refresh:()=>Promise<void>;add:(draft:ExpenseDraft)=>Promise<void>;update:(id:string,draft:ExpenseDraft)=>Promise<void>;
  remove:(id:string)=>Promise<void>;importLocalHousehold:()=>Promise<number>;
@@ -27,6 +41,8 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const [localLoaded,setLocalLoaded]=useState(false);
  const [localExpenses,setLocalExpenses]=useState<Expense[]>([]);
  const [budgets,setBudgets]=useState<Budgets>(defaultBudgets);
+ const [recurringRules,setRecurringRules]=useState<RecurringRule[]>([]);
+ const [generated,setGenerated]=useState<string[]>([]);
  const [household,setHousehold]=useState<Household|null>(null);
  const [cloudExpenses,setCloudExpenses]=useState<Expense[]>([]);
  const [syncError,setSyncError]=useState<string|null>(null);
@@ -44,6 +60,8 @@ export function DataProvider({children}:{children:React.ReactNode}){
     const data=JSON.parse(raw);
     if(Array.isArray(data.expenses))setLocalExpenses(data.expenses);
     if(data.budgets)setBudgets({...defaultBudgets,...data.budgets});
+    if(Array.isArray(data.recurringRules))setRecurringRules(data.recurringRules);
+    if(Array.isArray(data.generated))setGenerated(data.generated);
    }catch(e){console.warn('Could not restore local expenses',e)}
    finally{if(active)setLocalLoaded(true)}
   })();
@@ -51,9 +69,42 @@ export function DataProvider({children}:{children:React.ReactNode}){
  },[]);
  useEffect(()=>{
   if(!localLoaded)return;
-  AsyncStorage.setItem(STORAGE_KEY,JSON.stringify({expenses:localExpenses,budgets}))
+  AsyncStorage.setItem(STORAGE_KEY,JSON.stringify({expenses:localExpenses,budgets,recurringRules,generated}))
    .catch(e=>console.warn('Could not save local expenses',e));
- },[localExpenses,budgets,localLoaded]);
+ },[localExpenses,budgets,recurringRules,generated,localLoaded]);
+ const generateDue=useCallback(()=>{
+  if(!localLoaded)return;
+  const today=localDate(),created:string[]=[];
+  setLocalExpenses(previous=>{
+   const known=new Set([...generated,...previous.map(x=>x.id)]);
+   const additions:Expense[]=[];
+   for(const rule of recurringRules.filter(x=>x.active)){
+    for(const date of recurringDates(rule,today)){
+     const id='recurring:'+rule.id+':'+date;
+     if(known.has(id))continue;
+     known.add(id);created.push(id);
+     const now=new Date().toISOString();
+     additions.push({id,scope:'personal',amountPaise:rule.amountPaise,category:rule.category,note:rule.note,date,ownerId:'local-user',createdAt:now,updatedAt:now});
+    }
+   }
+   return additions.length?[...additions,...previous]:previous;
+  });
+  if(created.length)setGenerated(prev=>Array.from(new Set([...prev,...created])));
+ },[localLoaded,recurringRules,generated]);
+ useEffect(()=>{generateDue()},[generateDue]);
+ useEffect(()=>{
+  const sub=AppState.addEventListener('change',state=>{if(state==='active')generateDue()});
+  return()=>sub.remove();
+ },[generateDue]);
+ const addRecurring=useCallback((draft:Omit<RecurringRule,'id'|'active'>)=>{
+  setRecurringRules(prev=>[...prev,{...draft,id:Date.now()+'-'+Math.random().toString(36).slice(2),active:true}]);
+ },[]);
+ const setRecurringActive=useCallback((id:string,active:boolean)=>{
+  setRecurringRules(prev=>prev.map(x=>x.id===id?{...x,active}:x));
+ },[]);
+ const deleteRecurring=useCallback((id:string)=>{
+  setRecurringRules(prev=>prev.filter(x=>x.id!==id));
+ },[]);
 
  const refresh=useCallback(async()=>{
   if(!user||!configured)return;
@@ -163,10 +214,10 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const setBudget=useCallback((scope:Scope,value:number|null)=>setBudgets(prev=>({...prev,[scope]:value})),[]);
  const clearAll=useCallback(()=>{setLocalExpenses([]);setBudgets(defaultBudgets)},[]);
  const value=useMemo<Store>(()=>({
-  loaded:localLoaded&&(!user||cloudReady),expenses,budgets,household,syncing,syncError,
+  loaded:localLoaded&&(!user||cloudReady),expenses,recurringRules,addRecurring,setRecurringActive,deleteRecurring,budgets,household,syncing,syncError,
   currentUserId:user?.id??null,localHouseholdCount:household?localExpenses.filter(e=>e.scope==='household').length:0,
   refresh,add,update,remove,importLocalHousehold,setBudget,clearAll
- }),[localLoaded,user?.id,cloudReady,expenses,budgets,household,syncing,syncError,localExpenses,refresh,add,update,remove,importLocalHousehold,setBudget,clearAll]);
+ }),[localLoaded,user?.id,cloudReady,expenses,recurringRules,addRecurring,setRecurringActive,deleteRecurring,budgets,household,syncing,syncError,localExpenses,refresh,add,update,remove,importLocalHousehold,setBudget,clearAll]);
  return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 export function useData(){const store=useContext(Context);if(!store)throw new Error('Missing DataProvider');return store}
