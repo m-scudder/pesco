@@ -38,10 +38,12 @@ function SettingsRow({icon,label,subtitle,onPress,right,danger=false,last=false}
 export default function Settings(){
  const router=useRouter();
  const {resolved,setAppearance,colors}=useAppTheme();
- const {expenses,clearAll}=useData();
+ const {expenses,clearAll,pendingEntries}=useData();
  return <Screen style={{gap:20,paddingBottom:90}}>
   <SettingsSection title="Manage">
+   <SettingsRow icon="person-circle-outline" label="My profile" subtitle="Manage your name and household identity" onPress={()=>router.push('/profile')}/>
    <SettingsRow icon="people-outline" label="Household" subtitle="Members, house name and partner invitations" onPress={()=>router.push('/household')}/>
+   <SettingsRow icon="repeat-outline" label="Recurring bills" subtitle="Automatically record monthly personal expenses" onPress={()=>router.push('/recurring')}/>
    <SettingsRow icon="wallet-outline" label="Monthly budgets" subtitle="Manage household and personal limits" onPress={()=>router.push('/budget')}/>
    <SettingsRow icon="pricetags-outline" label="Categories" subtitle="Organize your expenses" onPress={()=>router.push('/categories')} last/>
   </SettingsSection>
@@ -52,9 +54,10 @@ export default function Settings(){
      trackColor={{false:colors.secondary,true:colors.household}} thumbColor="#FFFFFF"/>}/>
   </SettingsSection>
   <SettingsSection title="Data">
-   <SettingsRow icon="save-outline" label={expenses.length+' saved locally'} subtitle="Expense records stored on this device"/>
-   <SettingsRow icon="trash-outline" label="Clear local data" subtitle="Remove locally saved expense records" danger last
-    onPress={()=>Alert.alert('Delete local expenses?','This cannot be undone.',[
+   <SettingsRow icon="cloud-upload-outline" label="Pending uploads" subtitle={pendingEntries.length?pendingEntries.length+" expense(s) waiting to sync":"No pending uploads"} onPress={()=>router.push('/sync')}/>
+   <SettingsRow icon="save-outline" label={expenses.filter(e=>e.scope==='personal').length+' personal expenses'} subtitle="Stored locally on this device"/>
+   <SettingsRow icon="trash-outline" label="Clear local data" subtitle="Remove local expenses, budgets and personal recurring rules" danger last
+    onPress={()=>Alert.alert('Delete local data?','This removes personal and legacy local expenses, budgets, and personal recurring rules. Shared cloud expenses and pending uploads are not deleted. This cannot be undone.',[
      {text:'Cancel',style:'cancel'},
      {text:'Delete',style:'destructive',onPress:clearAll}
     ])}/>

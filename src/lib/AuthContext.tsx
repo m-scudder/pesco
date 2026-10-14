@@ -18,6 +18,17 @@ export function AuthProvider({children}:{children:React.ReactNode}){
    if(data.session){
     const {data:validated,error:validationError}=await supabase.auth.getUser();
     if(!validationError&&validated.user){setSession(data.session);return}
+    // Allow previously stored sessions to open user-scoped cached data when the
+    // validation endpoint is unreachable. Explicit auth rejections never fall back.
+    const transient=!!validationError&&(
+     validationError.status===0||
+     /network|fetch|offline|connection|timeout/i.test(validationError.message)
+    );
+    if(transient){
+     setSession(data.session);
+     setError('Offline: household changes will sync when connected.');
+     return;
+    }
     // Do not silently erase a possibly recoverable local session.
     throw validationError??new Error('Unable to validate the saved session');
    }

@@ -41,14 +41,19 @@ export async function fetchCloudExpenses(scope:Scope,householdId:string|null,lim
  if(error)throw error;
  return (data as ExpenseRow[]).map(toExpense);
 }
-export async function addCloudExpense(input:CloudExpenseInput){
+export async function addCloudExpense(input:CloudExpenseInput,requestId?:string){
  assertInput(input);
  const db=client();const {data:{user},error:authError}=await db.auth.getUser();
  if(authError||!user)throw new Error('Sign in required');
  const {data,error}=await db.from('expenses').insert({
-  owner_id:user.id,household_id:input.householdId,scope:input.scope,
+  ...(requestId?{id:requestId}:{}),owner_id:user.id,household_id:input.householdId,scope:input.scope,
   amount_paise:input.amountPaise,category:input.category,note:input.note,spent_on:input.date
  }).select('id,owner_id,household_id,scope,amount_paise,category,note,spent_on,created_at,updated_at').single();
+ if(error&&requestId&&error.code==='23505'){
+  const existing=await db.from('expenses').select('id,owner_id,household_id,scope,amount_paise,category,note,spent_on,created_at,updated_at').eq('id',requestId).eq('owner_id',user.id).maybeSingle();
+  if(existing.error)throw existing.error;
+  if(existing.data&&existing.data.household_id===input.householdId)return toExpense(existing.data as ExpenseRow);
+ }
  if(error)throw error;
  return toExpense(data as ExpenseRow);
 }
