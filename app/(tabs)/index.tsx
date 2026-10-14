@@ -24,7 +24,7 @@ export default function Home(){
     {text:'Cancel',style:'cancel'},
     {text:'Import',onPress:()=>{void importLocalHousehold().then(count=>Alert.alert('Imported',`${count} expenses shared`)).catch(e=>Alert.alert('Import stopped',e instanceof Error?e.message:'Try again'))}}
    ])} style={{padding:12,borderRadius:10,backgroundColor:colors.secondary}}>
-    <Text style={{color:accent,fontWeight:'600',fontSize:13}}>Share ${localHouseholdCount} existing expenses ›</Text>
+    <Text style={{color:accent,fontWeight:'600',fontSize:13}}>Share {localHouseholdCount} existing expenses ›</Text>
    </Pressable>:null}
   {scope==='household'&&syncError?<Pressable onPress={()=>{void refresh()}} style={{padding:10,borderRadius:8,backgroundColor:colors.secondary}}><Text style={{color:'#C94F4F',fontSize:12}}>Sync failed · Tap to retry</Text></Pressable>:null}
   <MonthPicker month={month} onChange={setMonth}/>
