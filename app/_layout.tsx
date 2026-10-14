@@ -1,6 +1,6 @@
 import React from 'react';
 import {Stack} from 'expo-router';
-import {View,ActivityIndicator} from 'react-native';
+import {PescoLoader} from '@/components/PescoLoader';
 import {useFonts as useInterFonts,Inter_400Regular,Inter_500Medium,Inter_600SemiBold,Inter_700Bold} from '@expo-google-fonts/inter';
 import {useFonts as useJakartaFonts,PlusJakartaSans_500Medium,PlusJakartaSans_600SemiBold,PlusJakartaSans_700Bold} from '@expo-google-fonts/plus-jakarta-sans';
 import {StatusBar} from 'expo-status-bar';
@@ -14,5 +14,5 @@ function RootNavigation(){const {colors,resolved}=useAppTheme();return <><Status
 export default function RootLayout(){
  const [interLoaded]=useInterFonts({Inter_400Regular,Inter_500Medium,Inter_600SemiBold,Inter_700Bold});
  const [jakartaLoaded]=useJakartaFonts({PlusJakartaSans_500Medium,PlusJakartaSans_600SemiBold,PlusJakartaSans_700Bold});
- if(!interLoaded||!jakartaLoaded)return <View style={{flex:1,justifyContent:'center',alignItems:'center'}}><ActivityIndicator/></View>;
+ if(!interLoaded||!jakartaLoaded)return <PescoLoader message="Setting up your space…"/>;
  return <SafeAreaProvider><ThemeProvider><AuthProvider><OnboardingProvider><DataProvider><CategoryProvider><RootNavigation/></CategoryProvider></DataProvider></OnboardingProvider></AuthProvider></ThemeProvider></SafeAreaProvider>}
