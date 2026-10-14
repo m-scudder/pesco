@@ -1,6 +1,8 @@
 import React from 'react';
 import { Tabs, Redirect } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { PescoLoader } from '@/components/PescoLoader';
+import { useAuth } from '@/lib/AuthContext';
+import { useData } from '@/data';
 import { useOnboarding } from '@/lib/OnboardingContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/ThemeContext';
@@ -8,7 +10,9 @@ import { localDate } from '@/data';
 export default function TabsLayout() {
   const { colors, scope } = useAppTheme();
   const {ready,complete}=useOnboarding();
-  if(!ready)return <View style={{flex:1,justifyContent:'center'}}><ActivityIndicator/></View>;
+  const {ready:authReady}=useAuth();
+  const {loaded}=useData();
+  if(!ready||!authReady||(complete&&!loaded))return <PescoLoader message="Gathering your expenses…"/>;
   if(!complete)return <Redirect href="/onboarding"/>;
   const accent = scope === 'household' ? colors.household : colors.personal;
   const [year,month,day] = localDate().split('-');
