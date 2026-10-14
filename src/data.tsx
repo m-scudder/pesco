@@ -6,6 +6,7 @@ import {useAuth} from './lib/AuthContext';
 import {getMyHousehold,type Household} from './lib/households';
 import {addCloudExpense,deleteCloudExpense,editCloudExpense,fetchCloudExpenses} from './lib/cloudExpenses';
 import {supabase} from './lib/supabase';
+import {generateHouseholdRecurring} from './lib/householdRecurring';
 import {queueHouseholdExpense,flushPending,loadPending,type PendingExpense} from './lib/pendingExpenses';
 
 export const CATEGORIES=['Groceries','Food & Drinks','Shopping','Utilities','Rent','Transport','Health','Entertainment','Education','Travel','Other'] as const;
@@ -54,6 +55,19 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const pendingBusy=useRef(false);
  const [pending,setPending]=useState<PendingExpense[]>([]);
  const [queueError,setQueueError]=useState<string|null>(null);
+ useEffect(()=>{
+  let active=true;
+  if(!user){setHousehold(null);setCloudExpenses([]);return}
+  AsyncStorage.getItem('pesco:household-cache:'+user.id).then(raw=>{
+   if(!raw||!active)return;
+   const saved=JSON.parse(raw) as {household:Household|null;expenses:Expense[]};
+   if(saved.household&&Array.isArray(saved.expenses)){
+    setHousehold(old=>old??saved.household);
+    setCloudExpenses(old=>old.length?old:saved.expenses);
+   }
+  }).catch(e=>console.warn('Could not load household cache',e));
+  return()=>{active=false};
+ },[user?.id]);
  useEffect(()=>{
   let live=true;
   if(!user){setPending([]);return}
@@ -132,7 +146,9 @@ export function DataProvider({children}:{children:React.ReactNode}){
      setPending(await loadPending(user.id));
     }finally{pendingBusy.current=false}
    }
+   if(membership)try{await generateHouseholdRecurring(membership.id)}catch(e){console.warn('Recurring generation postponed',e)}
    const rows=membership?await fetchCloudExpenses('household',membership.id,100):[];
+   await AsyncStorage.setItem('pesco:household-cache:'+user.id,JSON.stringify({household:membership,expenses:rows}));
    if(request===requested.current){
     setHousehold(membership);setCloudExpenses(rows);setSyncError(null);setCloudReady(true);
    }
