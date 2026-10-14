@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {Scope} from './theme/palette';
 
 export const CATEGORIES = ['Groceries','Food & Drinks','Shopping','Utilities','Rent','Transport','Health','Entertainment','Education','Travel','Other'] as const;
-export type Expense = {id:string;scope:Scope;amountPaise:number;category:string;note:string;date:string;createdAt:string;updatedAt:string;ownerId:'local-user'};
+export type Expense = {id:string;scope:Scope;amountPaise:number;category:string;note:string;date:string;createdAt:string;updatedAt:string;ownerId:string};
 type Draft = Pick<Expense,'scope'|'amountPaise'|'category'|'note'|'date'>;
 type Budgets = {household:number|null;personal:number|null};
 type Store = {loaded:boolean;expenses:Expense[];budgets:Budgets;add:(d:Draft)=>void;update:(id:string,d:Draft)=>void;remove:(id:string)=>void;setBudget:(scope:Scope,v:number|null)=>void;clearAll:()=>void};
