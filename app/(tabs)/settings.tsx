@@ -43,6 +43,7 @@ export default function Settings(){
   <SettingsSection title="Manage">
    <SettingsRow icon="person-circle-outline" label="My profile" subtitle="Manage your name and household identity" onPress={()=>router.push('/profile')}/>
    <SettingsRow icon="people-outline" label="Household" subtitle="Members, house name and partner invitations" onPress={()=>router.push('/household')}/>
+   <SettingsRow icon="repeat-outline" label="Recurring bills" subtitle="Automatically record monthly personal expenses" onPress={()=>router.push('/recurring')}/>
    <SettingsRow icon="wallet-outline" label="Monthly budgets" subtitle="Manage household and personal limits" onPress={()=>router.push('/budget')}/>
    <SettingsRow icon="pricetags-outline" label="Categories" subtitle="Organize your expenses" onPress={()=>router.push('/categories')} last/>
   </SettingsSection>
