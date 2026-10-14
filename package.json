@@ -7,7 +7,9 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "generate:icon": "node scripts/generate-icon.cjs",
+    "postinstall": "npm run generate:icon"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.0",
@@ -26,10 +28,13 @@
     "@supabase/supabase-js": "^2.57.0",
     "react-native-url-polyfill": "^2.0.0",
     "@react-native-community/datetimepicker": "8.4.4",
-    "react-native-svg": "15.12.1"
+    "react-native-svg": "15.12.1",
+    "@expo-google-fonts/inter": "^0.4.1",
+    "@expo-google-fonts/plus-jakarta-sans": "^0.4.1"
   },
   "devDependencies": {
     "@types/react": "~19.1.10",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "sharp": "^0.34.4"
   }
 }
