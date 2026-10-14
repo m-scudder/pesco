@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {Scope} from './theme/palette';
 import {useAuth} from './lib/AuthContext';
 import {getMyHousehold,type Household} from './lib/households';
-import {addCloudExpense,deleteCloudExpense,editCloudExpense,fetchCloudExpenses} from './lib/cloudExpenses';
+import {addCloudExpense,deleteCloudExpense,editCloudExpense,fetchAllHouseholdExpenses} from './lib/cloudExpenses';
 import {supabase} from './lib/supabase';
 import {generateHouseholdRecurring} from './lib/householdRecurring';
 import {queueHouseholdExpense,flushPending,loadPending,cancelPending,type PendingExpense} from './lib/pendingExpenses';
@@ -164,7 +164,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
      catch(e){console.warn('Recurring generation postponed',e)}
     }
    }
-   const rows=membership?await fetchCloudExpenses('household',membership.id,100):[];
+   const rows=membership?await fetchAllHouseholdExpenses(membership.id):[];
    try{await AsyncStorage.setItem('pesco:household-cache:'+user.id,JSON.stringify({household:membership,expenses:rows}))}
    catch(e){console.warn('Could not update offline household cache',e)}
    if(request===requested.current){
