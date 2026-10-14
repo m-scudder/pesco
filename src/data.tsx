@@ -197,7 +197,8 @@ export function DataProvider({children}:{children:React.ReactNode}){
   setHousehold(null);setCloudExpenses([]);setCloudReady(false);setSyncError(null);
   if(!user)return;
   void refresh();
-  const interval=setInterval(()=>{void refresh()},15000);
+  // Realtime refreshes normally provide prompt updates; polling is a fallback after missed events.
+  const interval=setInterval(()=>{void refresh()},60000);
   const app=AppState.addEventListener('change',s=>{if(s==='active')void refresh()});
   return()=>{
    clearInterval(interval);app.remove();
@@ -216,6 +217,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
     filter:'household_id=eq.'+household.id
    },()=>{void refresh()})
    .subscribe(status=>{
+    if(status==='SUBSCRIBED')void refresh();
     if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
      console.warn('Household Realtime disconnected:',status);
     }
