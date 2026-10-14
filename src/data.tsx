@@ -8,7 +8,7 @@ import {addCloudExpense,deleteCloudExpense,editCloudExpense,fetchAllHouseholdExp
 import {supabase} from './lib/supabase';
 import {makeDemoExpenses} from './lib/demoExpenses';
 import {generateHouseholdRecurring} from './lib/householdRecurring';
-import {queueHouseholdExpense,flushPending,loadPending,cancelPending,type PendingExpense} from './lib/pendingExpenses';
+import {queueHouseholdExpense,flushPending,loadPending,cancelPending,editPending,type PendingExpense} from './lib/pendingExpenses';
 
 export const CATEGORIES=['Groceries','Food & Drinks','Shopping','Utilities','Rent','Transport','Health','Entertainment','Education','Travel','Other'] as const;
 export type Expense={id:string;scope:Scope;amountPaise:number;category:string;note:string;date:string;createdAt:string;updatedAt:string;ownerId:string};
@@ -241,7 +241,13 @@ export function DataProvider({children}:{children:React.ReactNode}){
 
  const update=useCallback(async(id:string,draft:ExpenseDraft)=>{
   if(id.startsWith('demo:'))throw new Error('Demo records are read-only. Turn off sample data in Settings to view actual records.');
-  if(pending.some(entry=>entry.id===id))throw new Error('Wait until this expense syncs before editing it.');
+  const queued=pending.find(entry=>entry.id===id);
+  if(queued){
+   if(!user||!household)throw new Error('Household unavailable');
+   if(draft.scope!=='household')throw new Error('Changing the expense scope is unavailable');
+   setPending(await editPending(user.id,id,{...draft,householdId:household.id}));
+   return;
+  }
   const cloud=cloudExpenses.find(e=>e.id===id);
   if(cloud){
    if(!household)throw new Error('Household no longer available');
