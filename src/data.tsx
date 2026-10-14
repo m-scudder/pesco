@@ -7,7 +7,7 @@ import {getMyHousehold,type Household} from './lib/households';
 import {addCloudExpense,deleteCloudExpense,editCloudExpense,fetchCloudExpenses} from './lib/cloudExpenses';
 import {supabase} from './lib/supabase';
 import {generateHouseholdRecurring} from './lib/householdRecurring';
-import {queueHouseholdExpense,flushPending,loadPending,type PendingExpense} from './lib/pendingExpenses';
+import {queueHouseholdExpense,flushPending,loadPending,cancelPending,type PendingExpense} from './lib/pendingExpenses';
 
 export const CATEGORIES=['Groceries','Food & Drinks','Shopping','Utilities','Rent','Transport','Health','Entertainment','Education','Travel','Other'] as const;
 export type Expense={id:string;scope:Scope;amountPaise:number;category:string;note:string;date:string;createdAt:string;updatedAt:string;ownerId:string};
@@ -213,6 +213,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
  },[household,refresh,user?.id]);
 
  const update=useCallback(async(id:string,draft:ExpenseDraft)=>{
+  if(pending.some(entry=>entry.id===id))throw new Error('Wait until this expense syncs before editing it.');
   const cloud=cloudExpenses.find(e=>e.id===id);
   if(cloud){
    if(!household)throw new Error('Household no longer available');
@@ -223,15 +224,20 @@ export function DataProvider({children}:{children:React.ReactNode}){
    return;
   }
   setLocalExpenses(prev=>prev.map(e=>e.id===id?{...e,...draft,updatedAt:new Date().toISOString()}:e));
- },[cloudExpenses,household,user?.id,refresh]);
+ },[cloudExpenses,household,user?.id,refresh,pending]);
 
  const remove=useCallback(async(id:string)=>{
+  if(pending.some(entry=>entry.id===id)){
+   if(!user)throw new Error('Sign in required');
+   setPending(await cancelPending(user.id,id));
+   return;
+  }
   const cloud=cloudExpenses.find(e=>e.id===id);
   if(cloud){
    if(cloud.ownerId!==user?.id)throw new Error('Only the creator can delete this expense');
    await deleteCloudExpense(id);await refresh();
   }else setLocalExpenses(prev=>prev.filter(e=>e.id!==id));
- },[cloudExpenses,user?.id,refresh]);
+ },[cloudExpenses,user?.id,refresh,pending]);
 
  const importLocalHousehold=useCallback(async()=>{
   if(!household)throw new Error('Join a household first');
