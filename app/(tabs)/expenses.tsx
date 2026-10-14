@@ -6,14 +6,16 @@ import {AddExpenseButton} from '@/components/AddExpenseButton';
 import {Body,Card,Heading,ScopeSwitch} from '@/components/UI';
 import {ExpenseRow} from '@/components/ExpenseRow';
 import {MonthPicker} from '@/components/MonthPicker';
-import {CATEGORIES,localDate,monthKey,useData} from '@/data';
+import {localDate,monthKey,useData} from '@/data';
+import {useCategories} from '@/lib/CategoryContext';
 import {useAppTheme} from '@/theme/ThemeContext';
 
 export default function Expenses(){
- const {colors,scope}=useAppTheme();const {expenses,refresh,syncError}=useData();
+ const {colors,scope}=useAppTheme();const {expenses,refresh,syncError}=useData();const {names:categoryNames}=useCategories();
  const [search,setSearch]=useState('');const [category,setCategory]=useState('All');
  const [month,setMonth]=useState(monthKey(localDate()));const [allMonths,setAllMonths]=useState(false);
  useFocusEffect(React.useCallback(()=>{void refresh()},[refresh]));
+ const filterCategories=Array.from(new Set([...categoryNames(scope),...expenses.filter(e=>e.scope===scope).map(e=>e.category)]));
  const filtered=useMemo(()=>expenses.filter(e=>e.scope===scope&&(allMonths||monthKey(e.date)===month)&&(category==='All'||e.category===category)&&(e.category+' '+e.note).toLowerCase().includes(search.trim().toLowerCase())).sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt.localeCompare(a.createdAt)),[expenses,scope,allMonths,month,category,search]);
  let lastDate='';
  return <View style={{flex:1}}><Screen>
@@ -25,7 +27,7 @@ export default function Expenses(){
    <Pressable onPress={()=>setAllMonths(v=>!v)} style={{backgroundColor:allMonths?colors.text:colors.secondary,paddingHorizontal:10,paddingVertical:8,borderRadius:9}}><Text style={{color:allMonths?colors.background:colors.text,fontSize:12}}>All dates</Text></Pressable>
   </View>
   <ScrollView style={{flexGrow:0,maxHeight:38}} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{alignItems:'center',gap:6,paddingRight:16}}>
-   {['All',...CATEGORIES].map(cat=><Pressable key={cat} onPress={()=>setCategory(cat)} style={{alignSelf:'center',paddingHorizontal:12,height:32,justifyContent:'center',borderRadius:16,backgroundColor:category===cat?colors.text:colors.secondary}}>
+   {['All',...filterCategories].map(cat=><Pressable key={cat} onPress={()=>setCategory(cat)} style={{alignSelf:'center',paddingHorizontal:12,height:32,justifyContent:'center',borderRadius:16,backgroundColor:category===cat?colors.text:colors.secondary}}>
     <Text style={{color:category===cat?colors.background:colors.text,fontSize:12}}>{cat}</Text>
    </Pressable>)}
   </ScrollView>
