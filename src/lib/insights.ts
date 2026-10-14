@@ -38,3 +38,20 @@ export function buildInsights(expenses:Expense[],scope:Scope,month:string,userId
  })).sort((a,b)=>b.amount-a.amount||a.name.localeCompare(b.name));
  return {selected,spent,prior,difference,percentChange,own,partner:spent-own,monthSeries,categories};
 }
+
+export type CategoryChange={name:string;current:number;previous:number;difference:number};
+export function monthlyCategoryChanges(expenses:Expense[],scope:Scope,month:string):CategoryChange[]{
+ const previousMonth=shiftMonth(month,-1);
+ const totals=new Map<string,{current:number;previous:number}>();
+ for(const expense of expenses){
+  if(expense.scope!==scope)continue;
+  const dateMonth=expense.date.slice(0,7);
+  if(dateMonth!==month&&dateMonth!==previousMonth)continue;
+  const row=totals.get(expense.category)??{current:0,previous:0};
+  if(dateMonth===month)row.current+=expense.amountPaise;
+  else row.previous+=expense.amountPaise;
+  totals.set(expense.category,row);
+ }
+ return Array.from(totals,([name,row])=>({...row,name,difference:row.current-row.previous}))
+  .sort((a,b)=>Math.abs(b.difference)-Math.abs(a.difference)||a.name.localeCompare(b.name));
+}

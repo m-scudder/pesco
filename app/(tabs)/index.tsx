@@ -11,7 +11,7 @@ import {useAppTheme} from '@/theme/ThemeContext';
 
 export default function Home(){
  const {colors,scope}=useAppTheme();
- const {expenses,refresh,syncError,currentUserId,pendingCount,pendingIds,remove}=useData();
+ const {expenses,refresh,syncError,currentUserId,pendingCount,pendingIds,remove,demoEnabled}=useData();
  const router=useRouter();
  const [month,setMonth]=useState(monthKey(localDate()));
  const [search,setSearch]=useState('');
@@ -54,6 +54,7 @@ export default function Home(){
   <Screen style={{paddingHorizontal:0,gap:0}}>
    <View style={{paddingHorizontal:16,paddingBottom:8,gap:8}}>
     <ScopeSwitch/>
+    {demoEnabled?<Text style={{fontSize:11,color:colors.muted,fontFamily:'Inter_500Medium'}}>DEMO DATA · Sample expenses are read-only</Text>:null}
     <MonthPicker month={month} onChange={setMonth}/>
     <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
      <View style={{flex:1,flexDirection:'row',alignItems:'center',backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,borderRadius:11,paddingHorizontal:10}}>
@@ -119,6 +120,7 @@ export default function Home(){
        accessibilityRole="button"
        accessibilityLabel={expense.category+', '+formatMoney(expense.amountPaise)}
        onPress={()=>{
+        if(expense.id.startsWith('demo:')){Alert.alert('Demo expense','Sample records are read-only and are not shared with your partner. Disable them in Settings to view only real expenses.');return}
         if(pendingIds.includes(expense.id)){
          Alert.alert('Waiting to sync','This expense is saved on this device. Once online, it will sync with your household.',[
           {text:'Keep it',style:'cancel'},

@@ -21,7 +21,7 @@ export default function Insights(){
  const router=useRouter();
  const {colors,scope}=useAppTheme();
  const {width}=useWindowDimensions();
- const {expenses,currentUserId,refresh,loaded}=useData();
+ const {expenses,currentUserId,refresh,loaded,demoEnabled}=useData();
  const [month,setMonth]=useState(monthKey(localDate()));
  const [chosen,setChosen]=useState<string|null>(null);
  const [highlighted,setHighlighted]=useState<string|null>(null);
@@ -60,7 +60,8 @@ export default function Insights(){
     <Text numberOfLines={1} style={{color:colors.text,fontSize:19,fontWeight:'600',flex:1}}>{chosen}</Text>
    </View>:
    <View style={{paddingHorizontal:12,paddingBottom:8,paddingTop:4}}><ScopeSwitch/></View>}
-  <View style={{paddingHorizontal:12,paddingBottom:12}}><MonthPicker month={month} onChange={setMonth}/></View>
+  <View style={{paddingHorizontal:12,paddingBottom:12}}><MonthPicker month={month} onChange={setMonth}/>
+   {demoEnabled?<Text style={{color:colors.muted,fontSize:11,fontFamily:'Inter_500Medium'}}>DEMO DATA · Includes read-only sample expenses</Text>:null}</View>
   {chosen===null?<>
    {spent>0?<View style={{alignItems:'center',justifyContent:'center',paddingVertical:8,borderTopWidth:1,borderColor:colors.border}}>
     <Svg width={chartSize} height={chartSize} viewBox={`0 0 ${chartSize} ${chartSize}`}>

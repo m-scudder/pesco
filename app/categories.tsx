@@ -4,22 +4,21 @@ import {Screen} from '@/components/Screen';
 import {Body} from '@/components/UI';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {useCategories,type Category} from '@/lib/CategoryContext';
+import {useData} from '@/data';
 import type {Scope} from '@/theme/palette';
 
 type ListedCategory=Category&{origin:Scope};
 export default function Categories(){
  const {colors}=useAppTheme();
+ const {household:activeHousehold}=useData();
+ const [scope,setScope]=useState<Scope>('household');
  const {household,personal,loading,error,refresh,create,rename,remove}=useCategories();
  const [editing,setEditing]=useState<ListedCategory|null>(null);
  const [draft,setDraft]=useState('');
  const [creating,setCreating]=useState(false);
  const [busy,setBusy]=useState(false);
- const list=useMemo(()=>{
-  const byName=new Map<string,ListedCategory>();
-  for(const item of personal)byName.set(item.name.toLocaleLowerCase(),{...item,origin:'personal'});
-  for(const item of household)byName.set(item.name.toLocaleLowerCase(),{...item,origin:'household'});
-  return Array.from(byName.values()).sort((a,b)=>a.name.localeCompare(b.name));
- },[household,personal]);
+ const list=useMemo(()=> (scope==='household'?household:personal)
+  .map(item=>({...item,origin:scope} as ListedCategory)).sort((a,b)=>a.name.localeCompare(b.name)),[scope,household,personal]);
  useEffect(()=>{void refresh()},[refresh]);
  const cancel=()=>{setEditing(null);setCreating(false);setDraft('')};
  const save=async()=>{
@@ -31,13 +30,14 @@ export default function Categories(){
   }
   setBusy(true);
   try{
-   if(creating)await create('personal',clean);
+   if(creating)await create(scope,clean);
    else if(editing)await rename(editing.origin,editing.id,clean);
    cancel();
   }catch(e){Alert.alert('Could not save',e instanceof Error?e.message:'Try again')}
   finally{setBusy(false)}
  };
  const start=(item?:ListedCategory)=>{setEditing(item??null);setCreating(!item);setDraft(item?.name??'')};
+ const changeScope=(value:Scope)=>{cancel();setScope(value)};
  const confirmRemove=(item:ListedCategory)=>Alert.alert(
   'Remove category?',item.name+' will no longer appear for new expenses. Existing transactions are unchanged.',[
    {text:'Cancel',style:'cancel'},
@@ -55,7 +55,14 @@ export default function Categories(){
   {button('Cancel',cancel,true)}
  </View>;
  return <Screen modal style={{gap:12}}>
-  <Body muted>One category list for household and personal expenses.</Body>
+  <View style={{flexDirection:'row',padding:3,borderRadius:10,backgroundColor:colors.secondary}}>
+   {(['household','personal'] as const).map(value=><Pressable key={value} accessibilityRole="button" accessibilityState={{selected:scope===value}} onPress={()=>changeScope(value)}
+    style={{flex:1,alignItems:'center',justifyContent:'center',minHeight:36,borderRadius:8,backgroundColor:scope===value?colors.surface:undefined}}>
+    <Text style={{fontFamily:scope===value?'Inter_600SemiBold':'Inter_400Regular',fontSize:13,color:scope===value?colors.text:colors.muted}}>{value==='household'?'Household':'Personal'}</Text>
+   </Pressable>)}
+  </View>
+  <Text style={{color:colors.muted,fontSize:12}}>{scope==='household'?'Categories created here sync with your partner.':'Personal categories stay on this device.'}</Text>
+  {scope==='household'&&!activeHousehold?<Body muted>Join or create a household to manage shared categories.</Body>:null}
   <View style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:12,paddingHorizontal:12}}>
    {list.map((item,index)=><View key={item.origin+':'+item.id} style={{minHeight:50,borderBottomWidth:index===list.length-1?0:1,borderColor:colors.border,justifyContent:'center'}}>
     {editing?.id===item.id?editor:<View style={{flexDirection:'row',alignItems:'center',gap:6}}>
@@ -66,8 +73,8 @@ export default function Categories(){
    </View>)}
    {list.length===0?<View style={{paddingVertical:14}}><Body muted>No categories</Body></View>:null}
   </View>
-  {creating?editor:<Pressable onPress={()=>start()} accessibilityRole="button"
-   style={{minHeight:44,borderRadius:10,backgroundColor:colors.secondary,justifyContent:'center',alignItems:'center'}}>
+  {creating?editor:<Pressable disabled={scope==='household'&&!activeHousehold} onPress={()=>start()} accessibilityRole="button"
+   style={{minHeight:44,borderRadius:10,backgroundColor:colors.secondary,opacity:scope==='household'&&!activeHousehold?0.4:1,justifyContent:'center',alignItems:'center'}}>
    <Text style={{fontFamily:'Inter_600SemiBold',fontSize:14,color:colors.household}}>+ Add category</Text>
   </Pressable>}
   {loading?<Body muted>Updating…</Body>:null}
