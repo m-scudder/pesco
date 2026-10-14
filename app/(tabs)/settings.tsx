@@ -38,7 +38,7 @@ function SettingsRow({icon,label,subtitle,onPress,right,danger=false,last=false}
 export default function Settings(){
  const router=useRouter();
  const {resolved,setAppearance,colors}=useAppTheme();
- const {expenses,clearAll}=useData();
+ const {expenses,clearAll,pendingEntries}=useData();
  return <Screen style={{gap:20,paddingBottom:90}}>
   <SettingsSection title="Manage">
    <SettingsRow icon="person-circle-outline" label="My profile" subtitle="Manage your name and household identity" onPress={()=>router.push('/profile')}/>
@@ -54,6 +54,7 @@ export default function Settings(){
      trackColor={{false:colors.secondary,true:colors.household}} thumbColor="#FFFFFF"/>}/>
   </SettingsSection>
   <SettingsSection title="Data">
+   <SettingsRow icon="cloud-upload-outline" label="Pending uploads" subtitle={pendingEntries.length?pendingEntries.length+" expense(s) waiting to sync":"All household expenses synced"} onPress={()=>router.push('/sync')}/>
    <SettingsRow icon="save-outline" label={expenses.length+' saved locally'} subtitle="Expense records stored on this device"/>
    <SettingsRow icon="trash-outline" label="Clear local data" subtitle="Remove locally saved expense records" danger last
     onPress={()=>Alert.alert('Delete local expenses?','This cannot be undone.',[
