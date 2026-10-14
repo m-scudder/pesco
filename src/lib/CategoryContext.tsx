@@ -73,7 +73,7 @@ export function CategoryProvider({children}:{children:React.ReactNode}){
   return()=>{app.remove();void client.removeChannel(channel)};
  },[householdId,refresh]);
 
- const names=useCallback((scope:Scope)=>(scope==='household'?household:personal).map(x=>x.name),[household,personal]);
+ const names=useCallback((_scope:Scope)=>Array.from(new Map([...personal,...household].map(item=>[item.name.toLocaleLowerCase(),item.name])).values()),[household,personal]);
  const create=useCallback(async(scope:Scope,name:string)=>{
   const items=scope==='household'?household:personal;
   const clean=validate(name,items);
