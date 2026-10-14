@@ -59,6 +59,7 @@ export default function Settings(){
      onValueChange={setDemoEnabled} trackColor={{false:colors.secondary,true:colors.household}} thumbColor="#FFFFFF"/>}/>
   </SettingsSection>:null}
   <SettingsSection title="Data">
+   <SettingsRow icon="time-outline" label="Expense history & CSV" subtitle="Search all dates and share CSV records" onPress={()=>router.push('/history')}/>
    <SettingsRow icon="cloud-upload-outline" label="Pending uploads" subtitle={pendingEntries.length?pendingEntries.length+" expense(s) waiting to sync":"No pending uploads"} onPress={()=>router.push('/sync')}/>
    <SettingsRow icon="save-outline" label={expenses.filter(e=>e.scope==='personal').length+' personal expenses'} subtitle="Stored locally on this device"/>
    <SettingsRow icon="trash-outline" label="Clear local data" subtitle="Remove local expenses, budgets and personal recurring rules" danger last
