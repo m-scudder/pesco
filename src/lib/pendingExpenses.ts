@@ -28,29 +28,41 @@ export async function queueHouseholdExpense(userId:string,draft:CloudExpenseInpu
 export async function savePending(userId:string,pending:PendingExpense[]){
  await AsyncStorage.setItem(key(userId),JSON.stringify(pending));
 }
-export async function flushPending(userId:string,householdId:string){return locked(async()=>{
- const pending=await loadPending(userId);
- const retained:PendingExpense[]=[];
- let sent=0;
- let errorMessage:string|null=null;
- for(let i=0;i<pending.length;i++){
-  const entry=pending[i];
-  if(entry.draft.householdId!==householdId){retained.push(entry);continue}
-  if(errorMessage){retained.push(entry);continue}
-  try{
-   await addCloudExpense(entry.draft,entry.id);
-   sent++;
-  }catch(e){
-   retained.push(entry);
-   errorMessage=e instanceof Error?e.message:String(e);
+const uploading=new Set<string>();
+const activeFlushes=new Map<string,Promise<{remaining:number;sent:number;errorMessage:string|null}>>();
+export async function flushPending(userId:string,householdId:string){
+ const keyForFlush=userId+':'+householdId;
+ const running=activeFlushes.get(keyForFlush);
+ if(running)return running;
+ const run=(async()=>{
+  const pending=await locked(()=>loadPending(userId));
+  let sent=0,errorMessage:string|null=null;
+  for(const entry of pending){
+   if(entry.draft.householdId!==householdId)continue;
+   // A new expense can be saved to disk while a network upload is running.
+   uploading.add(entry.id);
+   try{
+    await addCloudExpense(entry.draft,entry.id);
+    await locked(async()=>{
+     const latest=await loadPending(userId);
+     await savePending(userId,latest.filter(item=>item.id!==entry.id));
+    });
+    sent++;
+   }catch(e){
+    errorMessage=e instanceof Error?e.message:String(e);
+    break;
+   }finally{uploading.delete(entry.id)}
   }
- }
- await savePending(userId,retained);
- return {remaining:retained.length,sent,errorMessage};
-});}
+  const remaining=(await locked(()=>loadPending(userId))).length;
+  return {remaining,sent,errorMessage};
+ })();
+ activeFlushes.set(keyForFlush,run);
+ try{return await run}finally{activeFlushes.delete(keyForFlush)}
+}
 
 export async function cancelPending(userId:string,id:string){
  return locked(async()=>{
+  if(uploading.has(id))throw new Error('This expense is uploading. Try again when sync finishes.');
   const existing=await loadPending(userId);
   const remaining=existing.filter(entry=>entry.id!==id);
   await savePending(userId,remaining);
