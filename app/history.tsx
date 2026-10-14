@@ -1,5 +1,5 @@
 import React,{useMemo,useState} from 'react';
-import {Alert,Platform,Pressable,Text,TextInput,View} from 'react-native';
+import {Alert,Modal,Platform,Pressable,Text,TextInput,View} from 'react-native';
 import DateTimePicker,{DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 import {File,Paths} from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -13,12 +13,13 @@ const dateString=(d:Date)=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2
 const firstOfMonth=(d:Date)=>dateString(new Date(d.getFullYear(),d.getMonth(),1));
 const displayDate=(date:string)=>new Date(date+'T12:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
 export default function History(){
- const {colors,scope}=useAppTheme();
+ const {colors,scope,resolved}=useAppTheme();
  const {expenses,demoEnabled,refresh,syncError}=useData();
  const [from,setFrom]=useState(()=>firstOfMonth(new Date()));
  const [to,setTo]=useState(localDate());
  const [query,setQuery]=useState('');
  const [picker,setPicker]=useState<'from'|'to'|null>(null);
+ const [pendingDate,setPendingDate]=useState(new Date());
  const [sharing,setSharing]=useState(false);
  const [includeDemo,setIncludeDemo]=useState(false);
  const [visibleCount,setVisibleCount]=useState(50);
@@ -31,7 +32,10 @@ export default function History(){
   if(Platform.OS==='android'){
    DateTimePickerAndroid.open({mode:'date',value:new Date((target==='from'?from:to)+'T12:00:00'),
     onChange:(event,date)=>{if(event.type==='set'&&date)(target==='from'?setFrom:setTo)(dateString(date))}});
-  }else setPicker(target);
+  }else{
+   setPendingDate(new Date((target==='from'?from:to)+'T12:00:00'));
+   setPicker(target);
+  }
  };
  const share=async()=>{
   if(!exportRecords.length){Alert.alert('Nothing to export','No matching non-demo expenses in this date range.');return}
@@ -62,11 +66,6 @@ export default function History(){
      <Text style={{fontSize:13,color:colors.text,fontFamily:'Inter_500Medium'}}>{displayDate(target==='from'?from:to)} ▾</Text>
     </Pressable>)}
    </View>
-   {picker!==null?<View style={{gap:8}}>
-    <DateTimePicker value={new Date((picker==='from'?from:to)+'T12:00:00')} mode="date" display="spinner"
-     onChange={(event,date)=>{if(event.type==='set'&&date)(picker==='from'?setFrom:setTo)(dateString(date))}}/>
-    <Pressable accessibilityRole="button" onPress={()=>setPicker(null)} style={{padding:8,alignSelf:'flex-end'}}><Text style={{color:colors.household}}>Done</Text></Pressable>
-   </View>:null}
    <TextInput accessibilityLabel="Search history" value={query} onChangeText={setQuery} placeholder="Search category, note or amount"
     placeholderTextColor={colors.muted} style={{height:42,borderWidth:1,borderColor:colors.border,borderRadius:9,paddingHorizontal:10,color:colors.text,fontSize:13}}/>
    {from>to?<Text style={{fontSize:12,color:'#C94F4F'}}>Start date must be before the end date.</Text>:null}
@@ -96,5 +95,27 @@ export default function History(){
    <Text style={{color:'#fff',fontFamily:'Inter_600SemiBold',fontSize:13}}>{sharing?'Preparing…':'Export CSV'}</Text>
   </Pressable>
   <Text style={{fontSize:11,color:colors.muted}}>Exports a .csv file to your device's share sheet. No export is uploaded by PESCO.</Text>
+  <Modal visible={picker!==null} transparent animationType="fade" presentationStyle="overFullScreen" onRequestClose={()=>setPicker(null)}>
+   <View style={{flex:1,justifyContent:'center',paddingHorizontal:24,backgroundColor:'rgba(0,0,0,0.55)'}}>
+    <Pressable onPress={()=>setPicker(null)} accessibilityLabel="Dismiss date picker" style={{position:'absolute',top:0,bottom:0,left:0,right:0}}/>
+    <View style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:14,padding:14}}>
+     <Text style={{color:colors.text,fontFamily:'Inter_600SemiBold',fontSize:15}}>{picker==='from'?'From date':'To date'}</Text>
+     <DateTimePicker value={pendingDate} mode="date" display="spinner" themeVariant={resolved} textColor={colors.text}
+      style={{height:210,width:'100%'}} onChange={(event,date)=>{if(event.type==='set'&&date)setPendingDate(date)}}/>
+     <View style={{flexDirection:'row',justifyContent:'flex-end',gap:18}}>
+      <Pressable accessibilityRole="button" onPress={()=>setPicker(null)} style={{padding:10}}>
+       <Text style={{color:colors.muted,fontFamily:'Inter_500Medium',fontSize:13}}>Cancel</Text>
+      </Pressable>
+      <Pressable accessibilityRole="button" onPress={()=>{
+       if(picker==='from')setFrom(dateString(pendingDate));
+       if(picker==='to')setTo(dateString(pendingDate));
+       setPicker(null);
+      }} style={{padding:10}}>
+       <Text style={{color:colors.household,fontFamily:'Inter_600SemiBold',fontSize:13}}>Done</Text>
+      </Pressable>
+     </View>
+    </View>
+   </View>
+  </Modal>
  </Screen>;
 }
