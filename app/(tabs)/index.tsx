@@ -11,7 +11,7 @@ import {useAppTheme} from '@/theme/ThemeContext';
 
 export default function Home(){
  const {colors,scope}=useAppTheme();
- const {expenses,refresh,syncError,currentUserId,pendingCount,remove}=useData();
+ const {expenses,refresh,syncError,currentUserId,pendingCount,pendingIds,remove}=useData();
  const router=useRouter();
  const [month,setMonth]=useState(monthKey(localDate()));
  const [search,setSearch]=useState('');
@@ -119,8 +119,12 @@ export default function Home(){
        accessibilityRole="button"
        accessibilityLabel={expense.category+', '+formatMoney(expense.amountPaise)}
        onPress={()=>{
-        if(expense.id.length===36&&expense.id.includes('-')&&pendingCount>0){
-         // Open the details normally for synced IDs; only pending IDs are marked below.
+        if(pendingIds.includes(expense.id)){
+         Alert.alert('Waiting to sync','This expense is saved on this device. Once online, it will sync with your household.',[
+          {text:'Keep it',style:'cancel'},
+          {text:'Cancel expense',style:'destructive',onPress:()=>{void remove(expense.id)}}
+         ]);
+         return;
         }
         router.push({pathname:'/expense/[id]',params:{id:expense.id}});
        }}
@@ -131,7 +135,10 @@ export default function Home(){
         {scope==='household'?
          <Text style={{color:colors.muted,fontSize:12}}>{expense.ownerId==='local-user'||expense.ownerId===currentUserId?'You':'Partner'}</Text>:null}
        </View>
-       <Text style={{color:'#F25B59',fontSize:15,fontWeight:'500',textAlign:'right'}}>{formatMoney(expense.amountPaise)}</Text>
+       <View style={{alignItems:'flex-end',gap:3}}>
+        <Text style={{color:'#F25B59',fontSize:15,fontWeight:'500',textAlign:'right'}}>{formatMoney(expense.amountPaise)}</Text>
+        {pendingIds.includes(expense.id)?<Text style={{color:colors.muted,fontSize:10}}>Waiting to sync</Text>:null}
+       </View>
       </Pressable>)}
      </View>;
     })
