@@ -11,7 +11,6 @@ import {useAppTheme} from '@/theme/ThemeContext';
 
 const SEGMENT_COLORS=['#FF655B','#FF984F','#FFD143','#FFE600','#B7DF48','#64D073','#4AD1C9','#568AF2','#AA7CE4','#F77FB4'];
 const fmt=(amount:number)=>formatMoney(amount);
-const amountText=(value:number)=>fmt(value).replace(/\.00$/,'');
 function slicePath(cx:number,cy:number,r:number,start:number,end:number){
  const point=(angle:number)=>({x:cx+r*Math.cos(angle),y:cy+r*Math.sin(angle)});
  const a=point(start),b=point(end);
@@ -50,7 +49,6 @@ export default function Insights(){
  const trendWidth=Math.min(width-24,440);
  const trendHeight=170;
  const trendPoints=monthlyCategory.map((m,i)=>({x:18+i*(trendWidth-36)/6,y:18+(1-m.amount/trendMax)*112,...m}));
- const categoryTotal=selected.reduce((sum,e)=>sum+e.amountPaise,0);
  return <Screen style={{paddingHorizontal:0,gap:0,paddingTop:10}}>
   {chosen!==null?
    <View style={{flexDirection:'row',alignItems:'center',paddingHorizontal:14,paddingBottom:12,gap:14}}>
@@ -64,10 +62,10 @@ export default function Insights(){
   {chosen===null?<>
    {spent>0?<View style={{alignItems:'center',justifyContent:'center',paddingVertical:8,borderTopWidth:1,borderColor:colors.border}}>
     <Svg width={chartSize} height={chartSize} viewBox={`0 0 ${chartSize} ${chartSize}`}>
-     {slices.map((s,i)=><Path key={s.name} d={slicePath(cx,cy,r,s.start,s.end)} fill={s.color} stroke={colors.background} strokeWidth={1.5}/>)}
+     {slices.map(s=><Path key={s.name} d={slicePath(cx,cy,r,s.start,s.end)} fill={s.color} stroke={colors.background} strokeWidth={1.5}/>)}
     </Svg>
    </View>:<Text style={{color:colors.muted,textAlign:'center',paddingVertical:36}}>{loaded?'No expenses this month':'Loading…'}</Text>}
-   {slices.map((s,i)=><Pressable key={s.name} accessibilityRole="button"
+   {slices.map(s=><Pressable key={s.name} accessibilityRole="button"
     accessibilityLabel={s.name+', '+s.percent+' percent, '+fmt(s.amount)}
     onPress={()=>setChosen(s.name)}
     style={{flexDirection:'row',alignItems:'center',gap:10,paddingHorizontal:14,paddingVertical:13,minHeight:58,borderTopWidth:1,borderColor:colors.border}}>
