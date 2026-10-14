@@ -9,7 +9,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.pesco"
+      "bundleIdentifier": "com.anonymous.pesco",
+      "icon": "./assets/icon.png"
     },
     "android": {
       "edgeToEdgeEnabled": true,
