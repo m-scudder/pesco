@@ -6,6 +6,7 @@ import {Body,Card} from '@/components/UI';
 import {MonthPicker} from '@/components/MonthPicker';
 import {formatMoney,localDate,monthKey,useData} from '@/data';
 import {buildInsights} from '@/lib/insights';
+import {useCategoryBudgets} from '@/lib/useCategoryBudgets';
 import {useAppTheme} from '@/theme/ThemeContext';
 
 export default function House(){
@@ -17,6 +18,7 @@ export default function House(){
  const {spent,prior,difference,percentChange,selected,monthSeries,categories}=useMemo(
   ()=>buildInsights(expenses,'household',month,null),[expenses,month]);
  const budget=budgets.household;
+ const {items:categoryLimits}=useCategoryBudgets('household');
  const accent=colors.household;
  const maxMonth=Math.max(1,...monthSeries.map(m=>m.amount));
  return <Screen style={{gap:12}}>
@@ -55,6 +57,7 @@ export default function House(){
      <Text numberOfLines={1} style={{color:colors.text,fontSize:13,fontFamily:'Inter_500Medium',flex:1}}>{item.name}</Text>
      <Text style={{color:colors.text,fontSize:13,fontFamily:'Inter_500Medium'}}>{formatMoney(item.amount)}</Text>
     </View>
+    {categoryLimits.find(limit=>limit.category===item.name)?<Text style={{fontSize:11,color:item.amount>(categoryLimits.find(limit=>limit.category===item.name)?.amountPaise??Infinity)?'#C94F4F':colors.muted}}>Limit {formatMoney(categoryLimits.find(limit=>limit.category===item.name)!.amountPaise)}{item.amount>categoryLimits.find(limit=>limit.category===item.name)!.amountPaise?' · Over limit':''}</Text>:null}
     <View style={{height:5,borderRadius:4,backgroundColor:colors.secondary,overflow:'hidden'}}>
      <View style={{height:'100%',width:`${item.percent}%` as const,backgroundColor:accent,borderRadius:4}}/>
     </View>
