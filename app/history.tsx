@@ -39,9 +39,13 @@ export default function History(){
   try{
    if(!await Sharing.isAvailableAsync())throw new Error('File sharing is unavailable on this device');
    const file=new File(Paths.cache,'PESCO-'+scope+'-'+from+'-to-'+to+'.csv');
-   file.create({overwrite:true});
-   file.write(expensesCsv(exportRecords));
-   await Sharing.shareAsync(file.uri,{mimeType:'text/csv',UTI:'public.comma-separated-values',dialogTitle:'Export PESCO CSV'});
+   try{
+    file.create({overwrite:true});
+    file.write(expensesCsv(exportRecords));
+    await Sharing.shareAsync(file.uri,{mimeType:'text/csv',UTI:'public.comma-separated-values',dialogTitle:'Export PESCO CSV'});
+   }finally{
+    if(file.exists)file.delete();
+   }
   }
   catch(e){Alert.alert('Could not share CSV',e instanceof Error?e.message:'Try again')}
   finally{setSharing(false)}
