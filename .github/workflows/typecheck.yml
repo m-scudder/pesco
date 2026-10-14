@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - feat/household-first-onboarding
+      - feat/phase3-reliability-polish
+      - main
 
 jobs:
   typecheck:
