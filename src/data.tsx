@@ -199,7 +199,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
   if(!user)return;
   void refresh();
   // Realtime refreshes normally provide prompt updates; polling is a fallback after missed events.
-  const interval=setInterval(()=>{void refresh()},60000);
+  const interval=setInterval(()=>{if(AppState.currentState==='active')void refresh()},60000);
   const app=AppState.addEventListener('change',s=>{if(s==='active')void refresh()});
   return()=>{
    clearInterval(interval);app.remove();
