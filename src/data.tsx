@@ -6,6 +6,7 @@ import {useAuth} from './lib/AuthContext';
 import {getMyHousehold,type Household} from './lib/households';
 import {addCloudExpense,deleteCloudExpense,editCloudExpense,fetchAllHouseholdExpenses} from './lib/cloudExpenses';
 import {supabase} from './lib/supabase';
+import {makeDemoExpenses} from './lib/demoExpenses';
 import {generateHouseholdRecurring} from './lib/householdRecurring';
 import {queueHouseholdExpense,flushPending,loadPending,cancelPending,type PendingExpense} from './lib/pendingExpenses';
 
@@ -28,7 +29,7 @@ function recurringDates(rule:RecurringRule,today:string):string[]{
  return output;
 }
 type Store={
- loaded:boolean;pendingCount:number;pendingIds:string[];pendingEntries:PendingExpense[];expenses:Expense[];recurringRules:RecurringRule[];addRecurring:(draft:Omit<RecurringRule,'id'|'active'>)=>void;setRecurringActive:(id:string,active:boolean)=>void;updateRecurring:(id:string,draft:Omit<RecurringRule,'id'|'active'>)=>void;deleteRecurring:(id:string)=>void;budgets:Budgets;household:Household|null;syncing:boolean;syncError:string|null;
+ loaded:boolean;demoEnabled:boolean;setDemoEnabled:(enabled:boolean)=>void;pendingCount:number;pendingIds:string[];pendingEntries:PendingExpense[];expenses:Expense[];recurringRules:RecurringRule[];addRecurring:(draft:Omit<RecurringRule,'id'|'active'>)=>void;setRecurringActive:(id:string,active:boolean)=>void;updateRecurring:(id:string,draft:Omit<RecurringRule,'id'|'active'>)=>void;deleteRecurring:(id:string)=>void;budgets:Budgets;household:Household|null;syncing:boolean;syncError:string|null;
  localHouseholdCount:number;currentUserId:string|null;
  refresh:()=>Promise<void>;add:(draft:ExpenseDraft)=>Promise<void>;update:(id:string,draft:ExpenseDraft)=>Promise<void>;
  remove:(id:string)=>Promise<void>;importLocalHousehold:()=>Promise<number>;
@@ -41,6 +42,9 @@ const defaultBudgets:Budgets={household:null,personal:null};
 export function DataProvider({children}:{children:React.ReactNode}){
  const {user,configured}=useAuth();
  const [localLoaded,setLocalLoaded]=useState(false);
+ const [demoEnabled,setDemoEnabled]=useState(__DEV__);
+ useEffect(()=>{if(!__DEV__)return;AsyncStorage.getItem('pesco:debug-demo-enabled').then(v=>{if(v!==null)setDemoEnabled(v==='true')}).catch(()=>{})},[]);
+ const changeDemoEnabled=useCallback((value:boolean)=>{if(!__DEV__)return;setDemoEnabled(value);void AsyncStorage.setItem('pesco:debug-demo-enabled',String(value))},[]);
  const [localExpenses,setLocalExpenses]=useState<Expense[]>([]);
  const [budgets,setBudgets]=useState<Budgets>(defaultBudgets);
  const [recurringRules,setRecurringRules]=useState<RecurringRule[]>([]);
@@ -211,7 +215,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
   return()=>{void client.removeChannel(channel)};
  },[user?.id,household?.id,refresh]);
 
- const expenses=useMemo(()=>[
+ const realExpenses=useMemo(()=>[
   ...localExpenses.filter(e=>e.scope==='personal'||(!household&&e.scope==='household')),
   ...(household?cloudExpenses:[]),
   ...pending.filter(p=>household&&p.draft.householdId===household.id&&!cloudExpenses.some(e=>e.id===p.id)).map(p=>({
@@ -219,6 +223,8 @@ export function DataProvider({children}:{children:React.ReactNode}){
    ownerId:p.userId,createdAt:p.queuedAt,updatedAt:p.queuedAt
   }))
  ],[localExpenses,cloudExpenses,household,pending]);
+ const demoExpenses=useMemo(()=>__DEV__?makeDemoExpenses():[],[]);
+ const expenses=useMemo(()=>demoEnabled&&__DEV__?[...realExpenses,...demoExpenses]:realExpenses,[demoEnabled,realExpenses,demoExpenses]);
 
  const add=useCallback(async(draft:ExpenseDraft)=>{
   if(draft.scope==='household'){
@@ -234,6 +240,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
  },[household,refresh,user?.id]);
 
  const update=useCallback(async(id:string,draft:ExpenseDraft)=>{
+  if(id.startsWith('demo:'))throw new Error('Demo records are read-only. Turn off sample data in Settings to view actual records.');
   if(pending.some(entry=>entry.id===id))throw new Error('Wait until this expense syncs before editing it.');
   const cloud=cloudExpenses.find(e=>e.id===id);
   if(cloud){
@@ -248,6 +255,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
  },[cloudExpenses,household,user?.id,refresh,pending]);
 
  const remove=useCallback(async(id:string)=>{
+  if(id.startsWith('demo:'))throw new Error('Demo records cannot be deleted. Turn off sample data in Settings.');
   if(pending.some(entry=>entry.id===id)){
    if(!user)throw new Error('Sign in required');
    setPending(await cancelPending(user.id,id));
@@ -283,10 +291,10 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const setBudget=useCallback((scope:Scope,value:number|null)=>setBudgets(prev=>({...prev,[scope]:value})),[]);
  const clearAll=useCallback(()=>{setLocalExpenses([]);setBudgets(defaultBudgets);setRecurringRules([]);setGenerated([])},[]);
  const value=useMemo<Store>(()=>({
-  loaded:localLoaded&&(!user||cloudReady),pendingCount:pending.filter(x=>x.draft.householdId===household?.id).length,pendingIds:pending.filter(x=>x.draft.householdId===household?.id).map(x=>x.id),pendingEntries:pending,expenses,recurringRules,addRecurring,setRecurringActive,updateRecurring,deleteRecurring,budgets,household,syncing,syncError:syncError??queueError,
+  loaded:localLoaded&&(!user||cloudReady),demoEnabled:__DEV__&&demoEnabled,setDemoEnabled:changeDemoEnabled,pendingCount:pending.filter(x=>x.draft.householdId===household?.id).length,pendingIds:pending.filter(x=>x.draft.householdId===household?.id).map(x=>x.id),pendingEntries:pending,expenses,recurringRules,addRecurring,setRecurringActive,updateRecurring,deleteRecurring,budgets,household,syncing,syncError:syncError??queueError,
   currentUserId:user?.id??null,localHouseholdCount:household?localExpenses.filter(e=>e.scope==='household').length:0,
   refresh,add,update,remove,importLocalHousehold,setBudget,clearAll
- }),[localLoaded,user?.id,cloudReady,expenses,pending,queueError,recurringRules,addRecurring,setRecurringActive,updateRecurring,deleteRecurring,budgets,household,syncing,syncError,localExpenses,refresh,add,update,remove,importLocalHousehold,setBudget,clearAll]);
+ }),[localLoaded,user?.id,cloudReady,demoEnabled,changeDemoEnabled,expenses,pending,queueError,recurringRules,addRecurring,setRecurringActive,updateRecurring,deleteRecurring,budgets,household,syncing,syncError,localExpenses,refresh,add,update,remove,importLocalHousehold,setBudget,clearAll]);
  return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 export function useData(){const store=useContext(Context);if(!store)throw new Error('Missing DataProvider');return store}
