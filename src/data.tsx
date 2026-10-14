@@ -88,8 +88,9 @@ export function DataProvider({children}:{children:React.ReactNode}){
  // Subscribe after membership is known. Re-subscribe if the household changes.
  // Realtime events invalidate the household feed, which is fetched under RLS.
  useEffect(()=>{
-  if(!supabase||!user||!household?.id)return;
-  const channel=supabase.channel('household-expenses-'+household.id)
+  const client=supabase;
+  if(!client||!user||!household?.id)return;
+  const channel=client.channel('household-expenses-'+household.id)
    .on('postgres_changes',{
     event:'*',schema:'public',table:'expenses',
     filter:'household_id=eq.'+household.id
@@ -99,7 +100,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
      console.warn('Household Realtime disconnected:',status);
     }
    });
-  return()=>{void supabase.removeChannel(channel)};
+  return()=>{void client.removeChannel(channel)};
  },[user?.id,household?.id,refresh]);
 
  const expenses=useMemo(()=>[
