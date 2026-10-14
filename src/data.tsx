@@ -26,7 +26,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
 }
 export function useData(){const store=useContext(Context);if(!store)throw new Error('Missing DataProvider');return store}
 export function formatMoney(paise:number){return new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',minimumFractionDigits:2,maximumFractionDigits:2}).format(paise/100)}
-export function parseMoney(input:string){if(!/^\\d+(\\.\\d{1,2})?$/.test(input.trim()))return null;const [whole,decimal='']=input.trim().split('.');const value=Number(whole)*100+Number(decimal.padEnd(2,'0'));return Number.isSafeInteger(value)&&value>0?value:null}
+export function parseMoney(input:string){if(!/^\d+(\.\d{1,2})?$/.test(input.trim()))return null;const [whole,decimal='']=input.trim().split('.');const value=Number(whole)*100+Number(decimal.padEnd(2,'0'));return Number.isSafeInteger(value)&&value>0?value:null}
 export function localDate(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 export function monthKey(date:string){return date.slice(0,7)}
 export function monthly(expenses:Expense[],scope:Scope,month:string){return expenses.filter(e=>e.scope===scope&&monthKey(e.date)===month)}
