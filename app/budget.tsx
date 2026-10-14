@@ -1,7 +1,9 @@
 import React,{useEffect,useState} from 'react';
 import {Alert,Pressable,Text,TextInput,View} from 'react-native';
 import {Screen} from '@/components/Screen';
-import {useData,parseMoney} from '@/data';
+import {useData,parseMoney,formatMoney,monthKey,localDate} from '@/data';
+import {useCategories} from '@/lib/CategoryContext';
+import {useCategoryBudgets} from '@/lib/useCategoryBudgets';
 import {useAppTheme} from '@/theme/ThemeContext';
 import type {Scope} from '@/theme/palette';
 
@@ -11,6 +13,8 @@ export default function Budget(){
   {(['household','personal'] as Scope[]).map(scope=>
    <BudgetForm key={scope} scope={scope} value={budgets[scope]} onSave={amount=>setBudget(scope,amount)}/>
   )}
+  <CategoryBudgetSection scope="household"/>
+  <CategoryBudgetSection scope="personal"/>
  </Screen>;
 }
 
