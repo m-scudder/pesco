@@ -30,7 +30,9 @@
     "@react-native-community/datetimepicker": "8.4.4",
     "react-native-svg": "15.12.1",
     "@expo-google-fonts/inter": "^0.4.2",
-    "@expo-google-fonts/plus-jakarta-sans": "^0.4.2"
+    "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
+    "expo-file-system": "~19.0.24",
+    "expo-sharing": "~14.0.8"
   },
   "devDependencies": {
     "@types/react": "~19.1.10",
