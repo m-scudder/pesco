@@ -5,8 +5,8 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
+    "android": "npm run generate:icon && expo run:android",
+    "ios": "npm run generate:icon && expo run:ios",
     "typecheck": "tsc --noEmit",
     "generate:icon": "node scripts/generate-icon.cjs",
     "postinstall": "npm run generate:icon"
