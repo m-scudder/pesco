@@ -1,4 +1,13 @@
-import React from 'react';
-import { Screen } from '@/components/Screen';
-import { Body, Card, Heading, ScopeSwitch } from '@/components/UI';
-export default function Insights() { return <Screen><Heading subtitle="Monthly spending at a glance">Insights</Heading><ScopeSwitch /><Card><Body muted>Spending trends and category breakdowns will appear here once expenses are available.</Body></Card></Screen>; }
+import React,{useState} from 'react';
+import {Text,View} from 'react-native';
+import {Screen} from '@/components/Screen';
+import {Body,Card,Heading,ScopeSwitch} from '@/components/UI';
+import {MonthPicker} from '@/components/MonthPicker';
+import {formatMoney,localDate,monthKey,monthly,total,useData} from '@/data';
+import {useAppTheme} from '@/theme/ThemeContext';
+export default function Insights(){
+ const {colors,scope}=useAppTheme();const {expenses}=useData();const [month,setMonth]=useState(monthKey(localDate()));const selected=monthly(expenses,scope,month);const sum=total(selected);const [year,monthIndex]=month.split('-').map(Number);const priorDate=new Date(year,monthIndex-2,1);const prevKey=priorDate.getFullYear()+'-'+String(priorDate.getMonth()+1).padStart(2,'0');const previous=total(monthly(expenses,scope,prevKey));
+ const categories=Object.entries(selected.reduce<Record<string,number>>((a,e)=>{a[e.category]=(a[e.category]||0)+e.amountPaise;return a},{})).sort((a,b)=>b[1]-a[1]);
+ const months=Array.from({length:6},(_,i)=>{const d=new Date(year,monthIndex-1-(5-i),1);const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');return {label:d.toLocaleDateString('en-IN',{month:'short'}),amount:total(monthly(expenses,scope,key))}});const maximum=Math.max(1,...months.map(x=>x.amount));const accent=scope==='household'?colors.household:colors.personal;
+ return <Screen><Heading subtitle="Understand your spending">Insights</Heading><ScopeSwitch/><MonthPicker month={month} onChange={setMonth}/><Card><Body muted>Total spent</Body><Heading>{formatMoney(sum)}</Heading><Body muted>{previous===0?'No spending last month':(sum>=previous?'+':'−')+Math.abs(Math.round((sum-previous)/previous*100))+'% versus previous month'}</Body></Card><Heading>Last six months</Heading><Card><View style={{flexDirection:'row',height:120,alignItems:'flex-end',gap:10}}>{months.map((x,i)=><View key={i} style={{flex:1,alignItems:'center',justifyContent:'flex-end',height:'100%',gap:5}}><View style={{width:'65%',height:x.amount/maximum*90,backgroundColor:accent,borderRadius:4}}/><Text style={{color:colors.muted,fontSize:11}}>{x.label}</Text></View>)}</View></Card><Heading>By category</Heading><Card>{categories.length===0?<Body muted>No expenses for this month.</Body>:categories.map(([name,amount])=><View key={name} style={{gap:7,paddingVertical:8}}><View style={{flexDirection:'row',justifyContent:'space-between'}}><Body>{name}</Body><Body>{formatMoney(amount)}</Body></View><View style={{height:6,backgroundColor:colors.secondary,borderRadius:4,overflow:'hidden'}}><View style={{height:6,width:(sum?amount/sum*100:0)+'%',backgroundColor:accent}}/></View></View>)}</Card></Screen>
+}
