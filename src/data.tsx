@@ -6,6 +6,7 @@ import {useAuth} from './lib/AuthContext';
 import {getMyHousehold,type Household} from './lib/households';
 import {addCloudExpense,deleteCloudExpense,editCloudExpense,fetchCloudExpenses} from './lib/cloudExpenses';
 import {supabase} from './lib/supabase';
+import {queueHouseholdExpense,flushPending,loadPending,type PendingExpense} from './lib/pendingExpenses';
 
 export const CATEGORIES=['Groceries','Food & Drinks','Shopping','Utilities','Rent','Transport','Health','Entertainment','Education','Travel','Other'] as const;
 export type Expense={id:string;scope:Scope;amountPaise:number;category:string;note:string;date:string;createdAt:string;updatedAt:string;ownerId:string};
@@ -26,7 +27,7 @@ function recurringDates(rule:RecurringRule,today:string):string[]{
  return output;
 }
 type Store={
- loaded:boolean;expenses:Expense[];recurringRules:RecurringRule[];addRecurring:(draft:Omit<RecurringRule,'id'|'active'>)=>void;setRecurringActive:(id:string,active:boolean)=>void;updateRecurring:(id:string,draft:Omit<RecurringRule,'id'|'active'>)=>void;deleteRecurring:(id:string)=>void;budgets:Budgets;household:Household|null;syncing:boolean;syncError:string|null;
+ loaded:boolean;pendingCount:number;expenses:Expense[];recurringRules:RecurringRule[];addRecurring:(draft:Omit<RecurringRule,'id'|'active'>)=>void;setRecurringActive:(id:string,active:boolean)=>void;updateRecurring:(id:string,draft:Omit<RecurringRule,'id'|'active'>)=>void;deleteRecurring:(id:string)=>void;budgets:Budgets;household:Household|null;syncing:boolean;syncError:string|null;
  localHouseholdCount:number;currentUserId:string|null;
  refresh:()=>Promise<void>;add:(draft:ExpenseDraft)=>Promise<void>;update:(id:string,draft:ExpenseDraft)=>Promise<void>;
  remove:(id:string)=>Promise<void>;importLocalHousehold:()=>Promise<number>;
@@ -50,6 +51,15 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const [cloudReady,setCloudReady]=useState(false);
  const requested=useRef(0);
  const importing=useRef(false);
+ const pendingBusy=useRef(false);
+ const [pending,setPending]=useState<PendingExpense[]>([]);
+ const [queueError,setQueueError]=useState<string|null>(null);
+ useEffect(()=>{
+  let live=true;
+  if(!user){setPending([]);return}
+  loadPending(user.id).then(items=>{if(live)setPending(items)}).catch(e=>{if(live)setQueueError(String(e))});
+  return()=>{live=false};
+ },[user?.id]);
 
  useEffect(()=>{
   let active=true;
@@ -114,6 +124,14 @@ export function DataProvider({children}:{children:React.ReactNode}){
   setSyncing(true);
   try{
    const membership=await getMyHousehold();
+   if(membership&&!pendingBusy.current){
+    pendingBusy.current=true;
+    try{
+     const result=await flushPending(user.id,membership.id);
+     setQueueError(result.errorMessage);
+     setPending(await loadPending(user.id));
+    }finally{pendingBusy.current=false}
+   }
    const rows=membership?await fetchCloudExpenses('household',membership.id,100):[];
    if(request===requested.current){
     setHousehold(membership);setCloudExpenses(rows);setSyncError(null);setCloudReady(true);
@@ -158,14 +176,20 @@ export function DataProvider({children}:{children:React.ReactNode}){
 
  const expenses=useMemo(()=>[
   ...localExpenses.filter(e=>e.scope==='personal'||(!household&&e.scope==='household')),
-  ...(household?cloudExpenses:[])
- ],[localExpenses,cloudExpenses,household]);
+  ...(household?cloudExpenses:[]),
+  ...pending.filter(p=>household&&p.draft.householdId===household.id&&!cloudExpenses.some(e=>e.id===p.id)).map(p=>({
+   id:p.id,scope:'household' as Scope,amountPaise:p.draft.amountPaise,category:p.draft.category,note:p.draft.note,date:p.draft.date,
+   ownerId:p.userId,createdAt:p.queuedAt,updatedAt:p.queuedAt
+  }))
+ ],[localExpenses,cloudExpenses,household,pending]);
 
  const add=useCallback(async(draft:ExpenseDraft)=>{
   if(draft.scope==='household'){
    if(!household)throw new Error('Create or join a household first');
-   await addCloudExpense({...draft,householdId:household.id});
-   await refresh();
+   if(!user)throw new Error('Sign in required');
+   const entry=await queueHouseholdExpense(user.id,{...draft,householdId:household.id});
+   setPending(previous=>[...previous,entry]);
+   void refresh();
    return;
   }
   const now=new Date().toISOString();
@@ -216,10 +240,10 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const setBudget=useCallback((scope:Scope,value:number|null)=>setBudgets(prev=>({...prev,[scope]:value})),[]);
  const clearAll=useCallback(()=>{setLocalExpenses([]);setBudgets(defaultBudgets);setRecurringRules([]);setGenerated([])},[]);
  const value=useMemo<Store>(()=>({
-  loaded:localLoaded&&(!user||cloudReady),expenses,recurringRules,addRecurring,setRecurringActive,updateRecurring,deleteRecurring,budgets,household,syncing,syncError,
+  loaded:localLoaded&&(!user||cloudReady),pendingCount:pending.length,expenses,recurringRules,addRecurring,setRecurringActive,updateRecurring,deleteRecurring,budgets,household,syncing,syncError:syncError??queueError,
   currentUserId:user?.id??null,localHouseholdCount:household?localExpenses.filter(e=>e.scope==='household').length:0,
   refresh,add,update,remove,importLocalHousehold,setBudget,clearAll
- }),[localLoaded,user?.id,cloudReady,expenses,recurringRules,addRecurring,setRecurringActive,deleteRecurring,budgets,household,syncing,syncError,localExpenses,refresh,add,update,remove,importLocalHousehold,setBudget,clearAll]);
+ }),[localLoaded,user?.id,cloudReady,expenses,pending,queueError,recurringRules,addRecurring,setRecurringActive,deleteRecurring,budgets,household,syncing,syncError,localExpenses,refresh,add,update,remove,importLocalHousehold,setBudget,clearAll]);
  return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 export function useData(){const store=useContext(Context);if(!store)throw new Error('Missing DataProvider');return store}
