@@ -62,6 +62,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const recurringGeneratedOn=useRef<string|null>(null);
  const [pending,setPending]=useState<PendingExpense[]>([]);
  const [mutations,setMutations]=useState<PendingMutation[]>([]);
+ const mutationEpoch=useRef(0);
  const [queueError,setQueueError]=useState<string|null>(null);
  useEffect(()=>{
   let active=true;
@@ -165,8 +166,9 @@ export function DataProvider({children}:{children:React.ReactNode}){
     }finally{pendingBusy.current=false}
    }
    if(membership){
+    const epoch=mutationEpoch.current;
     const result=await flushMutations(user.id,membership.id);
-    setMutations(result.items);
+    if(epoch===mutationEpoch.current)setMutations(result.items);
     if(result.error)setQueueError(result.error);
     const checkKey=membership.id+':'+localDate();
     if(recurringGeneratedOn.current!==checkKey){
@@ -262,7 +264,9 @@ export function DataProvider({children}:{children:React.ReactNode}){
    if(!household)throw new Error('Household no longer available');
    if(cloud.ownerId!==user?.id)throw new Error('Only the creator can edit this expense');
    if(draft.scope!==cloud.scope)throw new Error('Changing the expense scope is unavailable');
-   setMutations(await queueMutation(user!.id,household.id,id,'update',{...draft,householdId:household.id},cloud.updatedAt));
+   const latest=await queueMutation(user!.id,household.id,id,'update',{...draft,householdId:household.id},cloud.updatedAt);
+   mutationEpoch.current++;
+   setMutations(latest);
    void refresh();
    return;
   }
@@ -280,7 +284,9 @@ export function DataProvider({children}:{children:React.ReactNode}){
   if(cloud){
    if(cloud.ownerId!==user?.id)throw new Error('Only the creator can delete this expense');
    if(!household||!user)throw new Error('Household unavailable');
-   setMutations(await queueMutation(user.id,household.id,id,'delete',undefined,cloud.updatedAt));
+   const latest=await queueMutation(user.id,household.id,id,'delete',undefined,cloud.updatedAt);
+   mutationEpoch.current++;
+   setMutations(latest);
    void refresh();
   }else setLocalExpenses(prev=>prev.filter(e=>e.id!==id));
  },[cloudExpenses,user?.id,household,refresh,pending]);
@@ -307,7 +313,9 @@ export function DataProvider({children}:{children:React.ReactNode}){
 
  const discardPendingMutation=useCallback(async(id:string)=>{
   if(!user)throw new Error('Sign in required');
-  setMutations(await discardMutation(user.id,id));
+  const latest=await discardMutation(user.id,id);
+  mutationEpoch.current++;
+  setMutations(latest);
   void refresh();
  },[user?.id,refresh]);
 
