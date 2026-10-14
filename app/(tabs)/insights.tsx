@@ -24,6 +24,7 @@ export default function Insights(){
  const {expenses,currentUserId,refresh,loaded}=useData();
  const [month,setMonth]=useState(monthKey(localDate()));
  const [chosen,setChosen]=useState<string|null>(null);
+ const [highlighted,setHighlighted]=useState<string|null>(null);
  useFocusEffect(React.useCallback(()=>{void refresh()},[refresh]));
  const model=useMemo(()=>buildInsights(expenses,scope,month,currentUserId),[expenses,scope,month,currentUserId]);
  const {categories,spent}=model;
@@ -41,6 +42,7 @@ export default function Insights(){
   const start=angle;angle+=c.amount/spent*Math.PI*2;
   return {...c,color:SEGMENT_COLORS[i%SEGMENT_COLORS.length],start,end:angle};
  });
+ const activeSlice=slices.find(s=>s.name===highlighted);
  const monthlyCategory=useMemo(()=>Array.from({length:7},(_,i)=>{
   const key=shiftMonth(month,i-4);
   return {key,label:new Date(Number(key.slice(0,4)),Number(key.slice(5))-1,1).toLocaleDateString('en-IN',{month:'short'}),amount:expenses.filter(e=>e.scope===scope&&e.category===chosen&&monthKey(e.date)===key).reduce((s,e)=>s+e.amountPaise,0)};
@@ -49,7 +51,7 @@ export default function Insights(){
  const trendWidth=Math.min(width-24,440);
  const trendHeight=170;
  const trendPoints=monthlyCategory.map((m,i)=>({x:18+i*(trendWidth-36)/6,y:18+(1-m.amount/trendMax)*112,...m}));
- return <Screen style={{paddingHorizontal:0,gap:0,paddingTop:10}}>
+ return <Screen style={{paddingHorizontal:0,gap:0}}>
   {chosen!==null?
    <View style={{flexDirection:'row',alignItems:'center',paddingHorizontal:14,paddingBottom:12,gap:14}}>
     <Pressable accessibilityRole="button" accessibilityLabel="Back to categories" onPress={()=>setChosen(null)}>
@@ -57,13 +59,19 @@ export default function Insights(){
     </Pressable>
     <Text numberOfLines={1} style={{color:colors.text,fontSize:19,fontWeight:'600',flex:1}}>{chosen}</Text>
    </View>:
-   <View style={{paddingHorizontal:12,paddingBottom:8}}><ScopeSwitch/></View>}
+   <View style={{paddingHorizontal:12,paddingBottom:8,paddingTop:4}}><ScopeSwitch/></View>}
   <View style={{paddingHorizontal:12,paddingBottom:12}}><MonthPicker month={month} onChange={setMonth}/></View>
   {chosen===null?<>
    {spent>0?<View style={{alignItems:'center',justifyContent:'center',paddingVertical:8,borderTopWidth:1,borderColor:colors.border}}>
     <Svg width={chartSize} height={chartSize} viewBox={`0 0 ${chartSize} ${chartSize}`}>
-     {slices.map(s=><Path key={s.name} d={slicePath(cx,cy,r,s.start,s.end)} fill={s.color} stroke={colors.background} strokeWidth={1.5}/>)}
+     {slices.map(s=><Path key={s.name} d={slicePath(cx,cy,r,s.start,s.end)} fill={s.color} stroke={highlighted===s.name?colors.text:colors.background} strokeWidth={highlighted===s.name?3:1.5} onPress={()=>setHighlighted(s.name)} />)}
     </Svg>
+    {activeSlice?<Pressable accessibilityRole="button" accessibilityLabel={'Open '+activeSlice.name+' transactions'} onPress={()=>setChosen(activeSlice.name)} style={{flexDirection:'row',alignItems:'center',gap:8,paddingVertical:8,paddingHorizontal:12}}>
+     <View style={{width:12,height:12,borderRadius:3,backgroundColor:activeSlice.color}}/>
+     <Text style={{fontSize:14,fontWeight:'600',color:colors.text}}>{activeSlice.name}</Text>
+     <Text style={{fontSize:13,color:colors.muted}}>{(activeSlice.amount/spent*100).toFixed(1)}%</Text>
+     <Text style={{fontSize:14,color:colors.text}}>{fmt(activeSlice.amount)} ›</Text>
+    </Pressable>:null}
    </View>:<Text style={{color:colors.muted,textAlign:'center',paddingVertical:36}}>{loaded?'No expenses this month':'Loading…'}</Text>}
    {slices.map(s=><Pressable key={s.name} accessibilityRole="button"
     accessibilityLabel={s.name+', '+s.percent+' percent, '+fmt(s.amount)}
