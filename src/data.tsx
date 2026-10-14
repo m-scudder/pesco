@@ -105,8 +105,11 @@ export function DataProvider({children}:{children:React.ReactNode}){
   const additions:Expense[]=[];
   for(const rule of recurringRules.filter(x=>x.active)){
    for(const date of recurringDates(rule,today)){
-    const id='recurring:'+rule.id+':'+date;
-    if(known.has(id))continue;
+    const month=date.slice(0,7);
+    const occurrencePrefix='recurring:'+rule.id+':'+month;
+    // Earlier versions stored full dates; recognize both formats.
+    if(Array.from(known).some(existing=>existing.startsWith(occurrencePrefix)))continue;
+    const id=occurrencePrefix;
     known.add(id);
     const now=new Date().toISOString();
     additions.push({id,scope:'personal',amountPaise:rule.amountPaise,category:rule.category,note:rule.note,date,ownerId:'local-user',createdAt:now,updatedAt:now});
@@ -125,8 +128,14 @@ export function DataProvider({children}:{children:React.ReactNode}){
   setRecurringRules(prev=>[...prev,{...draft,id:Date.now()+'-'+Math.random().toString(36).slice(2),active:true}]);
  },[]);
  const setRecurringActive=useCallback((id:string,active:boolean)=>{
+  const rule=recurringRules.find(x=>x.id===id);
+  if(rule&&!rule.active&&active){
+   // A pause skips due dates until the rule is resumed, never backfills them.
+   const skipped=recurringDates(rule,localDate()).map(date=>'recurring:'+id+':'+date.slice(0,7));
+   setGenerated(prev=>Array.from(new Set([...prev,...skipped])));
+  }
   setRecurringRules(prev=>prev.map(x=>x.id===id?{...x,active}:x));
- },[]);
+ },[recurringRules]);
  const updateRecurring=useCallback((id:string,draft:Omit<RecurringRule,'id'|'active'>)=>{
   setRecurringRules(previous=>previous.map(rule=>rule.id===id?{...rule,...draft}:rule));
  },[]);
