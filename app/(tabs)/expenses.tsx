@@ -1,6 +1,14 @@
-import React from 'react';
-import { View } from 'react-native';
-import { Screen } from '@/components/Screen';
-import { AddExpenseButton } from '@/components/AddExpenseButton';
-import { Body, Card, Heading, ScopeSwitch } from '@/components/UI';
-export default function Expenses() { return <View style={{ flex: 1 }}><Screen><Heading subtitle="Search and filters will be connected in Milestone 3">Expenses</Heading><ScopeSwitch /><Card><Body muted>No expenses yet. Your date-grouped transaction history will appear here.</Body></Card></Screen><AddExpenseButton /></View>; }
+import React,{useMemo,useState} from 'react';
+import {Text,TextInput,View,ScrollView,Pressable} from 'react-native';
+import {Screen} from '@/components/Screen';
+import {AddExpenseButton} from '@/components/AddExpenseButton';
+import {Body,Card,Heading,ScopeSwitch} from '@/components/UI';
+import {ExpenseRow} from '@/components/ExpenseRow';
+import {MonthPicker} from '@/components/MonthPicker';
+import {CATEGORIES,localDate,monthKey,useData} from '@/data';
+import {useAppTheme} from '@/theme/ThemeContext';
+export default function Expenses(){
+ const {colors,scope}=useAppTheme();const {expenses}=useData();const [search,setSearch]=useState('');const [category,setCategory]=useState('All');const [month,setMonth]=useState(monthKey(localDate()));const [allMonths,setAllMonths]=useState(false);
+ const filtered=useMemo(()=>expenses.filter(e=>e.scope===scope&&(allMonths||monthKey(e.date)===month)&&(category==='All'||e.category===category)&&(e.category+' '+e.note).toLowerCase().includes(search.trim().toLowerCase())).sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt.localeCompare(a.createdAt)),[expenses,scope,allMonths,month,category,search]);
+ let lastDate='';return <View style={{flex:1}}><Screen><Heading subtitle="Find and manage your spending">Expenses</Heading><ScopeSwitch/><TextInput value={search} onChangeText={setSearch} placeholder="Search expenses" placeholderTextColor={colors.muted} style={{backgroundColor:colors.surface,color:colors.text,borderWidth:1,borderColor:colors.border,borderRadius:12,paddingHorizontal:14,paddingVertical:12}}/><View style={{flexDirection:'row',alignItems:'center',gap:8}}><View style={{flex:1}}><MonthPicker month={month} onChange={setMonth}/></View><Pressable onPress={()=>setAllMonths(v=>!v)} style={{backgroundColor:colors.secondary,padding:9,borderRadius:10}}><Text style={{color:colors.text,fontSize:12}}>{allMonths?'All dates ✓':'All dates'}</Text></Pressable></View><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>{['All',...CATEGORIES].map(cat=><Pressable key={cat} onPress={()=>setCategory(cat)} style={{paddingHorizontal:14,paddingVertical:9,borderRadius:20,backgroundColor:category===cat?colors.text:colors.secondary}}><Text style={{color:category===cat?colors.background:colors.text,fontSize:12}}>{cat}</Text></Pressable>)}</ScrollView><Text style={{color:colors.muted,fontSize:12}}>{filtered.length} expenses · Local to this device</Text><Card>{filtered.length===0?<Body muted>No matching expenses.</Body>:filtered.map(e=>{const newDay=lastDate!==e.date;lastDate=e.date;return <View key={e.id}>{newDay?<Text style={{color:colors.muted,fontSize:12,fontWeight:'700',paddingTop:12}}>{new Date(e.date+'T12:00:00').toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}</Text>:null}<ExpenseRow expense={e}/></View>})}</Card></Screen><AddExpenseButton/></View>
+}
