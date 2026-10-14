@@ -19,8 +19,11 @@ export default function History(){
  const [picker,setPicker]=useState<'from'|'to'|null>(null);
  const [sharing,setSharing]=useState(false);
  const [includeDemo,setIncludeDemo]=useState(false);
+ const [visibleCount,setVisibleCount]=useState(50);
  const records=useMemo(()=>filterHistory(expenses,scope,from,to,query),[expenses,scope,from,to,query]);
  const exportRecords=useMemo(()=>records.filter(x=>includeDemo||!x.id.startsWith('demo:')),[records,includeDemo]);
+ React.useEffect(()=>{setVisibleCount(50)},[scope,from,to,query]);
+ const visible=records.slice(0,visibleCount);
  const total=records.reduce((value,item)=>value+item.amountPaise,0);
  const choose=(target:'from'|'to')=>{
   if(Platform.OS==='android'){
@@ -63,8 +66,8 @@ export default function History(){
    <Text style={{fontSize:15,color:colors.text,fontFamily:'Inter_600SemiBold'}}>{formatMoney(total)}</Text>
   </View>
   <View style={{backgroundColor:colors.surface,borderRadius:11,borderColor:colors.border,borderWidth:1,paddingHorizontal:12}}>
-   {records.length===0?<Text style={{color:colors.muted,paddingVertical:16,fontSize:13}}>No matching expenses</Text>:records.map((expense,index)=><View key={expense.id}
-    style={{paddingVertical:10,borderBottomWidth:index===records.length-1?0:1,borderColor:colors.border,flexDirection:'row',alignItems:'center',gap:12}}>
+   {records.length===0?<Text style={{color:colors.muted,paddingVertical:16,fontSize:13}}>No matching expenses</Text>:visible.map((expense,index)=><View key={expense.id}
+    style={{paddingVertical:10,borderBottomWidth:index===visible.length-1?0:1,borderColor:colors.border,flexDirection:'row',alignItems:'center',gap:12}}>
     <View style={{flex:1,gap:3}}>
      <Text numberOfLines={1} style={{color:colors.text,fontFamily:'Inter_500Medium',fontSize:13}}>{expense.note||expense.category}{expense.id.startsWith('demo:')?' · Demo':''}</Text>
      <Text style={{fontSize:11,color:colors.muted}}>{displayDate(expense.date)} · {expense.category}</Text>
@@ -72,6 +75,7 @@ export default function History(){
     <Text style={{fontSize:13,color:colors.text,fontFamily:'Inter_500Medium'}}>{formatMoney(expense.amountPaise)}</Text>
    </View>)}
   </View>
+  {records.length>visibleCount?<Pressable accessibilityRole="button" onPress={()=>setVisibleCount(n=>n+50)} style={{paddingVertical:12,alignItems:'center',borderRadius:10,backgroundColor:colors.secondary}}><Text style={{fontFamily:'Inter_600SemiBold',fontSize:13,color:colors.text}}>Show more ({records.length-visibleCount} remaining)</Text></Pressable>:null}
   {demoEnabled?<Pressable accessibilityRole="checkbox" accessibilityState={{checked:includeDemo}} onPress={()=>setIncludeDemo(v=>!v)} style={{paddingVertical:4}}>
    <Text style={{fontSize:12,color:colors.muted}}>{includeDemo?'☑':'□'} Include demo expenses in CSV</Text>
   </Pressable>:null}
