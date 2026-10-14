@@ -1,37 +1,78 @@
 import React,{useMemo,useState} from 'react';
-import {useFocusEffect} from 'expo-router';
-import {Text,TextInput,View,ScrollView,Pressable} from 'react-native';
+import {useFocusEffect,useRouter} from 'expo-router';
+import {Pressable,Text,View} from 'react-native';
 import {Screen} from '@/components/Screen';
 import {AddExpenseButton} from '@/components/AddExpenseButton';
-import {Body,Card,Heading,ScopeSwitch} from '@/components/UI';
-import {ExpenseRow} from '@/components/ExpenseRow';
+import {Heading,ScopeSwitch} from '@/components/UI';
 import {MonthPicker} from '@/components/MonthPicker';
-import {localDate,monthKey,useData} from '@/data';
-import {useCategories} from '@/lib/CategoryContext';
+import {formatMoney,localDate,monthKey,useData} from '@/data';
 import {useAppTheme} from '@/theme/ThemeContext';
 
 export default function Expenses(){
- const {colors,scope}=useAppTheme();const {expenses,refresh,syncError}=useData();const {names:categoryNames}=useCategories();
- const [search,setSearch]=useState('');const [category,setCategory]=useState('All');
- const [month,setMonth]=useState(monthKey(localDate()));const [allMonths,setAllMonths]=useState(false);
+ const {colors,scope}=useAppTheme();
+ const {expenses,refresh,syncError,currentUserId}=useData();
+ const router=useRouter();
+ const [month,setMonth]=useState(monthKey(localDate()));
+
  useFocusEffect(React.useCallback(()=>{void refresh()},[refresh]));
- const filterCategories=Array.from(new Set([...categoryNames(scope),...expenses.filter(e=>e.scope===scope).map(e=>e.category)]));
- const filtered=useMemo(()=>expenses.filter(e=>e.scope===scope&&(allMonths||monthKey(e.date)===month)&&(category==='All'||e.category===category)&&(e.category+' '+e.note).toLowerCase().includes(search.trim().toLowerCase())).sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt.localeCompare(a.createdAt)),[expenses,scope,allMonths,month,category,search]);
- let lastDate='';
- return <View style={{flex:1}}><Screen>
-  <Heading>Expenses</Heading>
-  <ScopeSwitch/>
-  <TextInput accessibilityLabel="Search expenses" value={search} onChangeText={setSearch} placeholder="Search" placeholderTextColor={colors.muted} style={{height:42,backgroundColor:colors.surface,color:colors.text,borderWidth:1,borderColor:colors.border,borderRadius:10,paddingHorizontal:12}}/>
-  <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-   <View style={{flex:1}}><MonthPicker month={month} onChange={setMonth}/></View>
-   <Pressable onPress={()=>setAllMonths(v=>!v)} style={{backgroundColor:allMonths?colors.text:colors.secondary,paddingHorizontal:10,paddingVertical:8,borderRadius:9}}><Text style={{color:allMonths?colors.background:colors.text,fontSize:12}}>All dates</Text></Pressable>
-  </View>
-  <ScrollView style={{flexGrow:0,maxHeight:38}} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{alignItems:'center',gap:6,paddingRight:16}}>
-   {['All',...filterCategories].map(cat=><Pressable key={cat} onPress={()=>setCategory(cat)} style={{alignSelf:'center',paddingHorizontal:12,height:32,justifyContent:'center',borderRadius:16,backgroundColor:category===cat?colors.text:colors.secondary}}>
-    <Text style={{color:category===cat?colors.background:colors.text,fontSize:12}}>{cat}</Text>
-   </Pressable>)}
-  </ScrollView>
-  {scope==='household'&&syncError?<Pressable onPress={()=>{void refresh()}}><Text style={{color:'#C94F4F',fontSize:12}}>Sync failed · Retry</Text></Pressable>:null}
-  {filtered.length===0?<View style={{paddingVertical:18,alignItems:'center'}}><Body muted>No expenses found</Body></View>:<Card>{filtered.map(e=>{const newDay=lastDate!==e.date;lastDate=e.date;return <View key={e.id}>{newDay?<Text style={{color:colors.muted,fontSize:12,fontWeight:'600',paddingTop:8}}>{new Date(e.date+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</Text>:null}<ExpenseRow expense={e}/></View>})}</Card>}
- </Screen><AddExpenseButton/></View>
+ const filtered=useMemo(()=>expenses
+  .filter(e=>e.scope===scope&&monthKey(e.date)===month)
+  .sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt.localeCompare(a.createdAt)),
+  [expenses,scope,month]);
+ const groups=useMemo(()=>{
+  const result:typeof filtered[]=[];
+  filtered.forEach(e=>{
+   const last=result[result.length-1];
+   if(last&&last[0].date===e.date)last.push(e);
+   else result.push([e]);
+  });
+  return result;
+ },[filtered]);
+
+ return <View style={{flex:1,backgroundColor:colors.background}}>
+  <Screen style={{paddingHorizontal:0,gap:0}}>
+   <View style={{paddingHorizontal:16,paddingBottom:16,gap:16}}>
+    <Heading>Expenses</Heading>
+    <ScopeSwitch/>
+    <MonthPicker month={month} onChange={setMonth}/>
+   </View>
+   {scope==='household'&&syncError?
+    <Pressable onPress={()=>{void refresh()}} style={{paddingHorizontal:16,paddingVertical:10}}>
+     <Text style={{color:'#C94F4F',fontSize:13}}>Sync failed · Tap to retry</Text>
+    </Pressable>:null}
+   {groups.length===0?
+    <View style={{paddingVertical:44,alignItems:'center'}}>
+     <Text style={{color:colors.muted,fontSize:14}}>No expenses for this month</Text>
+    </View>:
+    groups.map(group=>{
+     const date=group[0].date;
+     const parsed=new Date(date+'T12:00:00');
+     const weekday=parsed.toLocaleDateString('en-IN',{weekday:'short'});
+     return <View key={date}>
+      <View style={{flexDirection:'row',alignItems:'center',gap:9,paddingHorizontal:16,paddingVertical:12,backgroundColor:colors.secondary,borderTopWidth:1,borderBottomWidth:1,borderColor:colors.border}}>
+       <Text style={{fontSize:23,fontWeight:'700',color:colors.text}}>{parsed.getDate()}</Text>
+       <View style={{backgroundColor:colors.surface,borderRadius:5,paddingHorizontal:8,paddingVertical:4}}>
+        <Text style={{fontSize:12,color:colors.muted,fontWeight:'600'}}>{weekday}</Text>
+       </View>
+      </View>
+      {group.map(expense=><Pressable
+       key={expense.id}
+       accessibilityRole="button"
+       accessibilityLabel={expense.category+', '+formatMoney(expense.amountPaise)}
+       onPress={()=>router.push({pathname:'/expense/[id]',params:{id:expense.id}})}
+       style={{flexDirection:'row',alignItems:'center',paddingHorizontal:16,paddingVertical:16,gap:12,borderBottomWidth:1,borderColor:colors.border,minHeight:78}}>
+       <Text numberOfLines={2} style={{width:100,color:colors.muted,fontSize:13,lineHeight:19}}>{expense.category}</Text>
+       <View style={{flex:1,gap:5}}>
+        <Text numberOfLines={2} style={{color:colors.text,fontSize:16,fontWeight:'500'}}>{expense.note?.trim()||expense.category}</Text>
+        {scope==='household'?
+         <Text style={{color:colors.muted,fontSize:12}}>{expense.ownerId==='local-user'||expense.ownerId===currentUserId?'You':'Partner'}</Text>:null}
+       </View>
+       <Text style={{color:'#F25B59',fontSize:16,fontWeight:'500',textAlign:'right'}}>{formatMoney(expense.amountPaise)}</Text>
+      </Pressable>)}
+     </View>;
+    })
+   }
+  </Screen>
+  <AddExpenseButton/>
+ </View>;
 }
