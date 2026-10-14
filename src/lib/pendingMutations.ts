@@ -3,7 +3,7 @@ import {deleteCloudExpense,editCloudExpense,type CloudExpenseInput} from './clou
 
 export type PendingMutation={
  id:string; userId:string; householdId:string; kind:'update'|'delete';
- draft?:CloudExpenseInput; revision:string;
+ draft?:CloudExpenseInput; revision:string; baseUpdatedAt?:string;
 };
 const key=(userId:string)=>'pesco:pending-mutations:'+userId;
 let serial:Promise<unknown>=Promise.resolve();
@@ -24,14 +24,14 @@ export async function loadMutations(userId:string):Promise<PendingMutation[]>{
 async function persist(userId:string,items:PendingMutation[]){
  await AsyncStorage.setItem(key(userId),JSON.stringify(items));
 }
-export async function queueMutation(userId:string,householdId:string,id:string,kind:'update'|'delete',draft?:CloudExpenseInput){
+export async function queueMutation(userId:string,householdId:string,id:string,kind:'update'|'delete',draft?:CloudExpenseInput,baseUpdatedAt?:string){
  return locked(async()=>{
   if(sending.has(id))throw new Error('This expense is syncing. Try again shortly.');
   const previous=await loadMutations(userId);
   const old=previous.find(item=>item.id===id);
   // Never resurrect an item whose deletion is already queued.
   if(old?.kind==='delete'&&kind==='update')throw new Error('This expense is waiting to be deleted.');
-  const entry:PendingMutation={id,userId,householdId,kind,draft,revision:new Date().toISOString()+'-'+Math.random()};
+  const entry:PendingMutation={id,userId,householdId,kind,draft,baseUpdatedAt:old?.baseUpdatedAt??baseUpdatedAt,revision:new Date().toISOString()+'-'+Math.random()};
   const next=[...previous.filter(item=>item.id!==id),entry];
   await persist(userId,next);
   return next;
@@ -48,8 +48,8 @@ export async function flushMutations(userId:string,householdId:string){
    if(mutation.householdId!==householdId)continue;
    sending.add(mutation.id);
    try{
-    if(mutation.kind==='delete')await deleteCloudExpense(mutation.id);
-    else if(mutation.draft)await editCloudExpense(mutation.id,mutation.draft);
+    if(mutation.kind==='delete')await deleteCloudExpense(mutation.id,mutation.baseUpdatedAt);
+    else if(mutation.draft)await editCloudExpense(mutation.id,mutation.draft,mutation.baseUpdatedAt);
     await locked(async()=>{
      const latest=await loadMutations(userId);
      await persist(userId,latest.filter(item=>item.id!==mutation.id||item.revision!==mutation.revision));
@@ -61,4 +61,14 @@ export async function flushMutations(userId:string,householdId:string){
  })();
  active.set(id,task);
  try{return await task}finally{active.delete(id)}
+}
+
+export async function discardMutation(userId:string,id:string){
+ return locked(async()=>{
+  if(sending.has(id))throw new Error('This change is currently syncing.');
+  const existing=await loadMutations(userId);
+  const next=existing.filter(mutation=>mutation.id!==id);
+  await persist(userId,next);
+  return next;
+ });
 }
