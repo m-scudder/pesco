@@ -54,6 +54,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const importing=useRef(false);
  const pendingBusy=useRef(false);
  const verifiedUser=useRef<string|null>(null);
+ const recurringGeneratedOn=useRef<string|null>(null);
  const [pending,setPending]=useState<PendingExpense[]>([]);
  const [queueError,setQueueError]=useState<string|null>(null);
  useEffect(()=>{
@@ -147,7 +148,13 @@ export function DataProvider({children}:{children:React.ReactNode}){
      setPending(await loadPending(user.id));
     }finally{pendingBusy.current=false}
    }
-   if(membership)try{await generateHouseholdRecurring(membership.id)}catch(e){console.warn('Recurring generation postponed',e)}
+   if(membership){
+    const checkKey=membership.id+':'+localDate();
+    if(recurringGeneratedOn.current!==checkKey){
+     try{await generateHouseholdRecurring(membership.id);recurringGeneratedOn.current=checkKey}
+     catch(e){console.warn('Recurring generation postponed',e)}
+    }
+   }
    const rows=membership?await fetchCloudExpenses('household',membership.id,100):[];
    await AsyncStorage.setItem('pesco:household-cache:'+user.id,JSON.stringify({household:membership,expenses:rows}));
    if(request===requested.current){
@@ -164,6 +171,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
  useEffect(()=>{
   requested.current++;
   verifiedUser.current=null;
+  recurringGeneratedOn.current=null;
   setHousehold(null);setCloudExpenses([]);setCloudReady(false);setSyncError(null);
   if(!user)return;
   void refresh();
