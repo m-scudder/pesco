@@ -31,7 +31,7 @@ export default function Expenses(){
 
  return <View style={{flex:1,backgroundColor:colors.background}}>
   <Screen style={{paddingHorizontal:0,gap:0}}>
-   <View style={{paddingHorizontal:16,paddingBottom:16,gap:16}}>
+   <View style={{paddingHorizontal:16,paddingBottom:8,gap:8}}>
     <Heading>Expenses</Heading>
     <ScopeSwitch/>
     <MonthPicker month={month} onChange={setMonth}/>
@@ -41,7 +41,7 @@ export default function Expenses(){
      <Text style={{color:'#C94F4F',fontSize:13}}>Sync failed · Tap to retry</Text>
     </Pressable>:null}
    {groups.length===0?
-    <View style={{paddingVertical:44,alignItems:'center'}}>
+    <View style={{paddingVertical:28,alignItems:'center'}}>
      <Text style={{color:colors.muted,fontSize:14}}>No expenses for this month</Text>
     </View>:
     groups.map(group=>{
@@ -49,9 +49,9 @@ export default function Expenses(){
      const parsed=new Date(date+'T12:00:00');
      const weekday=parsed.toLocaleDateString('en-IN',{weekday:'short'});
      return <View key={date}>
-      <View style={{flexDirection:'row',alignItems:'center',gap:9,paddingHorizontal:16,paddingVertical:12,backgroundColor:colors.secondary,borderTopWidth:1,borderBottomWidth:1,borderColor:colors.border}}>
-       <Text style={{fontSize:23,fontWeight:'700',color:colors.text}}>{parsed.getDate()}</Text>
-       <View style={{backgroundColor:colors.surface,borderRadius:5,paddingHorizontal:8,paddingVertical:4}}>
+      <View style={{flexDirection:'row',alignItems:'center',gap:7,paddingHorizontal:12,paddingVertical:7,backgroundColor:colors.secondary,borderTopWidth:1,borderBottomWidth:1,borderColor:colors.border}}>
+       <Text style={{fontSize:20,fontWeight:'700',color:colors.text}}>{parsed.getDate()}</Text>
+       <View style={{backgroundColor:colors.surface,borderRadius:5,paddingHorizontal:6,paddingVertical:2}}>
         <Text style={{fontSize:12,color:colors.muted,fontWeight:'600'}}>{weekday}</Text>
        </View>
       </View>
@@ -60,14 +60,14 @@ export default function Expenses(){
        accessibilityRole="button"
        accessibilityLabel={expense.category+', '+formatMoney(expense.amountPaise)}
        onPress={()=>router.push({pathname:'/expense/[id]',params:{id:expense.id}})}
-       style={{flexDirection:'row',alignItems:'center',paddingHorizontal:16,paddingVertical:16,gap:12,borderBottomWidth:1,borderColor:colors.border,minHeight:78}}>
-       <Text numberOfLines={2} style={{width:100,color:colors.muted,fontSize:13,lineHeight:19}}>{expense.category}</Text>
-       <View style={{flex:1,gap:5}}>
-        <Text numberOfLines={2} style={{color:colors.text,fontSize:16,fontWeight:'500'}}>{expense.note?.trim()||expense.category}</Text>
+       style={{flexDirection:'row',alignItems:'center',paddingHorizontal:12,paddingVertical:9,gap:9,borderBottomWidth:1,borderColor:colors.border,minHeight:56}}>
+       <Text numberOfLines={2} style={{width:88,color:colors.muted,fontSize:11,lineHeight:17}}>{expense.category}</Text>
+       <View style={{flex:1,gap:2}}>
+        <Text numberOfLines={2} style={{color:colors.text,fontSize:15,fontWeight:'500'}}>{expense.note?.trim()||expense.category}</Text>
         {scope==='household'?
          <Text style={{color:colors.muted,fontSize:12}}>{expense.ownerId==='local-user'||expense.ownerId===currentUserId?'You':'Partner'}</Text>:null}
        </View>
-       <Text style={{color:'#F25B59',fontSize:16,fontWeight:'500',textAlign:'right'}}>{formatMoney(expense.amountPaise)}</Text>
+       <Text style={{color:'#F25B59',fontSize:15,fontWeight:'500',textAlign:'right'}}>{formatMoney(expense.amountPaise)}</Text>
       </Pressable>)}
      </View>;
     })
