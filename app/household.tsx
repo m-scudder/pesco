@@ -4,11 +4,13 @@ import {Screen} from '@/components/Screen';
 import {Body,Card,Heading} from '@/components/UI';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {useAuth} from '@/lib/AuthContext';
+import {useData} from '@/data';
 import {createHousehold,createJoiningKey,getMyHousehold,joinWithKey,type Household} from '@/lib/households';
 
 const SIX=/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
 export default function HouseholdSetup(){
  const {colors}=useAppTheme();
+ const {refresh:refreshExpenses}=useData();
  const {configured,ready,user,error:authError,retry}=useAuth();
  const [household,setHousehold]=useState<Household|null>(null);
  const [loading,setLoading]=useState(false);
@@ -31,7 +33,7 @@ export default function HouseholdSetup(){
  async function submit(action:()=>Promise<void>){
   if(busy)return;
   setBusy(true);setError(null);
-  try{await action();await refresh()}
+  try{await action();await refresh();await refreshExpenses()}
   catch(e){setError(e instanceof Error?e.message:'Try again')}
   finally{setBusy(false)}
  }
