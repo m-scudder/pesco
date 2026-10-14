@@ -12,7 +12,7 @@ export default function Settings(){
  const link=(label:string,onPress:()=>void)=><Pressable accessibilityRole="button" onPress={onPress} style={{minHeight:42,justifyContent:'center'}}><Text style={{color:colors.text,fontSize:15}}>{label}  ›</Text></Pressable>;
  return <Screen>
   <Heading>Settings</Heading>
-  <Card>{link('Household & invite code',()=>router.push('/household'))}{link('Monthly budgets',()=>router.push('/budget'))}</Card>
+  <Card>{link('Household & invite code',()=>router.push('/household'))}{link('Monthly budgets',()=>router.push('/budget'))}{link('Categories',()=>router.push('/categories'))}</Card>
   <Card>
    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',minHeight:42}}>
     <Body>Dark mode</Body>
