@@ -1,6 +1,6 @@
 import React,{useEffect,useState} from 'react';
-import {Alert,Keyboard,Platform,Pressable,Text,TextInput,View} from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import {Alert,Keyboard,Modal,Platform,Pressable,ScrollView,Text,TextInput,View} from 'react-native';
+import DateTimePicker,{DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 import {Stack,useLocalSearchParams,useRouter} from 'expo-router';
 import {Screen} from '@/components/Screen';
 import {Body,Card,ScopeSwitch} from '@/components/UI';
@@ -9,11 +9,12 @@ import {localDate,parseMoney,useData} from '@/data';
 import {useCategories} from '@/lib/CategoryContext';
 import {useAppTheme} from '@/theme/ThemeContext';
 export default function ExpenseEditor(){
- const {id}=useLocalSearchParams<{id?:string}>();const router=useRouter();const {expenses,add,update,loaded,household,currentUserId}=useData();const {colors,scope,setScope}=useAppTheme();const editing=id?expenses.find(e=>e.id===id):undefined;
+ const {id}=useLocalSearchParams<{id?:string}>();const router=useRouter();const {expenses,add,update,loaded,household,currentUserId}=useData();const {colors,resolved,scope,setScope}=useAppTheme();const editing=id?expenses.find(e=>e.id===id):undefined;
  const {names:categoryNames}=useCategories();
  const availableCategories=categoryNames(scope);
  const options=editing&&!availableCategories.includes(editing.category)?[editing.category,...availableCategories]:availableCategories;
  const [datePickerOpen,setDatePickerOpen]=useState(false);
+ const [pendingDate,setPendingDate]=useState<Date>(()=>new Date(localDate()+'T12:00:00'));
  const [amount,setAmount]=useState('');const [category,setCategory]=useState<string>('Groceries');const [note,setNote]=useState('');const [date,setDate]=useState(localDate());const [categoryOpen,setCategoryOpen]=useState(false);const [submitting,setSubmitting]=useState(false);const [calculatorOpen,setCalculatorOpen]=useState(false);
  useEffect(()=>{if(!editing&&availableCategories.length&&!availableCategories.includes(category)){setCategory(availableCategories[0])}},[scope,availableCategories.join('|'),editing?.id]);
  useEffect(()=>{if(editing){setAmount((editing.amountPaise/100).toFixed(2));setCategory(editing.category);setNote(editing.note);setDate(editing.date);setScope(editing.scope)}},[editing?.id]);
@@ -35,16 +36,60 @@ export default function ExpenseEditor(){
  }
  await commit();
 }
+ function formatISO(picked:Date){
+  return picked.getFullYear()+'-'+String(picked.getMonth()+1).padStart(2,'0')+'-'+String(picked.getDate()).padStart(2,'0');
+ }
+ function openDatePicker(){
+  Keyboard.dismiss();setCalculatorOpen(false);setCategoryOpen(false);
+  const current=new Date(date+'T12:00:00');
+  if(Platform.OS==='android'){
+   DateTimePickerAndroid.open({
+    value:current,mode:'date',
+    onChange:(event,picked)=>{if(event.type==='set'&&picked)setDate(formatISO(picked))}
+   });
+  }else{setPendingDate(current);setDatePickerOpen(true)}
+ }
+ const pickerCard={backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1 as const,borderRadius:16,padding:16,width:'100%' as const,maxWidth:420};
  const line=()=> <View style={{height:1,backgroundColor:colors.border}}/>;
- return <><Stack.Screen options={{title:editing?'Edit expense':'Add expense'}}/><Screen modal><ScopeSwitch/><Card><View style={{flexDirection:'row',alignItems:'center',minHeight:44}}><View style={{width:84}}><Body>Date</Body></View><Pressable accessibilityRole="button" accessibilityLabel="Choose expense date" onPress={()=>{Keyboard.dismiss();setCalculatorOpen(false);setCategoryOpen(false);setDatePickerOpen(open=>!open)}} style={{flex:1,minHeight:44,justifyContent:'center'}}>
+ return <><Stack.Screen options={{title:editing?'Edit expense':'Add expense'}}/><Screen modal><ScopeSwitch/><Card><View style={{flexDirection:'row',alignItems:'center',minHeight:44}}><View style={{width:84}}><Body>Date</Body></View><Pressable accessibilityRole="button" accessibilityLabel="Choose expense date" onPress={openDatePicker} style={{flex:1,minHeight:44,justifyContent:'center'}}>
  <Text style={{color:colors.text,fontSize:15}}>{new Date(date+'T12:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}  ▾</Text>
- </Pressable></View>{line()}<View style={{flexDirection:'row',alignItems:'center',minHeight:44}}><View style={{width:84}}><Body>Amount</Body></View><Pressable accessibilityRole="button" accessibilityLabel="Amount, open calculator" onPress={()=>{Keyboard.dismiss();setDatePickerOpen(false);setCategoryOpen(false);setCalculatorOpen(open=>!open)}} style={{flex:1,minHeight:44,justifyContent:'center'}}><Text style={{color:amount?colors.text:colors.muted,fontSize:20}}>{amount?'₹'+amount:'₹0.00'}</Text></Pressable></View>{line()}<Pressable onPress={()=>setCategoryOpen(v=>!v)} style={{flexDirection:'row',alignItems:'center',minHeight:44}}><View style={{width:84}}><Body>Category</Body></View><Text style={{flex:1,color:colors.text}}>{category} ⌄</Text></Pressable>{categoryOpen?<View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>{options.map(c=><Pressable key={c} onPress={()=>{setCategory(c);setCategoryOpen(false)}} style={{padding:9,borderRadius:8,backgroundColor:colors.secondary}}><Text style={{color:colors.text}}>{c}</Text></Pressable> )}<Pressable onPress={()=>{setCategoryOpen(false);router.push('/categories')}} style={{padding:9}}><Text style={{color:colors.household,fontSize:13,fontWeight:'600'}}>Manage categories ›</Text></Pressable></View>:null}{line()}<View style={{flexDirection:'row',alignItems:'center',minHeight:44}}><View style={{width:84}}><Body>Note</Body></View><TextInput accessibilityLabel="Optional note" value={note} onChangeText={setNote} maxLength={500} placeholder="Optional" placeholderTextColor={colors.muted} style={{flex:1,color:colors.text}}/></View></Card>{datePickerOpen?<View style={{backgroundColor:colors.surface,borderRadius:12,padding:12,borderWidth:1,borderColor:colors.border}}>
- <DateTimePicker value={new Date(date+'T12:00:00')} mode="date" display={Platform.OS==='ios'?'spinner':'default'} onChange={(event,picked)=>{
-  if(Platform.OS!=='ios')setDatePickerOpen(false);
-  if(event.type==='dismissed'||!picked)return;
-  const year=picked.getFullYear();const month=String(picked.getMonth()+1).padStart(2,'0');const day=String(picked.getDate()).padStart(2,'0');
-  setDate(year+'-'+month+'-'+day);
- }}/>
- {Platform.OS==='ios'?<Pressable accessibilityRole="button" onPress={()=>setDatePickerOpen(false)} style={{alignSelf:'flex-end',paddingVertical:9,paddingHorizontal:12}}><Text style={{color:colors.household,fontWeight:'600'}}>Done</Text></Pressable>:null}
- </View>:null}{calculatorOpen?<AmountCalculator value={amount} onChange={setAmount} onDone={()=>setCalculatorOpen(false)}/>:null}<Pressable disabled={submitting||!loaded||calculatorOpen} onPress={()=>{void save()}} style={{backgroundColor:scope==='household'?colors.household:colors.personal,padding:13,borderRadius:10,alignItems:'center'}}><Text style={{color:'#fff',fontWeight:'700'}}>{editing?'Save changes':'Save expense'}</Text></Pressable></Screen></>
+ </Pressable></View>{line()}<View style={{flexDirection:'row',alignItems:'center',minHeight:44}}><View style={{width:84}}><Body>Amount</Body></View><Pressable accessibilityRole="button" accessibilityLabel="Amount, open calculator" onPress={()=>{Keyboard.dismiss();setDatePickerOpen(false);setCategoryOpen(false);setCalculatorOpen(open=>!open)}} style={{flex:1,minHeight:44,justifyContent:'center'}}><Text style={{color:amount?colors.text:colors.muted,fontSize:20}}>{amount?'₹'+amount:'₹0.00'}</Text></Pressable></View>{line()}<Pressable accessibilityRole="button" accessibilityLabel="Choose category" onPress={()=>{Keyboard.dismiss();setCalculatorOpen(false);setDatePickerOpen(false);setCategoryOpen(true)}} style={{flexDirection:'row',alignItems:'center',minHeight:44}}>
+ <View style={{width:84}}><Body>Category</Body></View>
+ <Text style={{flex:1,color:colors.text,fontSize:15}}>{category||'Select category'}  ▾</Text>
+ </Pressable>{line()}<View style={{flexDirection:'row',alignItems:'center',minHeight:44}}><View style={{width:84}}><Body>Note</Body></View><TextInput accessibilityLabel="Optional note" value={note} onChangeText={setNote} maxLength={500} placeholder="Optional" placeholderTextColor={colors.muted} style={{flex:1,color:colors.text}}/></View></Card><Modal visible={datePickerOpen} transparent animationType="fade" presentationStyle="overFullScreen" onRequestClose={()=>setDatePickerOpen(false)}>
+ <View style={{flex:1,justifyContent:'center',paddingHorizontal:24,backgroundColor:'rgba(0,0,0,0.55)'}}>
+  <Pressable onPress={()=>setDatePickerOpen(false)} style={{position:'absolute',top:0,bottom:0,left:0,right:0}} accessibilityLabel="Dismiss date picker"/>
+  <View style={pickerCard}>
+   <Text style={{color:colors.text,fontWeight:'700',fontSize:17,marginBottom:8}}>Select date</Text>
+   <DateTimePicker value={pendingDate} mode="date" display="spinner" themeVariant={resolved} textColor={colors.text}
+    style={{height:210,width:'100%',alignSelf:'center'}} onChange={(event,picked)=>{if(event.type==='set'&&picked)setPendingDate(picked)}}/>
+   <View style={{flexDirection:'row',justifyContent:'flex-end',gap:10,marginTop:10}}>
+    <Pressable accessibilityRole="button" onPress={()=>setDatePickerOpen(false)} style={{padding:10}}><Text style={{color:colors.muted,fontSize:14}}>Cancel</Text></Pressable>
+    <Pressable accessibilityRole="button" onPress={()=>{setDate(formatISO(pendingDate));setDatePickerOpen(false)}} style={{padding:10}}><Text style={{color:colors.household,fontSize:14,fontWeight:'700'}}>Done</Text></Pressable>
+   </View>
+  </View>
+ </View>
+ </Modal>
+ <Modal visible={categoryOpen} transparent animationType="fade" presentationStyle="overFullScreen" onRequestClose={()=>setCategoryOpen(false)}>
+ <View style={{flex:1,justifyContent:'center',paddingHorizontal:24,backgroundColor:'rgba(0,0,0,0.55)'}}>
+  <Pressable onPress={()=>setCategoryOpen(false)} style={{position:'absolute',top:0,bottom:0,left:0,right:0}} accessibilityLabel="Dismiss categories"/>
+  <View style={pickerCard}>
+   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+    <Text style={{color:colors.text,fontWeight:'700',fontSize:17}}>Category</Text>
+    <Pressable accessibilityRole="button" onPress={()=>setCategoryOpen(false)} style={{padding:8}}><Text style={{color:colors.muted,fontSize:14}}>Close</Text></Pressable>
+   </View>
+   <ScrollView style={{maxHeight:390}} nestedScrollEnabled>
+    {options.map((name,index)=><Pressable key={name} accessibilityRole="button" accessibilityState={{selected:category===name}}
+     onPress={()=>{setCategory(name);setCategoryOpen(false)}} style={{flexDirection:'row',alignItems:'center',minHeight:47,borderBottomWidth:index===options.length-1?0:1,borderBottomColor:colors.border}}>
+      <Text style={{flex:1,color:colors.text,fontSize:15}}>{name}</Text>
+      {category===name?<Text style={{color:colors.household,fontSize:18,fontWeight:'700'}}>✓</Text>:null}
+     </Pressable>)}
+   </ScrollView>
+   <Pressable accessibilityRole="button" onPress={()=>{setCategoryOpen(false);router.push('/categories')}} style={{paddingVertical:13,marginTop:6}}>
+    <Text style={{color:colors.household,fontSize:14,fontWeight:'600'}}>Manage categories ›</Text>
+   </Pressable>
+  </View>
+ </View>
+ </Modal>
+ {calculatorOpen?<AmountCalculator value={amount} onChange={setAmount} onDone={()=>setCalculatorOpen(false)}/>:null}<Pressable disabled={submitting||!loaded||calculatorOpen} onPress={()=>{void save()}} style={{backgroundColor:scope==='household'?colors.household:colors.personal,padding:13,borderRadius:10,alignItems:'center'}}><Text style={{color:'#fff',fontWeight:'700'}}>{editing?'Save changes':'Save expense'}</Text></Pressable></Screen></>
 }
