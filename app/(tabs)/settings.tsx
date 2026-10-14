@@ -38,7 +38,7 @@ function SettingsRow({icon,label,subtitle,onPress,right,danger=false,last=false}
 export default function Settings(){
  const router=useRouter();
  const {resolved,setAppearance,colors}=useAppTheme();
- const {expenses,clearAll,pendingEntries}=useData();
+ const {expenses,clearAll,pendingEntries,demoEnabled,setDemoEnabled}=useData();
  return <Screen style={{gap:20,paddingBottom:90}}>
   <SettingsSection title="Manage">
    <SettingsRow icon="person-circle-outline" label="My profile" subtitle="Manage your name and household identity" onPress={()=>router.push('/profile')}/>
@@ -53,6 +53,11 @@ export default function Settings(){
      onValueChange={enabled=>setAppearance(enabled?'dark':'light')}
      trackColor={{false:colors.secondary,true:colors.household}} thumbColor="#FFFFFF"/>}/>
   </SettingsSection>
+  {__DEV__?<SettingsSection title="Development">
+   <SettingsRow icon="flask-outline" label="Sample expenses" subtitle="Show read-only demo records for the past 4 months" last
+    right={<Switch accessibilityLabel="Show sample expenses" accessibilityRole="switch" value={demoEnabled}
+     onValueChange={setDemoEnabled} trackColor={{false:colors.secondary,true:colors.household}} thumbColor="#FFFFFF"/>}/>
+  </SettingsSection>:null}
   <SettingsSection title="Data">
    <SettingsRow icon="cloud-upload-outline" label="Pending uploads" subtitle={pendingEntries.length?pendingEntries.length+" expense(s) waiting to sync":"No pending uploads"} onPress={()=>router.push('/sync')}/>
    <SettingsRow icon="save-outline" label={expenses.filter(e=>e.scope==='personal').length+' personal expenses'} subtitle="Stored locally on this device"/>
