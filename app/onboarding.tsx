@@ -4,6 +4,7 @@ import {useRouter} from 'expo-router';
 import {Screen} from '@/components/Screen';
 import {Card,Heading,Body} from '@/components/UI';
 import {useAuth} from '@/lib/AuthContext';
+import {useData} from '@/data';
 import {useOnboarding} from '@/lib/OnboardingContext';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {createHousehold,joinWithKey} from '@/lib/households';
@@ -14,6 +15,7 @@ type Mode='choose'|'create'|'join';
 export default function Onboarding(){
  const router=useRouter();
  const {colors}=useAppTheme();
+ const {refresh:refreshExpenses}=useData();
  const {configured,ready,user,error:authError,retry}=useAuth();
  const {finish}=useOnboarding();
  const [mode,setMode]=useState<Mode>('choose');
@@ -30,7 +32,7 @@ export default function Onboarding(){
  async function submit(action:()=>Promise<void>){
   if(busy)return;
   setBusy(true);setError(null);
-  try{await action();await finishAndOpen()}
+  try{await action();await refreshExpenses();await finishAndOpen()}
   catch(e){setError(e instanceof Error?e.message:'Please try again')}
   finally{setBusy(false)}
  }
