@@ -1,6 +1,6 @@
 import React,{useState} from 'react';
-import {Pressable,Text,View} from 'react-native';
-import {useRouter} from 'expo-router';
+import {Alert,Pressable,Text,View} from 'react-native';
+import {useFocusEffect,useRouter} from 'expo-router';
 import {Screen} from '@/components/Screen';
 import {AddExpenseButton} from '@/components/AddExpenseButton';
 import {Body,Card,Heading,ScopeSwitch} from '@/components/UI';
@@ -10,14 +10,23 @@ import {formatMoney,localDate,monthly,monthKey,total,useData} from '@/data';
 import {useAppTheme} from '@/theme/ThemeContext';
 
 export default function Home(){
- const {scope,colors}=useAppTheme();const {expenses,budgets,loaded}=useData();const router=useRouter();
+ const {scope,colors}=useAppTheme();const {expenses,budgets,loaded,household,syncError,localHouseholdCount,importLocalHousehold,refresh}=useData();const router=useRouter();
  const [month,setMonth]=useState(monthKey(localDate()));
+ useFocusEffect(React.useCallback(()=>{void refresh()},[refresh]));
  const entries=monthly(expenses,scope,month).sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt.localeCompare(a.createdAt));
  const spent=total(entries);const budget=budgets[scope];const accent=scope==='household'?colors.household:colors.personal;
  return <View style={{flex:1}}><Screen>
   <Heading>PESCO</Heading>
   <ScopeSwitch/>
-  {scope==='household'?<Pressable onPress={()=>router.push('/household')} accessibilityRole="button" style={{paddingVertical:9,paddingHorizontal:12,borderRadius:9,backgroundColor:colors.secondary}}><Text style={{color:accent,fontWeight:'600',fontSize:13}}>Household  ›</Text></Pressable>:null}
+  {scope==='household'?<Pressable onPress={()=>router.push('/household')} accessibilityRole="button" style={{paddingVertical:9,paddingHorizontal:12,borderRadius:9,backgroundColor:colors.secondary}}><Text style={{color:accent,fontWeight:'600',fontSize:13}}>{household?household.name:'Create or join household'}  ›</Text></Pressable>:null}
+  {scope==='household'&&household&&localHouseholdCount>0?
+   <Pressable accessibilityRole="button" onPress={()=>Alert.alert('Share existing expenses?',`Upload ${localHouseholdCount} expenses from this device to ${household.name}? Your partner will be able to see them.`,[
+    {text:'Cancel',style:'cancel'},
+    {text:'Import',onPress:()=>{void importLocalHousehold().then(count=>Alert.alert('Imported',`${count} expenses shared`)).catch(e=>Alert.alert('Import stopped',e instanceof Error?e.message:'Try again'))}}
+   ])} style={{padding:12,borderRadius:10,backgroundColor:colors.secondary}}>
+    <Text style={{color:accent,fontWeight:'600',fontSize:13}}>Share ${localHouseholdCount} existing expenses ›</Text>
+   </Pressable>:null}
+  {scope==='household'&&syncError?<Pressable onPress={()=>{void refresh()}} style={{padding:10,borderRadius:8,backgroundColor:colors.secondary}}><Text style={{color:'#C94F4F',fontSize:12}}>Sync failed · Tap to retry</Text></Pressable>:null}
   <MonthPicker month={month} onChange={setMonth}/>
   <Card>
    <Body muted>Spent this month</Body>
