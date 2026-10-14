@@ -3,7 +3,7 @@ import {Alert,Keyboard,Modal,Platform,Pressable,ScrollView,Text,TextInput,View} 
 import DateTimePicker,{DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 import {Stack,useLocalSearchParams,useRouter} from 'expo-router';
 import {Screen} from '@/components/Screen';
-import {Body,Card} from '@/components/UI';
+import {Body} from '@/components/UI';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {useCategories} from '@/lib/CategoryContext';
 import {localDate,parseMoney,useData} from '@/data';
@@ -94,45 +94,41 @@ export default function RecurringEditor(){
   finally{setBusy(false)}
  };
  const line=()=> <View style={{height:1,backgroundColor:colors.border}}/>;
- const fieldLabel=()=>({width:84});
+ const fieldLabel=()=>({width:83});
  const pickerCard={backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1 as const,borderRadius:16,padding:16,width:'100%' as const,maxWidth:420};
 
- return <><Stack.Screen options={{title:id?'Edit recurring bill':'Add recurring bill',presentation:'card'}}/><Screen modal style={{gap:12}}>
+ return <><Stack.Screen options={{title:id?'Edit bill':'Add bill',presentation:'card'}}/><Screen modal style={{gap:10}}>
   {loading?<Body muted>Loading bill…</Body>:loadError?<Body muted>{loadError}</Body>:<>
-   <View style={{flexDirection:'row',padding:3,borderRadius:11,backgroundColor:colors.secondary}}>
-    <View style={{flex:1,paddingVertical:9,alignItems:'center',borderRadius:8,backgroundColor:colors.surface}}>
-     <Text style={{fontSize:13,fontFamily:'Inter_700Bold',color:accent}}>{scope==='household'?'Household':'Personal'}</Text>
-    </View>
-   </View>
-   <Card>
-    <View style={{flexDirection:'row',alignItems:'center',minHeight:44}}>
-     <View style={fieldLabel()}><Body>First due</Body></View>
-     <Pressable accessibilityRole="button" accessibilityLabel="Choose first due date" onPress={selectDate} style={{flex:1,minHeight:44,justifyContent:'center'}}>
-      <Text style={{color:colors.text,fontSize:15}}>{labelDate(firstDue)}  ▾</Text>
+   <Text style={{fontFamily:'Inter_500Medium',fontSize:11,color:colors.muted,marginHorizontal:2}}>{scope==='household'?'HOUSEHOLD · MONTHLY':'PERSONAL · MONTHLY'}</Text>
+   <View style={{backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,borderRadius:10,paddingHorizontal:12}}>
+    <View style={{flexDirection:'row',alignItems:'center',minHeight:42}}>
+     <View style={fieldLabel()}><Text style={{fontFamily:'Inter_400Regular',fontSize:13,color:colors.muted}}>First due</Text></View>
+     <Pressable accessibilityRole="button" accessibilityLabel="Choose first due date" onPress={selectDate} style={{flex:1,minHeight:42,justifyContent:'center'}}>
+      <Text style={{color:colors.text,fontSize:14,fontFamily:'Inter_500Medium'}}>{labelDate(firstDue)}  ▾</Text>
      </Pressable>
     </View>
     {line()}
-    <View style={{flexDirection:'row',alignItems:'center',minHeight:44}}>
-     <View style={fieldLabel()}><Body>Amount</Body></View>
-     <Text style={{color:colors.muted,fontSize:17,marginRight:4}}>₹</Text>
+    <View style={{flexDirection:'row',alignItems:'center',minHeight:42}}>
+     <View style={fieldLabel()}><Text style={{fontFamily:'Inter_400Regular',fontSize:13,color:colors.muted}}>Amount</Text></View>
+     <Text style={{color:colors.muted,fontSize:14,marginRight:4}}>₹</Text>
      <TextInput accessibilityLabel="Monthly amount" keyboardType="decimal-pad" value={amount} onChangeText={setAmount} placeholder="0.00" placeholderTextColor={colors.muted}
-      style={{flex:1,color:colors.text,fontSize:20,paddingVertical:8}}/>
+      style={{flex:1,color:colors.text,fontSize:16,fontFamily:'Inter_500Medium',paddingVertical:7}}/>
     </View>
     {line()}
-    <Pressable accessibilityRole="button" accessibilityLabel="Choose category" onPress={()=>{Keyboard.dismiss();setCategoryOpen(true)}} style={{flexDirection:'row',alignItems:'center',minHeight:44}}>
-     <View style={fieldLabel()}><Body>Category</Body></View>
-     <Text style={{flex:1,color:colors.text,fontSize:15}}>{category||'Choose category'}  ▾</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel="Choose category" onPress={()=>{Keyboard.dismiss();setCategoryOpen(true)}} style={{flexDirection:'row',alignItems:'center',minHeight:42}}>
+     <View style={fieldLabel()}><Text style={{fontFamily:'Inter_400Regular',fontSize:13,color:colors.muted}}>Category</Text></View>
+     <Text style={{flex:1,color:colors.text,fontSize:14,fontFamily:'Inter_500Medium'}}>{category||'Choose category'}  ▾</Text>
     </Pressable>
     {line()}
-    <View style={{flexDirection:'row',alignItems:'center',minHeight:44}}>
-     <View style={fieldLabel()}><Body>Note</Body></View>
+    <View style={{flexDirection:'row',alignItems:'center',minHeight:42}}>
+     <View style={fieldLabel()}><Text style={{fontFamily:'Inter_400Regular',fontSize:13,color:colors.muted}}>Note</Text></View>
      <TextInput accessibilityLabel="Bill description" value={note} onChangeText={setNote} maxLength={500} placeholder="Optional" placeholderTextColor={colors.muted}
-      style={{flex:1,color:colors.text,fontSize:15,paddingVertical:8}}/>
+      style={{flex:1,color:colors.text,fontSize:14,paddingVertical:7}}/>
     </View>
    </Card>
-   <Text style={{color:colors.muted,fontSize:12,lineHeight:18}}>Repeats monthly on the selected date. Short months use the last day.</Text>
-   <Pressable accessibilityRole="button" disabled={busy} onPress={()=>{void save()}} style={{backgroundColor:accent,padding:13,borderRadius:10,alignItems:'center',opacity:busy?0.6:1}}>
-    <Text style={{color:'#fff',fontFamily:'Inter_700Bold'}}>{busy?'Saving…':id?'Save changes':'Save recurring bill'}</Text>
+   <Text style={{color:colors.muted,fontSize:11,lineHeight:16}}>Repeats monthly on the selected date. Short months use the last day.</Text>
+   <Pressable accessibilityRole="button" disabled={busy} onPress={()=>{void save()}} style={{backgroundColor:accent,padding:11,borderRadius:9,alignItems:'center',opacity:busy?0.6:1}}>
+    <Text style={{color:'#fff',fontFamily:'Inter_600SemiBold',fontSize:13}}>{busy?'Saving…':id?'Save changes':'Save recurring bill'}</Text>
    </Pressable>
   </>}
  </Screen>
