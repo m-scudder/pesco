@@ -74,23 +74,22 @@ export function DataProvider({children}:{children:React.ReactNode}){
  },[localExpenses,budgets,recurringRules,generated,localLoaded]);
  const generateDue=useCallback(()=>{
   if(!localLoaded)return;
-  const today=localDate(),created:string[]=[];
-  setLocalExpenses(previous=>{
-   const known=new Set([...generated,...previous.map(x=>x.id)]);
-   const additions:Expense[]=[];
-   for(const rule of recurringRules.filter(x=>x.active)){
-    for(const date of recurringDates(rule,today)){
-     const id='recurring:'+rule.id+':'+date;
-     if(known.has(id))continue;
-     known.add(id);created.push(id);
-     const now=new Date().toISOString();
-     additions.push({id,scope:'personal',amountPaise:rule.amountPaise,category:rule.category,note:rule.note,date,ownerId:'local-user',createdAt:now,updatedAt:now});
-    }
+  const today=localDate();
+  const known=new Set([...generated,...localExpenses.map(x=>x.id)]);
+  const additions:Expense[]=[];
+  for(const rule of recurringRules.filter(x=>x.active)){
+   for(const date of recurringDates(rule,today)){
+    const id='recurring:'+rule.id+':'+date;
+    if(known.has(id))continue;
+    known.add(id);
+    const now=new Date().toISOString();
+    additions.push({id,scope:'personal',amountPaise:rule.amountPaise,category:rule.category,note:rule.note,date,ownerId:'local-user',createdAt:now,updatedAt:now});
    }
-   return additions.length?[...additions,...previous]:previous;
-  });
-  if(created.length)setGenerated(prev=>Array.from(new Set([...prev,...created])));
- },[localLoaded,recurringRules,generated]);
+  }
+  if(!additions.length)return;
+  setGenerated(previous=>Array.from(new Set([...previous,...additions.map(x=>x.id)])));
+  setLocalExpenses(previous=>[...additions.filter(x=>!previous.some(existing=>existing.id===x.id)),...previous]);
+ },[localLoaded,recurringRules,generated,localExpenses]);
  useEffect(()=>{generateDue()},[generateDue]);
  useEffect(()=>{
   const sub=AppState.addEventListener('change',state=>{if(state==='active')generateDue()});
