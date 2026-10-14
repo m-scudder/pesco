@@ -1,0 +1,9 @@
+import React,{useState} from 'react';
+import {Alert,Pressable,Text,TextInput,View} from 'react-native';
+import {Screen} from '@/components/Screen';
+import {Body,Card,Heading} from '@/components/UI';
+import {formatMoney,parseMoney,useData} from '@/data';
+import {useAppTheme} from '@/theme/ThemeContext';
+import type {Scope} from '@/theme/palette';
+export default function Budget(){const {budgets,setBudget}=useData();return <Screen><Heading subtitle="Optional monthly limits">Monthly budgets</Heading>{(['household','personal'] as Scope[]).map(scope=><BudgetForm key={scope} scope={scope} value={budgets[scope]} onSave={v=>setBudget(scope,v)}/>)}<Body muted>Budgets stay on this device until Supabase is connected.</Body></Screen>}
+function BudgetForm({scope,value,onSave}:{scope:Scope;value:number|null;onSave:(v:number|null)=>void}){const {colors}=useAppTheme();const [amount,setAmount]=useState(value===null?'':(value/100).toFixed(2));return <Card><Body>{scope==='household'?'Household budget':'Personal budget · Private'}</Body><Body muted>{value===null?'Not set':formatMoney(value)+' per month'}</Body><View style={{flexDirection:'row',gap:8}}><TextInput keyboardType="decimal-pad" placeholder="₹ amount" placeholderTextColor={colors.muted} value={amount} onChangeText={setAmount} style={{flex:1,color:colors.text,borderWidth:1,borderColor:colors.border,borderRadius:10,padding:12}}/><Pressable onPress={()=>{const v=parseMoney(amount);if(v===null){Alert.alert('Invalid amount','Enter a positive amount.');return}onSave(v)}} style={{backgroundColor:colors.household,borderRadius:10,padding:12}}><Text style={{color:'#fff'}}>Save</Text></Pressable></View>{value!==null?<Pressable onPress={()=>{onSave(null);setAmount('')}}><Text style={{color:colors.muted}}>Remove budget</Text></Pressable>:null}</Card>}
