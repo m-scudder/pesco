@@ -15,7 +15,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const [expenses,setExpenses]=useState<Expense[]>([]);
  const [budgets,setBudgets]=useState<Budgets>(defaults);
  useEffect(()=>{let alive=true;(async()=>{try{const raw=await AsyncStorage.getItem(STORAGE_KEY);if(raw&&alive){const data=JSON.parse(raw);if(Array.isArray(data.expenses))setExpenses(data.expenses);if(data.budgets)setBudgets({...defaults,...data.budgets});}}catch(e){console.warn('PESCO local data load failed',e)}finally{if(alive)setLoaded(true)}})();return()=>{alive=false}},[]);
- useEffect(()=>{if(!loaded)return;AsyncStorage.setItem(STORAGE_KEY,JSON.stringify({expenses,budgets})).catch(e=>console.warn('PESCO local save failed',e))},[expenses,budgets,loaded]);
+ useEffect(()=>{if(!loaded)return;AsyncStorage.setItem(STORAGE_KEY,JSON.stringify({expenses,budgets})).catch((e:unknown)=>console.warn('PESCO local save failed',e))},[expenses,budgets,loaded]);
  const add=useCallback((d:Draft)=>{const now=new Date().toISOString();setExpenses(prev=>[{...d,id:now+'-'+Math.random().toString(36).slice(2),ownerId:'local-user',createdAt:now,updatedAt:now},...prev])},[]);
  const update=useCallback((id:string,d:Draft)=>setExpenses(prev=>prev.map(e=>e.id===id?{...e,...d,updatedAt:new Date().toISOString()}:e)),[]);
  const remove=useCallback((id:string)=>setExpenses(prev=>prev.filter(e=>e.id!==id)),[]);
