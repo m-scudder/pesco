@@ -28,7 +28,7 @@ function recurringDates(rule:RecurringRule,today:string):string[]{
  return output;
 }
 type Store={
- loaded:boolean;pendingCount:number;pendingIds:string[];expenses:Expense[];recurringRules:RecurringRule[];addRecurring:(draft:Omit<RecurringRule,'id'|'active'>)=>void;setRecurringActive:(id:string,active:boolean)=>void;updateRecurring:(id:string,draft:Omit<RecurringRule,'id'|'active'>)=>void;deleteRecurring:(id:string)=>void;budgets:Budgets;household:Household|null;syncing:boolean;syncError:string|null;
+ loaded:boolean;pendingCount:number;pendingIds:string[];pendingEntries:PendingExpense[];expenses:Expense[];recurringRules:RecurringRule[];addRecurring:(draft:Omit<RecurringRule,'id'|'active'>)=>void;setRecurringActive:(id:string,active:boolean)=>void;updateRecurring:(id:string,draft:Omit<RecurringRule,'id'|'active'>)=>void;deleteRecurring:(id:string)=>void;budgets:Budgets;household:Household|null;syncing:boolean;syncError:string|null;
  localHouseholdCount:number;currentUserId:string|null;
  refresh:()=>Promise<void>;add:(draft:ExpenseDraft)=>Promise<void>;update:(id:string,draft:ExpenseDraft)=>Promise<void>;
  remove:(id:string)=>Promise<void>;importLocalHousehold:()=>Promise<number>;
@@ -273,7 +273,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const setBudget=useCallback((scope:Scope,value:number|null)=>setBudgets(prev=>({...prev,[scope]:value})),[]);
  const clearAll=useCallback(()=>{setLocalExpenses([]);setBudgets(defaultBudgets);setRecurringRules([]);setGenerated([])},[]);
  const value=useMemo<Store>(()=>({
-  loaded:localLoaded&&(!user||cloudReady),pendingCount:pending.length,pendingIds:pending.map(x=>x.id),expenses,recurringRules,addRecurring,setRecurringActive,updateRecurring,deleteRecurring,budgets,household,syncing,syncError:syncError??queueError,
+  loaded:localLoaded&&(!user||cloudReady),pendingCount:pending.filter(x=>x.draft.householdId===household?.id).length,pendingIds:pending.filter(x=>x.draft.householdId===household?.id).map(x=>x.id),pendingEntries:pending,expenses,recurringRules,addRecurring,setRecurringActive,updateRecurring,deleteRecurring,budgets,household,syncing,syncError:syncError??queueError,
   currentUserId:user?.id??null,localHouseholdCount:household?localExpenses.filter(e=>e.scope==='household').length:0,
   refresh,add,update,remove,importLocalHousehold,setBudget,clearAll
  }),[localLoaded,user?.id,cloudReady,expenses,pending,queueError,recurringRules,addRecurring,setRecurringActive,deleteRecurring,budgets,household,syncing,syncError,localExpenses,refresh,add,update,remove,importLocalHousehold,setBudget,clearAll]);
