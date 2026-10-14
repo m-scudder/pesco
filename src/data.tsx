@@ -165,7 +165,8 @@ export function DataProvider({children}:{children:React.ReactNode}){
     }
    }
    const rows=membership?await fetchCloudExpenses('household',membership.id,100):[];
-   await AsyncStorage.setItem('pesco:household-cache:'+user.id,JSON.stringify({household:membership,expenses:rows}));
+   try{await AsyncStorage.setItem('pesco:household-cache:'+user.id,JSON.stringify({household:membership,expenses:rows}))}
+   catch(e){console.warn('Could not update offline household cache',e)}
    if(request===requested.current){
     verifiedUser.current=user.id;
     setHousehold(membership);setCloudExpenses(rows);setSyncError(null);setCloudReady(true);
@@ -285,7 +286,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
   loaded:localLoaded&&(!user||cloudReady),pendingCount:pending.filter(x=>x.draft.householdId===household?.id).length,pendingIds:pending.filter(x=>x.draft.householdId===household?.id).map(x=>x.id),pendingEntries:pending,expenses,recurringRules,addRecurring,setRecurringActive,updateRecurring,deleteRecurring,budgets,household,syncing,syncError:syncError??queueError,
   currentUserId:user?.id??null,localHouseholdCount:household?localExpenses.filter(e=>e.scope==='household').length:0,
   refresh,add,update,remove,importLocalHousehold,setBudget,clearAll
- }),[localLoaded,user?.id,cloudReady,expenses,pending,queueError,recurringRules,addRecurring,setRecurringActive,deleteRecurring,budgets,household,syncing,syncError,localExpenses,refresh,add,update,remove,importLocalHousehold,setBudget,clearAll]);
+ }),[localLoaded,user?.id,cloudReady,expenses,pending,queueError,recurringRules,addRecurring,setRecurringActive,updateRecurring,deleteRecurring,budgets,household,syncing,syncError,localExpenses,refresh,add,update,remove,importLocalHousehold,setBudget,clearAll]);
  return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 export function useData(){const store=useContext(Context);if(!store)throw new Error('Missing DataProvider');return store}
