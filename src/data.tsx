@@ -80,7 +80,8 @@ export function DataProvider({children}:{children:React.ReactNode}){
  useEffect(()=>{
   let live=true;
   if(!user){setPending([]);setMutations([]);return}
-  loadMutations(user.id).then(items=>{if(live)setMutations(items)}).catch(e=>{if(live)setQueueError(String(e))});
+  const mutationLoadEpoch=mutationEpoch.current;
+  loadMutations(user.id).then(items=>{if(live&&mutationLoadEpoch===mutationEpoch.current)setMutations(items)}).catch(e=>{if(live)setQueueError(String(e))});
   loadPending(user.id).then(items=>{if(live)setPending(items)}).catch(e=>{if(live)setQueueError(String(e))});
   return()=>{live=false};
  },[user?.id]);
@@ -168,7 +169,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
    if(membership){
     const epoch=mutationEpoch.current;
     const result=await flushMutations(user.id,membership.id);
-    if(epoch===mutationEpoch.current)setMutations(result.items);
+    if(epoch===mutationEpoch.current){mutationEpoch.current++;setMutations(result.items)}
     if(result.error)setQueueError(result.error);
     const checkKey=membership.id+':'+localDate();
     if(recurringGeneratedOn.current!==checkKey){
