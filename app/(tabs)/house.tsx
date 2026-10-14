@@ -2,7 +2,7 @@ import React,{useMemo,useState} from 'react';
 import {Pressable,Text,View} from 'react-native';
 import {useFocusEffect,useRouter} from 'expo-router';
 import {Screen} from '@/components/Screen';
-import {Body,Card,Heading} from '@/components/UI';
+import {Body,Card} from '@/components/UI';
 import {MonthPicker} from '@/components/MonthPicker';
 import {formatMoney,localDate,monthKey,useData} from '@/data';
 import {buildInsights} from '@/lib/insights';
@@ -21,7 +21,6 @@ export default function House(){
  const ratio=spent>0?Math.max(0,Math.min(100,own/spent*100)):0;
  const maxMonth=Math.max(1,...monthSeries.map(m=>m.amount));
  return <Screen style={{gap:12}}>
-  <Heading>House</Heading>
   <MonthPicker month={month} onChange={setMonth}/>
   {syncError?<Pressable onPress={()=>{void refresh()}}>
    <Text style={{fontSize:12,color:'#C94F4F'}}>Unable to refresh shared expenses · Retry</Text>
