@@ -77,7 +77,7 @@ export default function History(){
   </Pressable>:null}
   <Pressable accessibilityRole="button" disabled={sharing||exportRecords.length===0||from>to} onPress={()=>{void share()}}
    style={{borderRadius:9,padding:12,alignItems:'center',backgroundColor:colors.household,opacity:sharing||!exportRecords.length||from>to?0.45:1}}>
-   <Text style={{color:'#fff',fontFamily:'Inter_600SemiBold',fontSize:13}}>{sharing?'Preparing…':'Share CSV text ('+exportRecords.length+')'}</Text>
+   <Text style={{color:'#fff',fontFamily:'Inter_600SemiBold',fontSize:13}}>{sharing?'Preparing…':'Export CSV'}</Text>
   </Pressable>
   <Text style={{fontSize:11,color:colors.muted}}>The share sheet sends CSV-formatted text, not an attached file. No export is uploaded by PESCO.</Text>
  </Screen>;
