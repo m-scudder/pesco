@@ -3,7 +3,7 @@ import {useFocusEffect,useRouter} from 'expo-router';
 import {Pressable,Text,View} from 'react-native';
 import {Screen} from '@/components/Screen';
 import {AddExpenseButton} from '@/components/AddExpenseButton';
-import {Heading,ScopeSwitch} from '@/components/UI';
+import {ScopeSwitch} from '@/components/UI';
 import {MonthPicker} from '@/components/MonthPicker';
 import {formatMoney,localDate,monthKey,useData} from '@/data';
 import {useAppTheme} from '@/theme/ThemeContext';
@@ -32,7 +32,6 @@ export default function Home(){
  return <View style={{flex:1,backgroundColor:colors.background}}>
   <Screen style={{paddingHorizontal:0,gap:0}}>
    <View style={{paddingHorizontal:16,paddingBottom:8,gap:8}}>
-    <Heading>Home</Heading>
     <ScopeSwitch/>
     <MonthPicker month={month} onChange={setMonth}/>
    </View>
