@@ -1,4 +1,5 @@
 import React,{useMemo,useState} from 'react';
+import {useFocusEffect} from 'expo-router';
 import {Text,TextInput,View,ScrollView,Pressable} from 'react-native';
 import {Screen} from '@/components/Screen';
 import {AddExpenseButton} from '@/components/AddExpenseButton';
@@ -9,9 +10,10 @@ import {CATEGORIES,localDate,monthKey,useData} from '@/data';
 import {useAppTheme} from '@/theme/ThemeContext';
 
 export default function Expenses(){
- const {colors,scope}=useAppTheme();const {expenses}=useData();
+ const {colors,scope}=useAppTheme();const {expenses,refresh,syncError}=useData();
  const [search,setSearch]=useState('');const [category,setCategory]=useState('All');
  const [month,setMonth]=useState(monthKey(localDate()));const [allMonths,setAllMonths]=useState(false);
+ useFocusEffect(React.useCallback(()=>{void refresh()},[refresh]));
  const filtered=useMemo(()=>expenses.filter(e=>e.scope===scope&&(allMonths||monthKey(e.date)===month)&&(category==='All'||e.category===category)&&(e.category+' '+e.note).toLowerCase().includes(search.trim().toLowerCase())).sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt.localeCompare(a.createdAt)),[expenses,scope,allMonths,month,category,search]);
  let lastDate='';
  return <View style={{flex:1}}><Screen>
@@ -27,6 +29,7 @@ export default function Expenses(){
     <Text style={{color:category===cat?colors.background:colors.text,fontSize:12}}>{cat}</Text>
    </Pressable>)}
   </ScrollView>
+  {scope==='household'&&syncError?<Pressable onPress={()=>{void refresh()}}><Text style={{color:'#C94F4F',fontSize:12}}>Sync failed · Retry</Text></Pressable>:null}
   {filtered.length===0?<View style={{paddingVertical:18,alignItems:'center'}}><Body muted>No expenses found</Body></View>:<Card>{filtered.map(e=>{const newDay=lastDate!==e.date;lastDate=e.date;return <View key={e.id}>{newDay?<Text style={{color:colors.muted,fontSize:12,fontWeight:'600',paddingTop:8}}>{new Date(e.date+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</Text>:null}<ExpenseRow expense={e}/></View>})}</Card>}
  </Screen><AddExpenseButton/></View>
 }
