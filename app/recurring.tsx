@@ -33,6 +33,7 @@ export default function Recurring(){
  const [amount,setAmount]=useState('');
  const [category,setCategory]=useState('Groceries');
  const [firstDate,setFirstDate]=useState(localDate());
+ const [originalSchedule,setOriginalSchedule]=useState<{shown:string;startsOn:string;day:number}|null>(null);
  const [pendingDate,setPendingDate]=useState(new Date(localDate()+'T12:00:00'));
  const [dateOpen,setDateOpen]=useState(false);
  const [categoryOpen,setCategoryOpen]=useState(false);
@@ -59,7 +60,9 @@ export default function Recurring(){
   setNote(rule?.note??'');
   setAmount(rule?(rule.amountPaise/100).toFixed(2):'');
   setCategory(rule?.category??categories[0]??'Groceries');
-  setFirstDate(rule?existingFirstDate(rule.startsOn,rule.day):localDate());
+  const shown=rule?existingFirstDate(rule.startsOn,rule.day):localDate();
+  setFirstDate(shown);
+  setOriginalSchedule(rule?{shown,startsOn:rule.startsOn,day:rule.day}:null);
   setOpen(true);
  };
  const chooseDate=()=>{
@@ -75,14 +78,16 @@ export default function Recurring(){
   if(paise===null){Alert.alert('Invalid amount','Enter a positive amount with up to two decimal places.');return}
   if(!options.includes(category)){Alert.alert('Category required','Choose a category.');return}
   if(!/^\d{4}-\d{2}-\d{2}$/.test(firstDate)){Alert.alert('Invalid date','Choose a first due date.');return}
-  const due=Number(firstDate.slice(8,10));
+  const unchanged=!!originalSchedule&&originalSchedule.shown===firstDate;
+  const due=unchanged?originalSchedule.day:Number(firstDate.slice(8,10));
+  const startsOn=unchanged?originalSchedule.startsOn:firstDate;
   // Future dates are allowed. Generation begins only when the first due date arrives.
-  const draft={amountPaise:paise,category,note:note.trim(),day:due,startsOn:firstDate};
+  const draft={amountPaise:paise,category,note:note.trim(),day:due,startsOn};
   setBusy(true);
   try{
    if(scope==='household'){
     if(!household)throw new Error('Create or join a household first.');
-    await saveHouseholdRecurring(household.id,{amount_paise:paise,category,note:draft.note,day_of_month:due,starts_on:firstDate},editingId??undefined);
+    await saveHouseholdRecurring(household.id,{amount_paise:paise,category,note:draft.note,day_of_month:due,starts_on:startsOn},editingId??undefined);
     await reload();
    }else if(editingId)updateRecurring(editingId,draft);
    else addRecurring(draft);
