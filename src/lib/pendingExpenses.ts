@@ -48,3 +48,12 @@ export async function flushPending(userId:string,householdId:string){return lock
  await savePending(userId,retained);
  return {remaining:retained.length,sent,errorMessage};
 });}
+
+export async function cancelPending(userId:string,id:string){
+ return locked(async()=>{
+  const existing=await loadPending(userId);
+  const remaining=existing.filter(entry=>entry.id!==id);
+  await savePending(userId,remaining);
+  return remaining;
+ });
+}
