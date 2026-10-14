@@ -33,6 +33,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const [syncing,setSyncing]=useState(false);
  const [cloudReady,setCloudReady]=useState(false);
  const requested=useRef(0);
+ const importing=useRef(false);
 
  useEffect(()=>{
   let active=true;
@@ -127,16 +128,22 @@ export function DataProvider({children}:{children:React.ReactNode}){
 
  const importLocalHousehold=useCallback(async()=>{
   if(!household)throw new Error('Join a household first');
-  const pending=localExpenses.filter(e=>e.scope==='household');
+  if(importing.current)throw new Error('Import already in progress');
+  importing.current=true;
   let imported=0;
-  for(const entry of pending){
-   await addCloudExpense({scope:'household',householdId:household.id,amountPaise:entry.amountPaise,category:entry.category,note:entry.note,date:entry.date});
-   // Only remove a local record after its upload was acknowledged.
-   setLocalExpenses(prev=>prev.filter(e=>e.id!==entry.id));
-   imported++;
+  try{
+   const pending=localExpenses.filter(e=>e.scope==='household');
+   for(const entry of pending){
+    await addCloudExpense({scope:'household',householdId:household.id,amountPaise:entry.amountPaise,category:entry.category,note:entry.note,date:entry.date});
+    // Remove each expense locally only after the server acknowledged it.
+    setLocalExpenses(prev=>prev.filter(e=>e.id!==entry.id));
+    imported++;
+   }
+   await refresh();
+   return imported;
+  }finally{
+   importing.current=false;
   }
-  await refresh();
-  return imported;
  },[household,localExpenses,refresh]);
 
  const setBudget=useCallback((scope:Scope,value:number|null)=>setBudgets(prev=>({...prev,[scope]:value})),[]);
