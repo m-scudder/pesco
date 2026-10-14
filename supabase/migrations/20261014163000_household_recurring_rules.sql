@@ -14,7 +14,7 @@ create table if not exists public.household_recurring_rules(
 create table if not exists public.household_recurring_occurrences(
  rule_id uuid not null references public.household_recurring_rules(id) on delete cascade,
  occurrence_date date not null,
- expense_id uuid not null references public.expenses(id) on delete cascade,
+ expense_id uuid references public.expenses(id) on delete set null,
  primary key(rule_id,occurrence_date), unique(expense_id)
 );
 alter table public.household_recurring_rules enable row level security;
