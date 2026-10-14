@@ -5,7 +5,7 @@ import {Screen} from '@/components/Screen';
 import {Body,Card} from '@/components/UI';
 import {MonthPicker} from '@/components/MonthPicker';
 import {formatMoney,localDate,monthKey,useData} from '@/data';
-import {buildInsights} from '@/lib/insights';
+import {buildInsights,monthlyCategoryChanges} from '@/lib/insights';
 import {useCategoryBudgets} from '@/lib/useCategoryBudgets';
 import {useAppTheme} from '@/theme/ThemeContext';
 
@@ -17,6 +17,9 @@ export default function House(){
  useFocusEffect(React.useCallback(()=>{void refresh()},[refresh]));
  const {spent,prior,difference,percentChange,selected,monthSeries,categories}=useMemo(
   ()=>buildInsights(expenses,'household',month,null),[expenses,month]);
+ const categoryChanges=useMemo(()=>monthlyCategoryChanges(expenses,'household',month),[expenses,month]);
+ const increased=categoryChanges.filter(x=>x.difference>0);
+ const decreased=categoryChanges.filter(x=>x.difference<0);
  const budget=budgets.household;
  const {items:categoryLimits}=useCategoryBudgets('household');
  const accent=colors.household;
@@ -63,6 +66,35 @@ export default function House(){
     </View>
    </View>)}
    {categories.length>6?<Text style={{fontSize:11,color:colors.muted}}>Plus {categories.length-6} more categories</Text>:null}
+  </Card>
+  <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+   <Text style={{color:colors.text,fontSize:14,fontFamily:'Inter_600SemiBold'}}>Monthly review</Text>
+   <Text style={{color:colors.muted,fontSize:11}}>Compared with previous month</Text>
+  </View>
+  <Card>
+   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
+    <Text style={{color:colors.muted,fontSize:12}}>Change in household spending</Text>
+    <Text style={{color:colors.text,fontFamily:'Inter_600SemiBold',fontSize:14}}>{prior===0?'No prior data':(difference>0?'+':difference<0?'−':'')+formatMoney(Math.abs(difference))}</Text>
+   </View>
+   {prior>0?<Text style={{color:colors.muted,fontSize:11}}>{difference===0?'Same as last month':`${percentChange}% ${difference>0?'higher':'lower'} than last month`}</Text>:null}
+   <View style={{height:1,backgroundColor:colors.border}}/>
+   {selected.length===0&&prior===0?<Text style={{color:colors.muted,fontSize:12}}>No spending to review yet</Text>:<>
+    {increased.length?<View style={{gap:6}}>
+     <Text style={{color:colors.muted,fontSize:11,fontFamily:'Inter_600SemiBold'}}>SPENDING INCREASED</Text>
+     {increased.slice(0,3).map(item=><View key={item.name} style={{flexDirection:'row',justifyContent:'space-between',gap:12}}>
+      <Text numberOfLines={1} style={{flex:1,color:colors.text,fontSize:13}}>{item.name}</Text>
+      <Text style={{fontFamily:'Inter_500Medium',fontSize:12,color:colors.text}}>+{formatMoney(item.difference)}</Text>
+     </View>)}
+    </View>:null}
+    {decreased.length?<View style={{gap:6}}>
+     <Text style={{color:colors.muted,fontSize:11,fontFamily:'Inter_600SemiBold'}}>SPENDING DECREASED</Text>
+     {decreased.slice(0,3).map(item=><View key={item.name} style={{flexDirection:'row',justifyContent:'space-between',gap:12}}>
+      <Text numberOfLines={1} style={{flex:1,color:colors.text,fontSize:13}}>{item.name}</Text>
+      <Text style={{fontFamily:'Inter_500Medium',fontSize:12,color:colors.text}}>−{formatMoney(Math.abs(item.difference))}</Text>
+     </View>)}
+    </View>:null}
+    {!increased.length&&!decreased.length?<Text style={{color:colors.muted,fontSize:12}}>Category spending was unchanged.</Text>:null}
+   </>}
   </Card>
   <Text style={{color:colors.text,fontSize:14,fontFamily:'Inter_600SemiBold'}}>Monthly trend</Text>
   <Card>
