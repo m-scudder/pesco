@@ -1,5 +1,5 @@
 import React,{useMemo,useState} from 'react';
-import {Alert,Pressable,Text,View} from 'react-native';
+import {Pressable,Text,View} from 'react-native';
 import {useFocusEffect,useRouter} from 'expo-router';
 import {Screen} from '@/components/Screen';
 import {Body,Card,Heading} from '@/components/UI';
@@ -11,7 +11,7 @@ import {useAppTheme} from '@/theme/ThemeContext';
 export default function House(){
  const router=useRouter();
  const {colors}=useAppTheme();
- const {expenses,budgets,household,currentUserId,refresh,syncError,localHouseholdCount,importLocalHousehold}=useData();
+ const {expenses,budgets,currentUserId,refresh,syncError}=useData();
  const [month,setMonth]=useState(monthKey(localDate()));
  useFocusEffect(React.useCallback(()=>{void refresh()},[refresh]));
  const {spent,prior,difference,percentChange,own,partner,selected,monthSeries}=useMemo(
@@ -23,20 +23,8 @@ export default function House(){
  return <Screen style={{gap:12}}>
   <Heading>House</Heading>
   <MonthPicker month={month} onChange={setMonth}/>
-  {household?<Pressable accessibilityRole="button" onPress={()=>router.push('/household')}>
-   <Text style={{fontSize:13,fontWeight:'600',color:accent}}>{household.name} ›</Text>
-  </Pressable>:<Pressable accessibilityRole="button" onPress={()=>router.push('/household')}>
-   <Text style={{fontSize:13,fontWeight:'600',color:accent}}>Create or join a household ›</Text>
-  </Pressable>}
   {syncError?<Pressable onPress={()=>{void refresh()}}>
    <Text style={{fontSize:12,color:'#C94F4F'}}>Unable to refresh shared expenses · Retry</Text>
-  </Pressable>:null}
-  {household&&localHouseholdCount>0?<Pressable accessibilityRole="button" onPress={()=>Alert.alert(
-   'Share existing expenses?',`Upload ${localHouseholdCount} expenses from this device to ${household.name}? Your partner will be able to see them.`,[
-    {text:'Cancel',style:'cancel'},
-    {text:'Import',onPress:()=>{void importLocalHousehold().then(count=>Alert.alert('Imported',`${count} expenses shared`)).catch(e=>Alert.alert('Import stopped',e instanceof Error?e.message:'Try again'))}}
-   ])}>
-   <Text style={{fontSize:13,color:accent}}>Share {localHouseholdCount} existing expenses ›</Text>
   </Pressable>:null}
   <Card>
    <Body muted>Household spending</Body>
