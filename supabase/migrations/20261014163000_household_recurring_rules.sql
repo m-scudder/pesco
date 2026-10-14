@@ -19,9 +19,13 @@ create table if not exists public.household_recurring_occurrences(
 );
 alter table public.household_recurring_rules enable row level security;
 alter table public.household_recurring_occurrences enable row level security;
+drop policy if exists recurring_read on public.household_recurring_rules;
 create policy recurring_read on public.household_recurring_rules for select to authenticated using(public.is_household_member(household_id));
+drop policy if exists recurring_insert on public.household_recurring_rules;
 create policy recurring_insert on public.household_recurring_rules for insert to authenticated with check(created_by=auth.uid() and public.is_household_member(household_id));
+drop policy if exists recurring_update on public.household_recurring_rules;
 create policy recurring_update on public.household_recurring_rules for update to authenticated using(created_by=auth.uid() and public.is_household_member(household_id)) with check(created_by=auth.uid() and public.is_household_member(household_id));
+drop policy if exists recurring_delete on public.household_recurring_rules;
 create policy recurring_delete on public.household_recurring_rules for delete to authenticated using(created_by=auth.uid() and public.is_household_member(household_id));
 create or replace function public.generate_household_recurring(target_household uuid)
 returns integer language plpgsql security definer set search_path='' as $$
