@@ -26,7 +26,7 @@ function recurringDates(rule:RecurringRule,today:string):string[]{
  return output;
 }
 type Store={
- loaded:boolean;expenses:Expense[];recurringRules:RecurringRule[];addRecurring:(draft:Omit<RecurringRule,'id'|'active'>)=>void;setRecurringActive:(id:string,active:boolean)=>void;deleteRecurring:(id:string)=>void;budgets:Budgets;household:Household|null;syncing:boolean;syncError:string|null;
+ loaded:boolean;expenses:Expense[];recurringRules:RecurringRule[];addRecurring:(draft:Omit<RecurringRule,'id'|'active'>)=>void;setRecurringActive:(id:string,active:boolean)=>void;updateRecurring:(id:string,draft:Omit<RecurringRule,'id'|'active'>)=>void;deleteRecurring:(id:string)=>void;budgets:Budgets;household:Household|null;syncing:boolean;syncError:string|null;
  localHouseholdCount:number;currentUserId:string|null;
  refresh:()=>Promise<void>;add:(draft:ExpenseDraft)=>Promise<void>;update:(id:string,draft:ExpenseDraft)=>Promise<void>;
  remove:(id:string)=>Promise<void>;importLocalHousehold:()=>Promise<number>;
@@ -100,6 +100,9 @@ export function DataProvider({children}:{children:React.ReactNode}){
  },[]);
  const setRecurringActive=useCallback((id:string,active:boolean)=>{
   setRecurringRules(prev=>prev.map(x=>x.id===id?{...x,active}:x));
+ },[]);
+ const updateRecurring=useCallback((id:string,draft:Omit<RecurringRule,'id'|'active'>)=>{
+  setRecurringRules(previous=>previous.map(rule=>rule.id===id?{...rule,...draft}:rule));
  },[]);
  const deleteRecurring=useCallback((id:string)=>{
   setRecurringRules(prev=>prev.filter(x=>x.id!==id));
@@ -211,9 +214,9 @@ export function DataProvider({children}:{children:React.ReactNode}){
  },[household,localExpenses,refresh]);
 
  const setBudget=useCallback((scope:Scope,value:number|null)=>setBudgets(prev=>({...prev,[scope]:value})),[]);
- const clearAll=useCallback(()=>{setLocalExpenses([]);setBudgets(defaultBudgets)},[]);
+ const clearAll=useCallback(()=>{setLocalExpenses([]);setBudgets(defaultBudgets);setRecurringRules([]);setGenerated([])},[]);
  const value=useMemo<Store>(()=>({
-  loaded:localLoaded&&(!user||cloudReady),expenses,recurringRules,addRecurring,setRecurringActive,deleteRecurring,budgets,household,syncing,syncError,
+  loaded:localLoaded&&(!user||cloudReady),expenses,recurringRules,addRecurring,setRecurringActive,updateRecurring,deleteRecurring,budgets,household,syncing,syncError,
   currentUserId:user?.id??null,localHouseholdCount:household?localExpenses.filter(e=>e.scope==='household').length:0,
   refresh,add,update,remove,importLocalHousehold,setBudget,clearAll
  }),[localLoaded,user?.id,cloudReady,expenses,recurringRules,addRecurring,setRecurringActive,deleteRecurring,budgets,household,syncing,syncError,localExpenses,refresh,add,update,remove,importLocalHousehold,setBudget,clearAll]);
