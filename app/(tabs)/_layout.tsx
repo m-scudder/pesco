@@ -13,7 +13,7 @@ export default function TabsLayout() {
   const accent = scope === 'household' ? colors.household : colors.personal;
   const [year,month,day] = localDate().split('-');
   const todayLabel = `${day}/${month}`;
-  return <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: accent, tabBarInactiveTintColor: colors.muted, tabBarStyle: { backgroundColor: colors.tab, borderTopColor: colors.border, height: 66, paddingBottom: 7 }, tabBarLabelStyle: { fontSize: 11 } }}>
+  return <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: accent, tabBarInactiveTintColor: colors.muted, tabBarStyle: { backgroundColor: colors.tab, borderTopColor: colors.border, height: 66, paddingBottom: 7 }, tabBarLabelStyle: { fontSize: 11, fontFamily: 'Inter_500Medium' } }}>
     <Tabs.Screen name="index" options={{ title: todayLabel, tabBarIcon: ({color,size}) => <Ionicons name="book-outline" color={color} size={size} /> }} />
     <Tabs.Screen name="house" options={{ title: 'House', tabBarIcon: ({color,size}) => <Ionicons name="people-outline" color={color} size={size} /> }} />
     <Tabs.Screen name="expenses" options={{ href: null }} />
