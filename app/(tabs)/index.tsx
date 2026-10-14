@@ -121,13 +121,6 @@ export default function Home(){
        accessibilityLabel={expense.category+', '+formatMoney(expense.amountPaise)}
        onPress={()=>{
         if(expense.id.startsWith('demo:')){Alert.alert('Demo expense','Sample records are read-only and are not shared with your partner. Disable them in Settings to view only real expenses.');return}
-        if(pendingIds.includes(expense.id)){
-         Alert.alert('Waiting to sync','This expense is saved on this device. Once online, it will sync with your household.',[
-          {text:'Keep it',style:'cancel'},
-          {text:'Cancel expense',style:'destructive',onPress:()=>{void remove(expense.id)}}
-         ]);
-         return;
-        }
         router.push({pathname:'/expense/[id]',params:{id:expense.id}});
        }}
        style={{flexDirection:'row',alignItems:'center',paddingHorizontal:12,paddingVertical:9,gap:9,borderBottomWidth:1,borderColor:colors.border,minHeight:56}}>
