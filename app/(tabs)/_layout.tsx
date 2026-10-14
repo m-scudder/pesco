@@ -1,9 +1,14 @@
 import React from 'react';
-import { Tabs } from 'expo-router';
+import { Tabs, Redirect } from 'expo-router';
+import { ActivityIndicator, View } from 'react-native';
+import { useOnboarding } from '@/lib/OnboardingContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme/ThemeContext';
 export default function TabsLayout() {
   const { colors, scope } = useAppTheme();
+  const {ready,complete}=useOnboarding();
+  if(!ready)return <View style={{flex:1,justifyContent:'center'}}><ActivityIndicator/></View>;
+  if(!complete)return <Redirect href="/onboarding"/>;
   const accent = scope === 'household' ? colors.household : colors.personal;
   return <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: accent, tabBarInactiveTintColor: colors.muted, tabBarStyle: { backgroundColor: colors.tab, borderTopColor: colors.border, height: 66, paddingBottom: 7 }, tabBarLabelStyle: { fontSize: 11 } }}>
     <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: ({color,size}) => <Ionicons name="home-outline" color={color} size={size} /> }} />
