@@ -1,4 +1,4 @@
-import React,{useEffect,useState} from 'react';
+import React,{useState} from 'react';
 import {Pressable,Text,View} from 'react-native';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {initialCalculator,pressCalculator,type CalculatorState} from '@/lib/calculator';
@@ -10,7 +10,6 @@ export function AmountCalculator({value,onChange,onDone}:{value:string;onChange:
  // The calculator is mounted only while open, so reopening starts with
  // the most recently accepted amount. No effect loop is necessary.
  const accent=scope==='household'?colors.household:colors.personal;
- useEffect(()=>{onChange(state.display)},[state.display]);
  function tap(label:string){
   if(label==='Done'){
    if(state.error)return;
