@@ -103,7 +103,7 @@ export default function Recurring(){
  const rowLabel={width:82,color:colors.text,fontSize:14,fontFamily:'Inter_400Regular' as const};
  const pickerCard={backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1 as const,borderRadius:16,padding:16,width:'100%' as const,maxWidth:420};
 
- return <Screen modal style={{gap:10}}>
+ return <View style={{flex:1,backgroundColor:colors.background}}><Screen modal style={{gap:10,paddingBottom:116}}>
   <View style={{flexDirection:'row',padding:3,borderRadius:11,backgroundColor:colors.secondary}}>
    {(['household','personal'] as const).map(value=><Pressable key={value} accessibilityRole="button" accessibilityState={{selected:scope===value}}
     onPress={()=>{setScope(value);close()}} style={{flex:1,paddingVertical:9,borderRadius:8,alignItems:'center',backgroundColor:scope===value?colors.surface:undefined}}>
@@ -146,19 +146,34 @@ export default function Recurring(){
    {(scope==='personal'&&recurringRules.length===0||scope==='household'&&shared.length===0)?
     <View style={{paddingVertical:24,alignItems:'center'}}><Text style={{color:colors.muted,fontSize:13}}>No recurring bills yet</Text></View>:null}
   </View>
-  {!open&&!(scope==='household'&&!household)?<Pressable accessibilityRole="button" onPress={()=>begin()} style={{minHeight:38,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:5}}>
-   <Text style={{color:accent,fontFamily:'Inter_600SemiBold',fontSize:13}}>＋ Add recurring bill</Text>
-  </Pressable>:null}
   <Modal visible={open} transparent animationType="slide" presentationStyle="overFullScreen" onRequestClose={close}>
-   <View style={{flex:1,justifyContent:'flex-end',backgroundColor:'rgba(0,0,0,0.38)'}}>
-    <Pressable onPress={close} accessibilityLabel="Dismiss bill editor" style={{position:'absolute',top:0,left:0,right:0,bottom:0}}/>
+   <View style={{flex:1,justifyContent:'flex-end'}}>
+    <Pressable onPress={close} accessibilityLabel="Dismiss bill editor" style={{position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'rgba(0,0,0,0.40)'}}/>
     <View style={{backgroundColor:colors.background,borderTopLeftRadius:20,borderTopRightRadius:20,paddingHorizontal:18,paddingTop:12,paddingBottom:38,gap:14}}>
      <View style={{alignItems:'center'}}><View style={{width:34,height:4,borderRadius:2,backgroundColor:colors.border}}/></View>
      <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
       <Pressable accessibilityRole="button" onPress={close} style={{paddingVertical:6}}><Text style={{color:colors.muted,fontSize:14}}>Cancel</Text></Pressable>
       <Text style={{color:colors.text,fontFamily:'Inter_600SemiBold',fontSize:15}}>{editingId?'Edit bill':'New bill'}</Text>
-      <Pressable accessibilityRole="button" disabled={busy} onPress={()=>{void save()}} style={{paddingVertical:6}}><Text style={{color:accent,fontFamily:'Inter_700Bold',fontSize:14}}>{busy?'Saving…':'Save'}</Text></Pressable>
+      <Pressable accessibilityRole="button" disabled={busy||dateOpen||categoryOpen} onPress={()=>{void save()}} style={{paddingVertical:6}}><Text style={{color:accent,fontFamily:'Inter_700Bold',fontSize:14}}>{busy?'Saving…':'Save'}</Text></Pressable>
      </View>
+     {dateOpen?<View style={{backgroundColor:colors.surface,borderRadius:12,padding:8}}>
+      <Text style={{color:colors.text,fontSize:14,fontFamily:'Inter_600SemiBold',padding:8}}>First due date</Text>
+      <DateTimePicker value={pendingDate} mode="date" display="spinner" themeVariant={resolved} textColor={colors.text}
+       style={{height:210,width:'100%'}} onChange={(_event,picked)=>{if(picked)setPendingDate(picked)}}/>
+      <View style={{flexDirection:'row',justifyContent:'flex-end',gap:15,padding:8}}>
+       <Pressable accessibilityRole="button" onPress={()=>setDateOpen(false)}><Text style={{color:colors.muted}}>Cancel</Text></Pressable>
+       <Pressable accessibilityRole="button" onPress={()=>{setFirstDate(dateString(pendingDate));setDateOpen(false)}}><Text style={{color:accent,fontFamily:'Inter_600SemiBold'}}>Done</Text></Pressable>
+      </View>
+     </View>:categoryOpen?<View style={{backgroundColor:colors.surface,borderRadius:12,padding:10}}>
+      <Text style={{color:colors.text,fontSize:14,fontFamily:'Inter_600SemiBold',padding:7}}>Select category</Text>
+      <ScrollView nestedScrollEnabled style={{maxHeight:260}}>
+       {options.map(name=><Pressable key={name} accessibilityRole="button" onPress={()=>{setCategory(name);setCategoryOpen(false)}} style={{minHeight:44,flexDirection:'row',alignItems:'center',paddingHorizontal:9,borderBottomWidth:1,borderColor:colors.border}}>
+        <Text style={{flex:1,color:colors.text,fontSize:14}}>{name}</Text>
+        {name===category?<Text style={{color:accent}}>✓</Text>:null}
+       </Pressable>)}
+      </ScrollView>
+      <Pressable accessibilityRole="button" onPress={()=>setCategoryOpen(false)} style={{alignSelf:'flex-end',padding:10}}><Text style={{color:colors.muted}}>Cancel</Text></Pressable>
+     </View>:<>
      <View style={{backgroundColor:colors.surface,borderRadius:12,borderWidth:1,borderColor:colors.border,paddingHorizontal:13}}>
       <Pressable accessibilityRole="button" onPress={chooseDate} style={{minHeight:49,flexDirection:'row',alignItems:'center'}}>
        <Text style={{...rowLabel,fontSize:13}}>First due</Text>
@@ -183,43 +198,16 @@ export default function Recurring(){
        <TextInput accessibilityLabel="Bill description" value={note} onChangeText={setNote} maxLength={500} placeholder="Optional" placeholderTextColor={colors.muted} style={{flex:1,color:colors.text,fontSize:14,paddingVertical:7}}/>
       </View>
      </View>
-     <Text style={{color:colors.muted,fontSize:11,lineHeight:16}}>Repeats monthly on the selected day. Short months use their last day.</Text>
+     </>}
+     {!dateOpen&&!categoryOpen?<Text style={{color:colors.muted,fontSize:11,lineHeight:16}}>Repeats monthly on the selected day. Short months use their last day.</Text>:null}
     </View>
    </View>
   </Modal>
   {error?<Pressable accessibilityRole="button" onPress={()=>{void reload()}}><Text style={{color:'#C94F4F',fontSize:13}}>Could not sync recurring bills · Retry</Text></Pressable>:null}
-  <Modal visible={dateOpen} transparent animationType="fade" presentationStyle="overFullScreen" onRequestClose={()=>setDateOpen(false)}>
-   <View style={{flex:1,justifyContent:'center',paddingHorizontal:24,backgroundColor:'rgba(0,0,0,0.55)'}}>
-    <Pressable accessibilityLabel="Dismiss date picker" onPress={()=>setDateOpen(false)} style={{position:'absolute',top:0,bottom:0,left:0,right:0}}/>
-    <View style={pickerCard}>
-     <Text style={{color:colors.text,fontSize:17,fontFamily:'Inter_700Bold',marginBottom:8}}>First due date</Text>
-     <DateTimePicker value={pendingDate} mode="date" display="spinner" themeVariant={resolved} textColor={colors.text}
-      style={{height:210,width:'100%',alignSelf:'center'}} onChange={(event,picked)=>{if(event.type==='set'&&picked)setPendingDate(picked)}}/>
-     <View style={{flexDirection:'row',justifyContent:'flex-end',gap:10,marginTop:10}}>
-      <Pressable accessibilityRole="button" onPress={()=>setDateOpen(false)} style={{padding:10}}><Text style={{color:colors.muted}}>Cancel</Text></Pressable>
-      <Pressable accessibilityRole="button" onPress={()=>{setFirstDate(dateString(pendingDate));setDateOpen(false)}} style={{padding:10}}><Text style={{color:accent,fontFamily:'Inter_700Bold'}}>Done</Text></Pressable>
-     </View>
-    </View>
-   </View>
-  </Modal>
-  <Modal visible={categoryOpen} transparent animationType="fade" presentationStyle="overFullScreen" onRequestClose={()=>setCategoryOpen(false)}>
-   <View style={{flex:1,justifyContent:'center',paddingHorizontal:24,backgroundColor:'rgba(0,0,0,0.55)'}}>
-    <Pressable accessibilityLabel="Dismiss categories" onPress={()=>setCategoryOpen(false)} style={{position:'absolute',top:0,bottom:0,left:0,right:0}}/>
-    <View style={pickerCard}>
-     <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-      <Text style={{color:colors.text,fontSize:17,fontFamily:'Inter_700Bold'}}>Category</Text>
-      <Pressable accessibilityRole="button" onPress={()=>setCategoryOpen(false)} style={{padding:8}}><Text style={{color:colors.muted}}>Close</Text></Pressable>
-     </View>
-     <ScrollView style={{maxHeight:390}} nestedScrollEnabled>
-      {options.map((name,index)=><Pressable key={name} accessibilityRole="button" accessibilityState={{selected:category===name}}
-       onPress={()=>{setCategory(name);setCategoryOpen(false)}} style={{flexDirection:'row',alignItems:'center',minHeight:47,borderBottomWidth:index===options.length-1?0:1,borderBottomColor:colors.border}}>
-       <Text style={{flex:1,color:colors.text,fontSize:15}}>{name}</Text>
-       {category===name?<Text style={{color:accent,fontSize:18,fontFamily:'Inter_700Bold'}}>✓</Text>:null}
-      </Pressable>)}
-     </ScrollView>
-     <Body muted>Manage categories from Settings.</Body>
-    </View>
-   </View>
-  </Modal>
- </Screen>;
+  </Screen>
+  {!open&&!(scope==='household'&&!household)?<Pressable accessibilityRole="button" accessibilityLabel="Add recurring bill" onPress={()=>begin()}
+   style={{position:'absolute',right:20,bottom:28,width:54,height:54,borderRadius:27,backgroundColor:accent,alignItems:'center',justifyContent:'center',shadowColor:'#000',shadowOpacity:0.18,shadowRadius:8,shadowOffset:{width:0,height:3},elevation:5}}>
+   <Text style={{color:'#fff',fontSize:29,lineHeight:34}}>+</Text>
+  </Pressable>:null}
+ </View>;
 }
