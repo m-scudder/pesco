@@ -3,7 +3,6 @@ import {Alert,Pressable,Switch,Text,View} from 'react-native';
 import {useRouter} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {Screen} from '@/components/Screen';
-import {Heading} from '@/components/UI';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {useData} from '@/data';
 
@@ -41,10 +40,6 @@ export default function Settings(){
  const {resolved,setAppearance,colors}=useAppTheme();
  const {expenses,clearAll}=useData();
  return <Screen style={{gap:20,paddingBottom:90}}>
-  <View style={{gap:4}}>
-   <Heading>Settings</Heading>
-   <Text style={{fontFamily:'Inter_400Regular',fontSize:13,color:colors.muted}}>Manage your household, preferences and saved data</Text>
-  </View>
   <SettingsSection title="Manage">
    <SettingsRow icon="people-outline" label="Household" subtitle="Members, house name and partner invitations" onPress={()=>router.push('/household')}/>
    <SettingsRow icon="wallet-outline" label="Monthly budgets" subtitle="Manage household and personal limits" onPress={()=>router.push('/budget')}/>
