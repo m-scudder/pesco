@@ -88,7 +88,21 @@ export async function editCloudExpense(id:string,input:CloudExpenseInput,expecte
  if(expectedUpdatedAt)query=query.eq('updated_at',expectedUpdatedAt);
  const {data,error}=await query.select('id,owner_id,household_id,scope,amount_paise,category,note,spent_on,created_at,updated_at').maybeSingle();
  if(error)throw error;
- if(!data)throw new Error('Conflict: this expense has changed or been removed on another device. Review and discard the pending change before trying again.');
+ if(!data){
+  // A retry may follow a successful server commit whose acknowledgement was lost.
+  // Accept that case only if the persisted record exactly matches the pending edit.
+  const existing=await db.from('expenses')
+   .select('id,owner_id,household_id,scope,amount_paise,category,note,spent_on,created_at,updated_at')
+   .eq('id',id).eq('owner_id',user.id).maybeSingle();
+  if(existing.error)throw existing.error;
+  if(existing.data){
+   const row=existing.data as ExpenseRow;
+   if(row.amount_paise===input.amountPaise&&row.category===input.category&&
+      row.note===input.note&&row.spent_on===input.date&&row.household_id===input.householdId)
+    return toExpense(row);
+  }
+  throw new Error('Conflict: this expense has changed or been removed on another device. Review and discard the pending change before trying again.');
+ }
  return toExpense(data as ExpenseRow);
 }
 export async function deleteCloudExpense(id:string,expectedUpdatedAt?:string){
