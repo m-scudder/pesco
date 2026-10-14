@@ -21,7 +21,7 @@ export default function TabsLayout() {
     <Tabs.Screen name="index" options={{ title: todayLabel, tabBarIcon: ({color,size}) => <Ionicons name="book-outline" color={color} size={size} /> }} />
     <Tabs.Screen name="house" options={{ title: 'House', tabBarIcon: ({color,size}) => <Ionicons name="people-outline" color={color} size={size} /> }} />
     <Tabs.Screen name="expenses" options={{ href: null }} />
-    <Tabs.Screen name="insights" options={{ title: 'Insights', tabBarIcon: ({color,size}) => <Ionicons name="stats-chart-outline" color={color} size={size} /> }} />
+    <Tabs.Screen name="insights" options={{ title: 'Stats', tabBarIcon: ({color,size}) => <Ionicons name="bar-chart-outline" color={color} size={size} /> }} />
     <Tabs.Screen name="settings" options={{ title: 'Settings', tabBarIcon: ({color,size}) => <Ionicons name="settings-outline" color={color} size={size} /> }} />
   </Tabs>;
 }
