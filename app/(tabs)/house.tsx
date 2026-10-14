@@ -11,7 +11,7 @@ import {useAppTheme} from '@/theme/ThemeContext';
 export default function House(){
  const router=useRouter();
  const {colors}=useAppTheme();
- const {expenses,budgets,refresh,syncError}=useData();
+ const {expenses,budgets,refresh,syncError,demoEnabled}=useData();
  const [month,setMonth]=useState(monthKey(localDate()));
  useFocusEffect(React.useCallback(()=>{void refresh()},[refresh]));
  const {spent,prior,difference,percentChange,selected,monthSeries,categories}=useMemo(
@@ -21,6 +21,7 @@ export default function House(){
  const maxMonth=Math.max(1,...monthSeries.map(m=>m.amount));
  return <Screen style={{gap:12}}>
   <MonthPicker month={month} onChange={setMonth}/>
+  {demoEnabled?<Text style={{color:colors.muted,fontSize:11,fontFamily:'Inter_500Medium'}}>DEMO DATA · Includes read-only sample expenses</Text>:null}
   {syncError?<Pressable onPress={()=>{void refresh()}}>
    <Text style={{fontSize:12,color:'#C94F4F'}}>Unable to refresh shared expenses · Retry</Text>
   </Pressable>:null}
