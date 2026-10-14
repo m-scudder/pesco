@@ -32,7 +32,7 @@ export async function fetchCloudExpenses(scope:Scope,householdId:string|null,lim
  const session=await db.auth.getUser();
  if(session.error||!session.data.user)throw new Error('Sign in required');
  let query=db.from('expenses').select('id,owner_id,household_id,scope,amount_paise,category,note,spent_on,created_at,updated_at')
-  .eq('scope',scope).order('spent_on',{ascending:false}).order('created_at',{ascending:false}).limit(Math.min(Math.max(limit,1),100));
+  .eq('scope',scope).order('spent_on',{ascending:false}).order('created_at',{ascending:false}).order('id',{ascending:false}).limit(Math.min(Math.max(limit,1),100));
  if(scope==='personal')query=query.eq('owner_id',session.data.user.id);
  else query=query.eq('household_id',householdId!);
  // Cursor pagination will be enabled with deterministic composite ordering in a later milestone.
@@ -41,6 +41,27 @@ export async function fetchCloudExpenses(scope:Scope,householdId:string|null,lim
  if(error)throw error;
  return (data as ExpenseRow[]).map(toExpense);
 }
+/** Read complete household history in deterministic pages, rather than silently truncating after 100 records. */
+export async function fetchAllHouseholdExpenses(householdId:string){
+ const db=client();
+ const user=await db.auth.getUser();
+ if(user.error||!user.data.user)throw new Error('Sign in required');
+ const all:Expense[]=[];
+ const size=200;
+ for(let offset=0;;offset+=size){
+  const {data,error}=await db.from('expenses')
+   .select('id,owner_id,household_id,scope,amount_paise,category,note,spent_on,created_at,updated_at')
+   .eq('scope','household').eq('household_id',householdId)
+   .order('spent_on',{ascending:false}).order('created_at',{ascending:false}).order('id',{ascending:false})
+   .range(offset,offset+size-1);
+  if(error)throw error;
+  const rows=(data??[]) as ExpenseRow[];
+  all.push(...rows.map(toExpense));
+  if(rows.length<size)break;
+ }
+ return all;
+}
+
 export async function addCloudExpense(input:CloudExpenseInput,requestId?:string){
  assertInput(input);
  const db=client();const {data:{user},error:authError}=await db.auth.getUser();
