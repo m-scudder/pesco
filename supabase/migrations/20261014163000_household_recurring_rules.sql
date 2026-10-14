@@ -17,6 +17,8 @@ create table if not exists public.household_recurring_occurrences(
  expense_id uuid references public.expenses(id) on delete set null,
  primary key(rule_id,occurrence_date), unique(expense_id)
 );
+create unique index if not exists household_recurring_one_per_month
+ on public.household_recurring_occurrences(rule_id,(date_trunc('month',occurrence_date::timestamp)::date));
 alter table public.household_recurring_rules enable row level security;
 alter table public.household_recurring_occurrences enable row level security;
 drop policy if exists recurring_read on public.household_recurring_rules;
@@ -40,7 +42,7 @@ begin
   for d in select generate_series(greatest(first_month,(end_month-interval '119 months')::date),end_month,interval '1 month')::date loop
    last_day:=extract(day from (d+interval '1 month - 1 day'))::int;
    d:=d+(least(r.day_of_month,last_day)-1);
-   if d>=r.starts_on and d<=current_date and not exists(select 1 from public.household_recurring_occurrences where rule_id=r.id and occurrence_date=d) then
+   if d>=r.starts_on and d<=current_date and not exists(select 1 from public.household_recurring_occurrences where rule_id=r.id and occurrence_date>=date_trunc('month',d::timestamp)::date and occurrence_date<(date_trunc('month',d::timestamp)+interval '1 month')::date) then
     insert into public.expenses(owner_id,household_id,scope,amount_paise,category,note,spent_on)
     values(r.created_by,target_household,'household',r.amount_paise,r.category,r.note,d) returning id into new_expense;
     insert into public.household_recurring_occurrences(rule_id,occurrence_date,expense_id) values(r.id,d,new_expense);
