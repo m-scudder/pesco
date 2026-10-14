@@ -11,7 +11,7 @@ import {useAppTheme} from '@/theme/ThemeContext';
 
 export default function Home(){
  const {colors,scope}=useAppTheme();
- const {expenses,refresh,syncError,currentUserId,pendingCount,pendingIds,remove,demoEnabled}=useData();
+ const {expenses,refresh,syncError,currentUserId,pendingCount,pendingEditCount,pendingIds,remove,demoEnabled}=useData();
  const router=useRouter();
  const [month,setMonth]=useState(monthKey(localDate()));
  const [search,setSearch]=useState('');
@@ -95,6 +95,9 @@ export default function Home(){
    </View>
    {scope==='household'&&pendingCount>0?<Pressable onPress={()=>{void refresh()}} style={{paddingHorizontal:16,paddingVertical:9,backgroundColor:colors.secondary}}>
     <Text style={{color:colors.text,fontSize:12}}>{pendingCount} expense{pendingCount===1?'':'s'} waiting to sync · Tap to retry</Text>
+   </Pressable>:null}
+   {scope==='household'&&pendingEditCount>0?<Pressable onPress={()=>{void refresh()}} style={{paddingHorizontal:16,paddingVertical:9,backgroundColor:colors.secondary}}>
+    <Text style={{color:colors.text,fontSize:12}}>{pendingEditCount} edit/delete change{pendingEditCount===1?'':'s'} waiting to sync · Tap to retry</Text>
    </Pressable>:null}
    {scope==='household'&&syncError?
     <Pressable onPress={()=>{void refresh()}} style={{paddingHorizontal:16,paddingVertical:10}}>
