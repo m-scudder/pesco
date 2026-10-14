@@ -22,6 +22,7 @@ export default function Insights(){
  const maxMonth=Math.max(1,...monthSeries.map(m=>m.amount));
  const dataMayBeIncomplete=scope==='household'&&expenses.filter(e=>e.scope==='household').length>=100;
  const summaryLabel=scope==='household'?'Household spending':'Personal spending';
+ const abbreviated=(paise:number)=>{const rupees=paise/100;return rupees>=100000?'₹'+(rupees/100000).toFixed(1)+'L':rupees>=1000?'₹'+(rupees/1000).toFixed(1)+'k':'₹'+Math.round(rupees)};
  const section=(label:string)=><Text style={{fontSize:16,fontWeight:'700',color:colors.text}}>{label}</Text>;
  return <Screen>
   <Heading>Insights</Heading>
