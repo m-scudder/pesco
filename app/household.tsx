@@ -5,7 +5,7 @@ import {Body,Card} from '@/components/UI';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {useAuth} from '@/lib/AuthContext';
 import {useData} from '@/data';
-import {createHousehold,createJoiningKey,getMyHousehold,joinWithKey,type Household} from '@/lib/households';
+import {createHousehold,createJoiningKey,getMyHousehold,joinWithKey,getHouseholdMembers,renameHousehold,removeHouseholdPartner,type Household,type HouseholdMember} from '@/lib/households';
 
 const SIX=/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
 export default function HouseholdSetup(){
@@ -13,6 +13,9 @@ export default function HouseholdSetup(){
  const {refresh:refreshExpenses}=useData();
  const {configured,ready,user,error:authError,retry}=useAuth();
  const [household,setHousehold]=useState<Household|null>(null);
+ const [members,setMembers]=useState<HouseholdMember[]>([]);
+ const [editingName,setEditingName]=useState(false);
+ const [draftName,setDraftName]=useState('');
  const [loading,setLoading]=useState(false);
  const [busy,setBusy]=useState(false);
  const [name,setName]=useState('Our Household');
@@ -24,7 +27,7 @@ export default function HouseholdSetup(){
  const refresh=useCallback(async()=>{
   if(!configured||!user)return;
   setLoading(true);
-  try{setHousehold(await getMyHousehold());setError(null)}
+  try{const current=await getMyHousehold();setHousehold(current);setMembers(current?await getHouseholdMembers(current.id):[]);setDraftName(current?.name??'');setError(null)}
   catch(e){setError(e instanceof Error?e.message:'Could not load household')}
   finally{setLoading(false)}
  },[configured,user?.id]);
@@ -51,19 +54,49 @@ export default function HouseholdSetup(){
  return <Screen modal style={{gap:12}}>
   <Text style={{color:colors.muted,fontSize:13,marginBottom:2}}>Share expenses with one partner</Text>
   {household?
-   <Card>
-    <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
-     <View style={{flex:1}}><Text style={{color:colors.text,fontSize:18,fontWeight:'700'}}>{household.name}</Text><Text style={{color:colors.muted,fontSize:12}}>Household active</Text></View>
-    </View>
-    {household.created_by===user.id?<>
+   <>
+    <Card>
+     <View style={{gap:4}}>
+      <Text style={{color:colors.muted,fontSize:12}}>Your household</Text>
+      <Text style={{color:colors.text,fontSize:20,fontWeight:'700'}}>{household.name}</Text>
+      <Text style={{color:colors.muted,fontSize:12}}>{household.created_by===user.id?'You are the creator':'You are a member'}</Text>
+     </View>
+     {household.created_by===user.id?<>
+      {editingName?<View style={{gap:10}}>
+       <TextInput accessibilityLabel="Edit household name" value={draftName} onChangeText={setDraftName} maxLength={100} style={input}/>
+       {action('Save name',()=>void submit(async()=>{await renameHousehold(household.id,draftName);setEditingName(false)}),true,!draftName.trim()||draftName.trim()===household.name)}
+       {action('Cancel',()=>{setEditingName(false);setDraftName(household.name)},false)}
+      </View>:action('Edit household name',()=>setEditingName(true),false)}
+     </>:null}
+    </Card>
+    <Card>
+     <Text style={{color:colors.text,fontWeight:'700',fontSize:16}}>Members · {members.length}/2</Text>
+     {members.map(member=><View key={member.user_id} style={{gap:5,paddingVertical:10,borderBottomWidth:1,borderColor:colors.border}}>
+      <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',gap:8}}>
+       <Text style={{flex:1,color:colors.text,fontSize:15,fontWeight:'600'}}>{member.display_name==='Member'?(member.user_id===user.id?'You':'Partner'):member.display_name}{member.user_id===user.id?' (You)':''}</Text>
+       <Text style={{fontSize:12,color:colors.muted}}>{member.is_owner?'Creator':'Partner'}</Text>
+      </View>
+      <Text style={{fontSize:12,color:colors.muted}}>Joined {new Date(member.joined_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</Text>
+      {household.created_by===user.id&&!member.is_owner?(
+       <Pressable accessibilityRole="button" onPress={()=>Alert.alert('Remove partner?', 'This will immediately revoke their access to this household and its shared expenses. Existing expenses will remain.',[
+        {text:'Cancel',style:'cancel'},
+        {text:'Remove',style:'destructive',onPress:()=>{void submit(()=>removeHouseholdPartner(household.id,member.user_id))}}
+       ])} style={{paddingVertical:7,alignSelf:'flex-start'}}>
+        <Text style={{color:'#C94F4F',fontSize:13,fontWeight:'600'}}>Remove partner</Text>
+       </Pressable>
+      ):null}
+     </View>)}
+     {members.length===1?<Body muted>No partner has joined yet.</Body>:null}
+    </Card>
+    {household.created_by===user.id&&members.length<2?<Card>
      {action('Invite partner',()=>{void submit(async()=>{const issued=await createJoiningKey(household.id);if(!SIX.test(issued))throw new Error('Server is not using 6-character keys');setInvite(issued)})})}
      {invite?<View style={{gap:9,alignItems:'center',paddingVertical:6}}>
       <Text selectable style={{fontSize:30,fontWeight:'800',letterSpacing:5,color:colors.text}}>{invite}</Text>
       <Body muted>Valid 24 hours · One use</Body>
       {action('Share code',()=>{void Share.share({message:'Join my PESCO household. Code: '+invite})},false)}
      </View>:null}
-    </>:<Body muted>You're a member of this household.</Body>}
-   </Card>
+    </Card>:null}
+   </>
    :mode==='choose'?<Card>
     {action('Create household',()=>setMode('create'))}
     {action('Join with code',()=>setMode('join'),false)}
