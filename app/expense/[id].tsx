@@ -1,0 +1,8 @@
+import React from 'react';
+import {Alert,Pressable,Text,View} from 'react-native';
+import {useLocalSearchParams,useRouter} from 'expo-router';
+import {Screen} from '@/components/Screen';
+import {Body,Card,Heading} from '@/components/UI';
+import {formatMoney,useData} from '@/data';
+import {useAppTheme} from '@/theme/ThemeContext';
+export default function Detail(){const {id}=useLocalSearchParams<{id:string}>();const {expenses,remove}=useData();const {colors}=useAppTheme();const router=useRouter();const e=expenses.find(x=>x.id===id);if(!e)return <Screen><Body muted>Expense not found.</Body></Screen>;return <Screen><Heading subtitle="Expense details">{formatMoney(e.amountPaise)}</Heading><Card>{[['Category',e.category],['Date',e.date],['Type',e.scope],['Note',e.note||'—'],['Recorded by','You']].map(([label,value])=><View key={label} style={{flexDirection:'row',justifyContent:'space-between',paddingVertical:10,borderBottomWidth:1,borderColor:colors.border}}><Body muted>{label}</Body><Text style={{color:colors.text}}>{value}</Text></View>)}</Card><Pressable onPress={()=>router.push({pathname:'/expense/new',params:{id:e.id}})} style={{backgroundColor:colors.household,padding:16,borderRadius:12,alignItems:'center'}}><Text style={{color:'#fff',fontWeight:'700'}}>Edit expense</Text></Pressable><Pressable onPress={()=>Alert.alert('Delete expense?','This cannot be undone.',[{text:'Cancel',style:'cancel'},{text:'Delete',style:'destructive',onPress:()=>{remove(e.id);router.back()}}])} style={{padding:16,alignItems:'center'}}><Text style={{color:'#C54B4B'}}>Delete expense</Text></Pressable></Screen>}
