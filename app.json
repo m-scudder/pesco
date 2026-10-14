@@ -9,16 +9,22 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.pesco"
+      "bundleIdentifier": "com.anonymous.pesco",
+      "icon": "./assets/icon.png"
     },
     "android": {
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#005C4B"
+      }
     },
     "plugins": [
       "expo-router"
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "icon": "./assets/icon.png"
   }
 }
