@@ -1,35 +1,28 @@
-# PESCO — Milestone 1 Starter
+# PESCO
 
-React Native + Expo Router + TypeScript. Designed for iOS and Android.
+Cross-platform household and personal expense tracker built with Expo Router, React Native and TypeScript.
 
-## Setup (on your development machine)
+## Current status
 
-1. Install Node.js (LTS) and platform development tools.
-2. Run `npm install` from this directory.
-3. Run `npx expo install --fix` to align native dependencies with the installed Expo SDK.
-4. Run `npm run typecheck`.
-5. Run `npm start`, then `npm run ios` (requires macOS/Xcode) or `npm run android` (requires Android emulator or device).
+Local-first prototype: you can create, edit, delete, search and filter expenses, browse monthly Home summaries and Insights, and set optional budgets. Changes persist on the current device using AsyncStorage.
 
-`npm install` and builds have **not** been run in the artifact environment. If registry versions differ, `npx expo install --fix` is the canonical Expo compatibility step. No Supabase credentials are present.
+**No Supabase connection yet.** Household/Personal currently indicates local expense grouping. Real partner visibility, privacy policies, authentication, receipt uploads and synchronization are blocked until Supabase is configured. See [docs/SUPABASE-TODO.md](docs/SUPABASE-TODO.md).
 
-## Implemented in this starter
+## Run locally
 
-- Four tabs: Home, Expenses, Insights, Settings.
-- Household/Personal scope switch shared across screens.
-- Light/dark/System appearance setting (currently held in memory only).
-- Floating Add Expense button on Home and Expenses.
-- Entry-screen skeleton with left labels/right inputs.
-- Honest empty states and disabled backend behavior: tapping Save explicitly says nothing was saved.
+```bash
+npm install
+npx expo install --check
+npm run typecheck
+npx expo run:ios
+```
 
-## Deliberately not implemented
+For Android, use `npx expo run:android`.
 
-- Authentication, households, expense CRUD, Supabase configuration, budgets, search, receipt upload, persistent preferences, actual analytics.
-- Device builds, tests or publishing.
+If the dependencies have already been installed locally, retain your tested `package-lock.json` and commit it after checking that the Expo versions match. Do not commit credentials or private signing material.
 
-## Configuration
+## Development practices
 
-Copy `.env.example` to `.env` only once Milestone 2 begins. Never include a Supabase service-role key in a mobile client.
+Make small, focused GitHub commits. Do not force-push over existing work. Keep Supabase setup as a separate reviewable milestone. No real multi-user claims until database access-control tests pass.
 
-## Branding
-
-PESCO is a **working name**, pending trademark/app-store/domain clearance. Do not commit permanent platform bundle IDs before clearance.
+PESCO is a working brand pending legal/store clearance.
