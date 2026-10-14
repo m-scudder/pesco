@@ -1,6 +1,6 @@
 import React,{useMemo,useState} from 'react';
 import {useFocusEffect,useRouter} from 'expo-router';
-import {Pressable,Text,TextInput,View} from 'react-native';
+import {Alert,Pressable,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {Screen} from '@/components/Screen';
 import {AddExpenseButton} from '@/components/AddExpenseButton';
@@ -11,7 +11,7 @@ import {useAppTheme} from '@/theme/ThemeContext';
 
 export default function Home(){
  const {colors,scope}=useAppTheme();
- const {expenses,refresh,syncError,currentUserId}=useData();
+ const {expenses,refresh,syncError,currentUserId,pendingCount,remove}=useData();
  const router=useRouter();
  const [month,setMonth]=useState(monthKey(localDate()));
  const [search,setSearch]=useState('');
@@ -92,6 +92,9 @@ export default function Home(){
      </Pressable>
     </View>:null}
    </View>
+   {scope==='household'&&pendingCount>0?<Pressable onPress={()=>{void refresh()}} style={{paddingHorizontal:16,paddingVertical:9,backgroundColor:colors.secondary}}>
+    <Text style={{color:colors.text,fontSize:12}}>{pendingCount} expense{pendingCount===1?'':'s'} waiting to sync · Tap to retry</Text>
+   </Pressable>:null}
    {scope==='household'&&syncError?
     <Pressable onPress={()=>{void refresh()}} style={{paddingHorizontal:16,paddingVertical:10}}>
      <Text style={{color:'#C94F4F',fontSize:13}}>Sync failed · Tap to retry</Text>
@@ -115,7 +118,12 @@ export default function Home(){
        key={expense.id}
        accessibilityRole="button"
        accessibilityLabel={expense.category+', '+formatMoney(expense.amountPaise)}
-       onPress={()=>router.push({pathname:'/expense/[id]',params:{id:expense.id}})}
+       onPress={()=>{
+        if(expense.id.length===36&&expense.id.includes('-')&&pendingCount>0){
+         // Open the details normally for synced IDs; only pending IDs are marked below.
+        }
+        router.push({pathname:'/expense/[id]',params:{id:expense.id}});
+       }}
        style={{flexDirection:'row',alignItems:'center',paddingHorizontal:12,paddingVertical:9,gap:9,borderBottomWidth:1,borderColor:colors.border,minHeight:56}}>
        <Text numberOfLines={2} style={{width:88,color:colors.muted,fontSize:11,lineHeight:17}}>{expense.category}</Text>
        <View style={{flex:1,gap:2}}>
