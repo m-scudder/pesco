@@ -16,7 +16,7 @@ function client(){
  return supabase;
 }
 function toExpense(row:ExpenseRow):Expense{
- return {id:row.id,ownerId:row.owner_id as Expense['ownerId'],scope:row.scope,
+ return {id:row.id,ownerId:row.owner_id,scope:row.scope,
   amountPaise:Number(row.amount_paise),category:row.category,note:row.note,date:row.spent_on,
   createdAt:row.created_at,updatedAt:row.updated_at};
 }
@@ -56,7 +56,7 @@ export async function editCloudExpense(id:string,input:CloudExpenseInput){
  assertInput(input);
  const db=client();const {data,error}=await db.from('expenses')
   .update({amount_paise:input.amountPaise,category:input.category,note:input.note,spent_on:input.date})
-  .eq('id',id).eq('scope',input.scope).eq('household_id',input.householdId ?? null)
+  .eq('id',id).eq('scope',input.scope)
   .select('id,owner_id,household_id,scope,amount_paise,category,note,spent_on,created_at,updated_at').single();
  if(error)throw error;
  return toExpense(data as ExpenseRow);
