@@ -100,80 +100,93 @@ export default function Recurring(){
   {text:'Delete',style:'destructive',onPress:()=>{void Promise.resolve(run()).catch(e=>Alert.alert('Could not delete',e instanceof Error?e.message:'Try again'))}}
  ]);
  const line=()=> <View style={{height:1,backgroundColor:colors.border}}/>;
- const rowLabel={width:94,color:colors.text,fontSize:14,fontFamily:'Inter_400Regular' as const};
+ const rowLabel={width:82,color:colors.text,fontSize:14,fontFamily:'Inter_400Regular' as const};
  const pickerCard={backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1 as const,borderRadius:16,padding:16,width:'100%' as const,maxWidth:420};
 
- return <Screen modal style={{gap:12}}>
+ return <Screen modal style={{gap:10}}>
   <View style={{flexDirection:'row',padding:3,borderRadius:11,backgroundColor:colors.secondary}}>
    {(['household','personal'] as const).map(value=><Pressable key={value} accessibilityRole="button" accessibilityState={{selected:scope===value}}
     onPress={()=>{setScope(value);close()}} style={{flex:1,paddingVertical:9,borderRadius:8,alignItems:'center',backgroundColor:scope===value?colors.surface:undefined}}>
     <Text style={{fontFamily:scope===value?'Inter_700Bold':'Inter_500Medium',fontSize:13,color:scope===value?(value==='household'?colors.household:colors.personal):colors.muted}}>{value==='household'?'Household':'Personal'}</Text>
    </Pressable>)}
   </View>
-  <Body muted>{scope==='household'?'Shared monthly bills appear for both members.':'Personal bills are stored on this device.'}</Body>
+  <Text style={{color:colors.muted,fontSize:12}}>{scope==='household'?'Shared with your household':'Only visible on this device'}</Text>
   {scope==='household'&&!household?<Card><Body muted>Create or join a household to manage shared bills.</Body></Card>:null}
-  {scope==='household'?shared.map(rule=><Card key={rule.id}>
-   <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:10}}>
-    <View style={{flex:1,gap:3}}>
-     <Text style={{color:colors.text,fontSize:15,fontFamily:'Inter_600SemiBold'}}>{rule.note||rule.category}</Text>
-     <Text style={{color:colors.muted,fontSize:12}}>{rule.category} · Monthly on {rule.day_of_month}</Text>
-    </View>
-    <Text style={{color:colors.text,fontSize:15,fontFamily:'Inter_600SemiBold'}}>{formatMoney(rule.amount_paise)}</Text>
-   </View>
-   {rule.created_by===user?.id?<View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:12}}>
-    <Pressable accessibilityRole="button" onPress={()=>begin({id:rule.id,note:rule.note,category:rule.category,amountPaise:rule.amount_paise,day:rule.day_of_month,startsOn:rule.starts_on})}><Text style={{color:accent,fontSize:13}}>Edit</Text></Pressable>
-    <Switch accessibilityLabel="Recurring bill active" value={rule.active} onValueChange={value=>{void toggleHouseholdRecurring(rule.household_id,rule.id,value).then(reload).catch(e=>Alert.alert('Could not update',String(e)))}} trackColor={{false:colors.border,true:colors.household}}/>
-    <Pressable accessibilityRole="button" onPress={()=>confirmDelete(rule.note||rule.category,async()=>{await deleteHouseholdRecurring(rule.household_id,rule.id);await reload()})}><Text style={{color:'#C94F4F',fontSize:13}}>Delete</Text></Pressable>
-   </View>:<Text style={{color:colors.muted,fontSize:12}}>Added by partner</Text>}
-  </Card>):recurringRules.map(rule=><Card key={rule.id}>
-   <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:10}}>
-    <View style={{flex:1,gap:3}}>
-     <Text style={{color:colors.text,fontSize:15,fontFamily:'Inter_600SemiBold'}}>{rule.note||rule.category}</Text>
-     <Text style={{color:colors.muted,fontSize:12}}>{rule.category} · Monthly on {rule.day}</Text>
-    </View>
-    <Text style={{color:colors.text,fontSize:15,fontFamily:'Inter_600SemiBold'}}>{formatMoney(rule.amountPaise)}</Text>
-   </View>
-   <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:12}}>
-    <Pressable accessibilityRole="button" onPress={()=>begin({id:rule.id,note:rule.note,category:rule.category,amountPaise:rule.amountPaise,day:rule.day,startsOn:rule.startsOn})}><Text style={{color:accent,fontSize:13}}>Edit</Text></Pressable>
-    <Switch accessibilityLabel="Recurring bill active" value={rule.active} onValueChange={value=>setRecurringActive(rule.id,value)} trackColor={{false:colors.border,true:colors.household}}/>
-    <Pressable accessibilityRole="button" onPress={()=>confirmDelete(rule.note||rule.category,()=>deleteRecurring(rule.id))}><Text style={{color:'#C94F4F',fontSize:13}}>Delete</Text></Pressable>
-   </View>
-  </Card>)}
-  {(scope==='personal'&&recurringRules.length===0||scope==='household'&&!!household&&shared.length===0)?<View style={{padding:16,alignItems:'center'}}><Body muted>No recurring bills yet</Body></View>:null}
-  {!open&&!(scope==='household'&&!household)?<Pressable accessibilityRole="button" onPress={()=>begin()} style={{minHeight:46,justifyContent:'center',alignItems:'center',borderRadius:11,backgroundColor:accent}}>
-   <Text style={{color:'#fff',fontFamily:'Inter_600SemiBold'}}>+ Add recurring bill</Text>
+  <View style={{backgroundColor:colors.surface,borderRadius:12,borderWidth:1,borderColor:colors.border,overflow:'hidden'}}>
+   {(scope==='household'?shared:recurringRules).map((rule,index)=>{
+    const isShared=scope==='household';
+    const title=rule.note||rule.category;
+    const amountValue=isShared?(rule as HouseholdRecurringRule).amount_paise:(rule as typeof recurringRules[number]).amountPaise;
+    const day=isShared?(rule as HouseholdRecurringRule).day_of_month:(rule as typeof recurringRules[number]).day;
+    const startsOn=isShared?(rule as HouseholdRecurringRule).starts_on:(rule as typeof recurringRules[number]).startsOn;
+    const owner=!isShared||(rule as HouseholdRecurringRule).created_by===user?.id;
+    const edit=()=>begin({id:rule.id,note:rule.note,category:rule.category,amountPaise:amountValue,day,startsOn});
+    const deleteRule=()=>confirmDelete(title,async()=>{
+     if(isShared&&household){await deleteHouseholdRecurring(household.id,rule.id);await reload()}
+     else deleteRecurring(rule.id);
+    });
+    return <View key={rule.id} style={{borderBottomWidth:index===(isShared?shared.length:recurringRules.length)-1?0:1,borderColor:colors.border}}>
+     <View style={{flexDirection:'row',alignItems:'center',paddingHorizontal:12,minHeight:62,gap:11}}>
+      <Pressable accessibilityRole="button" disabled={!owner} onPress={edit} style={{flex:1,paddingVertical:10,gap:4}}>
+       <Text numberOfLines={1} style={{color:rule.active?colors.text:colors.muted,fontFamily:'Inter_600SemiBold',fontSize:14}}>{title}</Text>
+       <Text numberOfLines={1} style={{color:colors.muted,fontFamily:'Inter_400Regular',fontSize:11}}>{rule.category} · {day}{day===1?'st':day===2?'nd':day===3?'rd':'th'} monthly{!rule.active?' · Paused':''}</Text>
+      </Pressable>
+      <Text style={{color:colors.text,fontFamily:'Inter_600SemiBold',fontSize:13}}>{formatMoney(amountValue)}</Text>
+      {owner?<Switch accessibilityLabel={'Active '+title} value={rule.active}
+       onValueChange={value=>{
+        if(isShared&&household)void toggleHouseholdRecurring(household.id,rule.id,value).then(reload).catch(e=>Alert.alert('Could not update',String(e)));
+        else setRecurringActive(rule.id,value);
+       }} style={{transform:[{scaleX:0.78},{scaleY:0.78}],marginHorizontal:-5}} trackColor={{false:colors.border,true:colors.household}}/>:null}
+      {owner?<Pressable accessibilityRole="button" accessibilityLabel={'More options for '+title} onPress={()=>Alert.alert(title,'Manage this recurring bill',[
+       {text:'Edit',onPress:edit},{text:'Delete',style:'destructive',onPress:deleteRule},{text:'Cancel',style:'cancel'}
+      ])} style={{padding:6}}><Text style={{color:colors.muted,fontSize:21}}>⋯</Text></Pressable>:null}
+     </View>
+    </View>;
+   })}
+   {(scope==='personal'&&recurringRules.length===0||scope==='household'&&shared.length===0)?
+    <View style={{paddingVertical:24,alignItems:'center'}}><Text style={{color:colors.muted,fontSize:13}}>No recurring bills yet</Text></View>:null}
+  </View>
+  {!open&&!(scope==='household'&&!household)?<Pressable accessibilityRole="button" onPress={()=>begin()} style={{minHeight:38,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:5}}>
+   <Text style={{color:accent,fontFamily:'Inter_600SemiBold',fontSize:13}}>＋ Add recurring bill</Text>
   </Pressable>:null}
-  {open?<View style={{gap:10}}>
-   <Text style={{fontFamily:'Inter_600SemiBold',color:colors.text,fontSize:15}}>{editingId?'Edit recurring bill':'New recurring bill'}</Text>
-   <Card>
-    <Pressable accessibilityRole="button" accessibilityLabel="Choose first due date" onPress={chooseDate} style={{flexDirection:'row',alignItems:'center',minHeight:44}}>
-     <Text style={rowLabel}>First due</Text><Text style={{flex:1,color:colors.text,fontSize:15}}>{showDate(firstDate)}  ▾</Text>
-    </Pressable>
-    {line()}
-    <View style={{flexDirection:'row',alignItems:'center',minHeight:44}}>
-     <Text style={rowLabel}>Amount</Text>
-     <Text style={{color:colors.muted,fontSize:16,marginRight:4}}>₹</Text>
-     <TextInput accessibilityLabel="Monthly amount" value={amount} onChangeText={setAmount} keyboardType="decimal-pad"
-      placeholder="0.00" placeholderTextColor={colors.muted} style={{flex:1,color:colors.text,fontSize:18,paddingVertical:8}}/>
+  <Modal visible={open} transparent animationType="slide" presentationStyle="overFullScreen" onRequestClose={close}>
+   <View style={{flex:1,justifyContent:'flex-end',backgroundColor:'rgba(0,0,0,0.38)'}}>
+    <Pressable onPress={close} accessibilityLabel="Dismiss bill editor" style={{position:'absolute',top:0,left:0,right:0,bottom:0}}/>
+    <View style={{backgroundColor:colors.background,borderTopLeftRadius:20,borderTopRightRadius:20,paddingHorizontal:18,paddingTop:12,paddingBottom:38,gap:14}}>
+     <View style={{alignItems:'center'}}><View style={{width:34,height:4,borderRadius:2,backgroundColor:colors.border}}/></View>
+     <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+      <Pressable accessibilityRole="button" onPress={close} style={{paddingVertical:6}}><Text style={{color:colors.muted,fontSize:14}}>Cancel</Text></Pressable>
+      <Text style={{color:colors.text,fontFamily:'Inter_600SemiBold',fontSize:15}}>{editingId?'Edit bill':'New bill'}</Text>
+      <Pressable accessibilityRole="button" disabled={busy} onPress={()=>{void save()}} style={{paddingVertical:6}}><Text style={{color:accent,fontFamily:'Inter_700Bold',fontSize:14}}>{busy?'Saving…':'Save'}</Text></Pressable>
+     </View>
+     <View style={{backgroundColor:colors.surface,borderRadius:12,borderWidth:1,borderColor:colors.border,paddingHorizontal:13}}>
+      <Pressable accessibilityRole="button" onPress={chooseDate} style={{minHeight:49,flexDirection:'row',alignItems:'center'}}>
+       <Text style={{...rowLabel,fontSize:13}}>First due</Text>
+       <Text style={{flex:1,color:colors.text,fontSize:14}}>{showDate(firstDate)}</Text>
+       <Text style={{color:colors.muted,fontSize:17}}>›</Text>
+      </Pressable>
+      {line()}
+      <View style={{minHeight:49,flexDirection:'row',alignItems:'center'}}>
+       <Text style={{...rowLabel,fontSize:13}}>Amount</Text>
+       <Text style={{color:colors.muted,fontSize:14,marginRight:3}}>₹</Text>
+       <TextInput accessibilityLabel="Monthly amount" keyboardType="decimal-pad" value={amount} onChangeText={setAmount} placeholder="0.00" placeholderTextColor={colors.muted} style={{flex:1,color:colors.text,fontSize:15,paddingVertical:7}}/>
+      </View>
+      {line()}
+      <Pressable accessibilityRole="button" onPress={()=>{Keyboard.dismiss();setCategoryOpen(true)}} style={{minHeight:49,flexDirection:'row',alignItems:'center'}}>
+       <Text style={{...rowLabel,fontSize:13}}>Category</Text>
+       <Text numberOfLines={1} style={{flex:1,color:colors.text,fontSize:14}}>{category}</Text>
+       <Text style={{color:colors.muted,fontSize:17}}>›</Text>
+      </Pressable>
+      {line()}
+      <View style={{minHeight:49,flexDirection:'row',alignItems:'center'}}>
+       <Text style={{...rowLabel,fontSize:13}}>Note</Text>
+       <TextInput accessibilityLabel="Bill description" value={note} onChangeText={setNote} maxLength={500} placeholder="Optional" placeholderTextColor={colors.muted} style={{flex:1,color:colors.text,fontSize:14,paddingVertical:7}}/>
+      </View>
+     </View>
+     <Text style={{color:colors.muted,fontSize:11,lineHeight:16}}>Repeats monthly on the selected day. Short months use their last day.</Text>
     </View>
-    {line()}
-    <Pressable accessibilityRole="button" accessibilityLabel="Choose category" onPress={()=>{Keyboard.dismiss();setCategoryOpen(true)}} style={{flexDirection:'row',alignItems:'center',minHeight:44}}>
-     <Text style={rowLabel}>Category</Text>
-     <Text style={{flex:1,color:colors.text,fontSize:15}}>{category||'Select category'}  ▾</Text>
-    </Pressable>
-    {line()}
-    <View style={{flexDirection:'row',alignItems:'center',minHeight:44}}>
-     <Text style={rowLabel}>Note</Text>
-     <TextInput accessibilityLabel="Bill description" value={note} onChangeText={setNote} maxLength={500} placeholder="Optional" placeholderTextColor={colors.muted}
-      style={{flex:1,color:colors.text,fontSize:15,paddingVertical:8}}/>
-    </View>
-   </Card>
-   <Body muted>Repeats monthly on day {Number(firstDate.slice(8,10))}. For shorter months, the last day is used. Older due dates are generated when synced.</Body>
-   <Pressable accessibilityRole="button" disabled={busy} onPress={()=>{void save()}} style={{minHeight:46,borderRadius:10,alignItems:'center',justifyContent:'center',backgroundColor:accent,opacity:busy?0.6:1}}>
-    <Text style={{color:'#fff',fontFamily:'Inter_700Bold'}}>{busy?'Saving…':editingId?'Save changes':'Create recurring bill'}</Text>
-   </Pressable>
-   <Pressable accessibilityRole="button" onPress={close} style={{alignItems:'center',padding:9}}><Text style={{color:colors.muted,fontSize:14}}>Cancel</Text></Pressable>
-  </View>:null}
+   </View>
+  </Modal>
   {error?<Pressable accessibilityRole="button" onPress={()=>{void reload()}}><Text style={{color:'#C94F4F',fontSize:13}}>Could not sync recurring bills · Retry</Text></Pressable>:null}
   <Modal visible={dateOpen} transparent animationType="fade" presentationStyle="overFullScreen" onRequestClose={()=>setDateOpen(false)}>
    <View style={{flex:1,justifyContent:'center',paddingHorizontal:24,backgroundColor:'rgba(0,0,0,0.55)'}}>
