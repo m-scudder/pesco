@@ -1,7 +1,7 @@
 import React,{useCallback,useEffect,useState} from 'react';
 import {ActivityIndicator,Alert,Pressable,Share,Text,TextInput,View} from 'react-native';
 import {Screen} from '@/components/Screen';
-import {Body,Card,Heading} from '@/components/UI';
+import {Body,Card} from '@/components/UI';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {useAuth} from '@/lib/AuthContext';
 import {useData} from '@/data';
@@ -44,12 +44,12 @@ export default function HouseholdSetup(){
   </Pressable>
  );
  const input={borderColor:colors.border,borderWidth:1 as const,borderRadius:9,paddingHorizontal:12,height:44,color:colors.text,fontSize:15};
- if(!configured)return <Screen><Heading>Household</Heading><Card><Body muted>Add the Supabase URL and publishable key to .env.</Body></Card></Screen>;
- if(!ready||loading)return <Screen><Heading>Household</Heading><ActivityIndicator/></Screen>;
- if(!user)return <Screen><Heading>Household</Heading><Card><Body muted>{authError||'Connection unavailable'}</Body>{action('Retry',()=>{void retry()})}</Card></Screen>;
+ if(!configured)return <Screen modal style={{gap:12}}><Card><Body muted>Add the Supabase URL and publishable key to .env.</Body></Card></Screen>;
+ if(!ready||loading)return <Screen modal style={{gap:12}}><ActivityIndicator/></Screen>;
+ if(!user)return <Screen modal style={{gap:12}}><Card><Body muted>{authError||'Connection unavailable'}</Body>{action('Retry',()=>{void retry()})}</Card></Screen>;
 
- return <Screen>
-  <Heading subtitle="Share expenses with one partner">Household</Heading>
+ return <Screen modal style={{gap:12}}>
+  <Text style={{color:colors.muted,fontSize:13,marginBottom:2}}>Share expenses with one partner</Text>
   {household?
    <Card>
     <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
