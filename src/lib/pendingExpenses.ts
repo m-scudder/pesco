@@ -15,16 +15,20 @@ export async function loadPending(userId:string):Promise<PendingExpense[]>{
  return Array.isArray(parsed)?parsed.filter((v):v is PendingExpense=>
   !!v&&typeof v.id==='string'&&v.userId===userId&&v.draft?.scope==='household'&&typeof v.draft?.householdId==='string'):[];
 }
+let queueLock:Promise<unknown>=Promise.resolve();
+function locked<T>(run:()=>Promise<T>):Promise<T>{const operation=queueLock.then(run,run);queueLock=operation.catch(()=>{});return operation}
 export async function queueHouseholdExpense(userId:string,draft:CloudExpenseInput){
  const entry:PendingExpense={id:uuid(),userId,draft,queuedAt:new Date().toISOString()};
- const existing=await loadPending(userId);
- await AsyncStorage.setItem(key(userId),JSON.stringify([...existing,entry]));
- return entry;
+ return locked(async()=>{
+  const existing=await loadPending(userId);
+  await AsyncStorage.setItem(key(userId),JSON.stringify([...existing,entry]));
+  return entry;
+ });
 }
 export async function savePending(userId:string,pending:PendingExpense[]){
  await AsyncStorage.setItem(key(userId),JSON.stringify(pending));
 }
-export async function flushPending(userId:string,householdId:string){
+export async function flushPending(userId:string,householdId:string){return locked(async()=>{
  const pending=await loadPending(userId);
  const retained:PendingExpense[]=[];
  let sent=0;
@@ -43,4 +47,4 @@ export async function flushPending(userId:string,householdId:string){
  }
  await savePending(userId,retained);
  return {remaining:retained.length,sent,errorMessage};
-}
+});}
