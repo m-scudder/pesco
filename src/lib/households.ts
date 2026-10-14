@@ -34,3 +34,21 @@ export async function joinWithKey(key:string):Promise<string>{
  if(error)throw error;
  return data as string;
 }
+
+export type HouseholdMember={user_id:string;display_name:string;joined_at:string;is_owner:boolean};
+export async function getHouseholdMembers(householdId:string):Promise<HouseholdMember[]>{
+ await requireUser();
+ const {data,error}=await db().rpc('household_roster',{target_household:householdId});
+ if(error)throw error;
+ return (data??[]) as HouseholdMember[];
+}
+export async function renameHousehold(householdId:string,newName:string):Promise<void>{
+ await requireUser();
+ const {error}=await db().rpc('rename_household',{target_household:householdId,new_name:newName.trim()});
+ if(error)throw error;
+}
+export async function removeHouseholdPartner(householdId:string,partnerId:string):Promise<void>{
+ await requireUser();
+ const {error}=await db().rpc('remove_household_partner',{target_household:householdId,partner_id:partnerId});
+ if(error)throw error;
+}
