@@ -125,7 +125,7 @@ export default function RecurringEditor(){
      <TextInput accessibilityLabel="Bill description" value={note} onChangeText={setNote} maxLength={500} placeholder="Optional" placeholderTextColor={colors.muted}
       style={{flex:1,color:colors.text,fontSize:14,paddingVertical:7}}/>
     </View>
-   </Card>
+   </View>
    <Text style={{color:colors.muted,fontSize:11,lineHeight:16}}>Repeats monthly on the selected date. Short months use the last day.</Text>
    <Pressable accessibilityRole="button" disabled={busy} onPress={()=>{void save()}} style={{backgroundColor:accent,padding:11,borderRadius:9,alignItems:'center',opacity:busy?0.6:1}}>
     <Text style={{color:'#fff',fontFamily:'Inter_600SemiBold',fontSize:13}}>{busy?'Saving…':id?'Save changes':'Save recurring bill'}</Text>
