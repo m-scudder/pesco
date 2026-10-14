@@ -1,5 +1,16 @@
 # Supabase integration — implementation status
 
+## Anonymous onboarding and joining keys (2026-10-14)
+
+- [x] Database: `household_invitations`, single-use 24h cryptographic 80-bit joining keys, one household per user, two-member cap with household row locks.
+- [x] Database: creator-only `issue_household_invite` and atomic `join_household_with_key` RPCs. Only SHA-256 hashes are stored; raw key returned once.
+- [x] Mobile: anonymous session initialization, create/join screen via **Settings → Household and invitations**, and OS share sheet for issued keys.
+- [ ] **User action:** Enable **Anonymous Sign-Ins** in Supabase Dashboard → Authentication → Providers → Anonymous Sign-Ins.
+- [ ] **User action:** Configure `.env` with `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` (publishable key), then restart Metro.
+- [ ] End-to-end verify on two independent devices and confirm concurrent key redeems reject the second member.
+- [ ] **Still pending:** Cloud expense data provider, migration consent and realtime synchronization. Joining a household does NOT YET synchronize existing local transactions.
+- [ ] Anonymous account recovery/upgrade before a production release. Reinstallation may lose the account permanently.
+
 ## Deployed to PESCO project
 
 Project ref: `kwwpswswavcjiplwsyde` (US East). Applied migrations are tracked in Supabase under `initial_schema` and `restrict_function_execution`. As of 2026-10-14 all five public application tables have RLS enabled and contain zero rows. Anonymous EXECUTE was revoked from privileged RPCs; `authenticated` can still execute `create_household` and `is_household_member` by design. Supabase security advisor still flags these two security-definer functions because they are accessible to authenticated users; verify their authorization logic with dedicated test users before production.
