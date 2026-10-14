@@ -1,6 +1,8 @@
 import React,{useMemo,useState} from 'react';
-import {Alert,Platform,Pressable,Share,Text,TextInput,View} from 'react-native';
+import {Alert,Platform,Pressable,Text,TextInput,View} from 'react-native';
 import DateTimePicker,{DateTimePickerAndroid} from '@react-native-community/datetimepicker';
+import {File,Paths} from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import {Screen} from '@/components/Screen';
 import {ScopeSwitch} from '@/components/UI';
 import {useAppTheme} from '@/theme/ThemeContext';
@@ -34,7 +36,13 @@ export default function History(){
  const share=async()=>{
   if(!exportRecords.length){Alert.alert('Nothing to export','No matching non-demo expenses in this date range.');return}
   setSharing(true);
-  try{await Share.share({title:'PESCO expenses CSV',message:expensesCsv(exportRecords)})}
+  try{
+   if(!await Sharing.isAvailableAsync())throw new Error('File sharing is unavailable on this device');
+   const file=new File(Paths.cache,'PESCO-'+scope+'-'+from+'-to-'+to+'.csv');
+   file.create({overwrite:true});
+   file.write(expensesCsv(exportRecords));
+   await Sharing.shareAsync(file.uri,{mimeType:'text/csv',UTI:'public.comma-separated-values',dialogTitle:'Export PESCO CSV'});
+  }
   catch(e){Alert.alert('Could not share CSV',e instanceof Error?e.message:'Try again')}
   finally{setSharing(false)}
  };
@@ -83,6 +91,6 @@ export default function History(){
    style={{borderRadius:9,padding:12,alignItems:'center',backgroundColor:colors.household,opacity:sharing||!exportRecords.length||from>to?0.45:1}}>
    <Text style={{color:'#fff',fontFamily:'Inter_600SemiBold',fontSize:13}}>{sharing?'Preparing…':'Export CSV'}</Text>
   </Pressable>
-  <Text style={{fontSize:11,color:colors.muted}}>The share sheet sends CSV-formatted text, not an attached file. No export is uploaded by PESCO.</Text>
+  <Text style={{fontSize:11,color:colors.muted}}>Exports a .csv file to your device's share sheet. No export is uploaded by PESCO.</Text>
  </Screen>;
 }
