@@ -80,15 +80,19 @@ export async function addCloudExpense(input:CloudExpenseInput,requestId?:string)
 }
 export async function editCloudExpense(id:string,input:CloudExpenseInput){
  assertInput(input);
- const db=client();const {data,error}=await db.from('expenses')
+ const db=client();const {data:{user},error:authError}=await db.auth.getUser();
+ if(authError||!user)throw new Error('Sign in required');
+ const {data,error}=await db.from('expenses')
   .update({amount_paise:input.amountPaise,category:input.category,note:input.note,spent_on:input.date})
-  .eq('id',id).eq('scope',input.scope)
+  .eq('id',id).eq('scope',input.scope).eq('owner_id',user.id)
   .select('id,owner_id,household_id,scope,amount_paise,category,note,spent_on,created_at,updated_at').single();
  if(error)throw error;
  return toExpense(data as ExpenseRow);
 }
 export async function deleteCloudExpense(id:string){
- const db=client();const {data,error}=await db.from('expenses').delete().eq('id',id).select('id').single();
+ const db=client();const {data:{user},error:authError}=await db.auth.getUser();
+ if(authError||!user)throw new Error('Sign in required');
+ const {data,error}=await db.from('expenses').delete().eq('id',id).eq('owner_id',user.id).select('id').single();
  if(error)throw error;
  if(!data)throw new Error('Expense not found');
 }
