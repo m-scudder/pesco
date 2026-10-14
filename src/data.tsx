@@ -79,15 +79,28 @@ export function DataProvider({children}:{children:React.ReactNode}){
   void refresh();
   const interval=setInterval(()=>{void refresh()},15000);
   const app=AppState.addEventListener('change',s=>{if(s==='active')void refresh()});
-  const channel=supabase?.channel('pesco-expense-refresh-'+user.id)
-   .on('postgres_changes',{event:'*',schema:'public',table:'expenses'},()=>{void refresh()})
-   .subscribe();
   return()=>{
    clearInterval(interval);app.remove();
-   if(channel&&supabase)void supabase.removeChannel(channel);
    requested.current++;
   };
  },[user?.id,refresh]);
+
+ // Subscribe after membership is known. Re-subscribe if the household changes.
+ // Realtime events invalidate the household feed, which is fetched under RLS.
+ useEffect(()=>{
+  if(!supabase||!user||!household?.id)return;
+  const channel=supabase.channel('household-expenses-'+household.id)
+   .on('postgres_changes',{
+    event:'*',schema:'public',table:'expenses',
+    filter:'household_id=eq.'+household.id
+   },()=>{void refresh()})
+   .subscribe(status=>{
+    if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
+     console.warn('Household Realtime disconnected:',status);
+    }
+   });
+  return()=>{void supabase.removeChannel(channel)};
+ },[user?.id,household?.id,refresh]);
 
  const expenses=useMemo(()=>[
   ...localExpenses.filter(e=>e.scope==='personal'||(!household&&e.scope==='household')),
