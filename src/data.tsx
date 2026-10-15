@@ -82,6 +82,21 @@ export function DataProvider({children}:{children:React.ReactNode}){
   return()=>{active=false};
  },[user?.id]);
  useEffect(()=>{
+  let active=true;
+  if(!user){setCloudPersonal([]);return}
+  AsyncStorage.getItem('pesco:personal-cache:'+user.id).then(raw=>{
+   if(!active||!raw)return;
+   const parsed:unknown=JSON.parse(raw);
+   if(Array.isArray(parsed)){
+    const safe=parsed.filter((item):item is Expense=>
+     item?.scope==='personal'&&item?.ownerId===user.id&&typeof item.id==='string');
+    setCloudPersonal(previous=>previous.length?previous:safe);
+   }
+  }).catch(error=>console.warn('Could not restore private expense cache',error));
+  return()=>{active=false};
+ },[user?.id]);
+
+ useEffect(()=>{
   let live=true;
   if(!user){setPending([]);setMutations([]);return}
   const mutationLoadEpoch=mutationEpoch.current;
@@ -202,6 +217,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
     }finally{personalImportBusy.current=false}
    }
    const personalRows=await fetchAllPersonalExpenses(user.id);
+   await AsyncStorage.setItem('pesco:personal-cache:'+user.id,JSON.stringify(personalRows)).catch(e=>console.warn('Personal cache write failed',e));
    try{await AsyncStorage.setItem('pesco:household-cache:'+user.id,JSON.stringify({household:membership,expenses:rows}))}
    catch(e){console.warn('Could not update offline household cache',e)}
    if(request===requested.current){
