@@ -1,6 +1,7 @@
 import React from 'react';
 import {Pressable,Text,View} from 'react-native';
 import Svg,{Path} from 'react-native-svg';
+import {useAppTheme} from '@/theme/ThemeContext';
 
 // Google's multicolor G (not the single-color icon-font approximation).
 function GoogleMark(){
@@ -12,9 +13,11 @@ function GoogleMark(){
  </Svg>;
 }
 export function GoogleSignInButton({onPress,disabled=false,loading=false}:{onPress:()=>void;disabled?:boolean;loading?:boolean}){
+ const {resolved}=useAppTheme();
+ const dark=resolved==='dark';
  return <Pressable accessibilityRole="button" accessibilityLabel="Continue with Google" disabled={disabled||loading} onPress={onPress}
-  style={{height:48,width:'100%',maxWidth:360,alignSelf:'center',backgroundColor:'#FFFFFF',borderWidth:1,borderColor:'#747775',borderRadius:4,flexDirection:'row',alignItems:'center',justifyContent:'center',opacity:disabled||loading?0.55:1}}>
+  style={{height:48,width:'100%',maxWidth:360,alignSelf:'center',backgroundColor:dark?'#131314':'#FFFFFF',borderWidth:1,borderColor:dark?'#8E918F':'#747775',borderRadius:4,flexDirection:'row',alignItems:'center',justifyContent:'center',opacity:disabled||loading?0.55:1}}>
   <View style={{position:'absolute',left:14,justifyContent:'center'}}><GoogleMark/></View>
-  <Text style={{color:'#1F1F1F',fontSize:14,fontFamily:'Inter_500Medium'}}>{loading?'Connecting…':'Continue with Google'}</Text>
+  <Text style={{color:dark?'#E3E3E3':'#1F1F1F',fontSize:14,fontFamily:'Inter_500Medium'}}>{loading?'Connecting…':'Continue with Google'}</Text>
  </Pressable>;
 }
