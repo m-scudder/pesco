@@ -1,5 +1,5 @@
 import React,{useEffect,useState} from 'react';
-import {ActivityIndicator,Image,Pressable,Text,TextInput,View} from 'react-native';
+import {ActivityIndicator,Image,Platform,Pressable,Text,TextInput,View} from 'react-native';
 import {useRouter} from 'expo-router';
 import {Screen} from '@/components/Screen';
 import {Card,Heading,Body} from '@/components/UI';
@@ -8,7 +8,7 @@ import {useData} from '@/data';
 import {useOnboarding} from '@/lib/OnboardingContext';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {createHousehold,getMyHousehold,joinWithKey} from '@/lib/households';
-import {googleAuth} from '@/lib/googleAuth';
+import {googleAuth,appleAuth} from '@/lib/googleAuth';
 import {GoogleSignInButton} from '@/components/GoogleSignInButton';
 
 const VALID_CODE=/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
@@ -26,7 +26,7 @@ export default function Onboarding(){
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState<string|null>(null);
  const [signingIn,setSigningIn]=useState(false);
- const authenticated=!!user&&!user.is_anonymous&&!!user.identities?.some(i=>i.provider==='google');
+ const authenticated=!!user&&!user.is_anonymous&&!!user.identities?.some(i=>i.provider==='google'||i.provider==='apple');
  useEffect(()=>{if(!authenticated)return;let active=true;
   void getMyHousehold().then(existing=>{if(active&&existing)void finish().then(()=>router.replace('/(tabs)'))}).catch(()=>{});
   return()=>{active=false};
@@ -62,6 +62,12 @@ export default function Onboarding(){
     catch(e){setError(e instanceof Error?e.message:'Google sign-in failed')}
     finally{setSigningIn(false)}
    })()}}/>
+   {Platform.OS==='ios'?<Pressable accessibilityRole="button" accessibilityLabel="Continue with Apple" disabled={signingIn||!configured||!ready}
+    onPress={()=>{void (async()=>{setSigningIn(true);setError(null);try{await appleAuth(user?'link':'sign-in')}catch(e){setError(e instanceof Error?e.message:'Apple sign-in failed')}finally{setSigningIn(false)}})()}}
+    style={{height:52,width:'100%',backgroundColor:colors.text,borderRadius:5,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,opacity:signingIn?0.55:1}}>
+    <Text style={{color:colors.background,fontSize:19,fontWeight:'600'}}>●</Text>
+    <Text style={{color:colors.background,fontFamily:'Inter_600SemiBold',fontSize:14}}>Continue with Apple</Text>
+   </Pressable>:null}
    {!configured?<Text style={{color:'#C94F4F',textAlign:'center'}}>Cloud authentication is not configured.</Text>:null}
   </View>:mode==='choose'?<Card>
    <Text style={{fontSize:14,fontFamily:'Inter_600SemiBold',color:colors.text,textAlign:'center',marginBottom:4}}>Set up your household</Text>
