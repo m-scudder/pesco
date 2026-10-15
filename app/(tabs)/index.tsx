@@ -91,7 +91,7 @@ export default function Home(){
      </View>:null}
      <View style={{flexDirection:'row',gap:8}}>
       {[{label:'Min ₹',value:minAmount,set:setMinAmount},{label:'Max ₹',value:maxAmount,set:setMaxAmount}].map(item=><TextInput key={item.label}
-       accessibilityLabel={item.label} value={item.value} onChangeText={item.set} keyboardType="decimal-pad" placeholder={item.label} placeholderTextColor={colors.muted}
+       accessibilityLabel={item.label} value={item.value} onChangeText={value=>item.set(value.replace(/[^0-9]/g,""))} keyboardType="number-pad" placeholder={item.label} placeholderTextColor={colors.muted}
        style={{flex:1,height:40,borderRadius:9,borderWidth:1,borderColor:colors.border,paddingHorizontal:10,color:colors.text,backgroundColor:colors.surface}}/>)}
      </View>
      <Pressable accessibilityRole="button" onPress={()=>{setSearch('');setCategoryFilter('All');setContributor('all');setMinAmount('');setMaxAmount('')}}>
