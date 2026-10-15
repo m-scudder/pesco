@@ -1,5 +1,5 @@
 import React,{useEffect,useMemo,useState} from 'react';
-import {useFocusEffect,useRouter} from 'expo-router';
+import {useRouter} from 'expo-router';
 import {Alert,Pressable,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {Screen} from '@/components/Screen';
@@ -23,7 +23,6 @@ export default function Home(){
  const [visibleCount,setVisibleCount]=useState(60);
  useEffect(()=>{setVisibleCount(60)},[scope,month,search,categoryFilter,contributor,minAmount,maxAmount]);
 
- useFocusEffect(React.useCallback(()=>{void refresh()},[refresh]));
  const options=useMemo(()=>['All',...Array.from(new Set(expenses.filter(e=>e.scope===scope).map(e=>e.category))).sort()], [expenses,scope]);
  const filtered=useMemo(()=>{
   const query=search.trim().toLocaleLowerCase();
