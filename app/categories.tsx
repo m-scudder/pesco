@@ -11,7 +11,7 @@ type ListedCategory=Category&{origin:Scope};
 export default function Categories(){
  const {colors}=useAppTheme();
  const {household:activeHousehold}=useData();
- const [scope,setScope]=useState<Scope>('household');
+ const [scope,setScope]=useState<Scope>(activeHousehold?'household':'personal');
  const {household,personal,loading,error,refresh,create,rename,remove}=useCategories();
  const [editing,setEditing]=useState<ListedCategory|null>(null);
  const [draft,setDraft]=useState('');
@@ -20,6 +20,7 @@ export default function Categories(){
  const list=useMemo(()=> (scope==='household'?household:personal)
   .map(item=>({...item,origin:scope} as ListedCategory)).sort((a,b)=>a.name.localeCompare(b.name)),[scope,household,personal]);
  useEffect(()=>{void refresh()},[refresh]);
+ useEffect(()=>{if(!activeHousehold&&scope==='household')setScope('personal')},[activeHousehold,scope]);
  const cancel=()=>{setEditing(null);setCreating(false);setDraft('')};
  const save=async()=>{
   if(busy)return;
@@ -55,12 +56,12 @@ export default function Categories(){
   {button('Cancel',cancel,true)}
  </View>;
  return <Screen modal style={{gap:12}}>
-  <View style={{flexDirection:'row',padding:3,borderRadius:10,backgroundColor:colors.secondary}}>
+  {activeHousehold?<View style={{flexDirection:'row',padding:3,borderRadius:10,backgroundColor:colors.secondary}}> 
    {(['household','personal'] as const).map(value=><Pressable key={value} accessibilityRole="button" accessibilityState={{selected:scope===value}} onPress={()=>changeScope(value)}
     style={{flex:1,alignItems:'center',justifyContent:'center',minHeight:36,borderRadius:8,backgroundColor:scope===value?colors.surface:undefined}}>
     <Text style={{fontFamily:scope===value?'Inter_600SemiBold':'Inter_400Regular',fontSize:13,color:scope===value?colors.text:colors.muted}}>{value==='household'?'Household':'Personal'}</Text>
    </Pressable>)}
-  </View>
+  </View>:null}
   <Text style={{color:colors.muted,fontSize:12}}>{scope==='household'?'Categories created here sync with your partner.':'Personal categories stay on this device.'}</Text>
   {scope==='household'&&!activeHousehold?<Body muted>Join or create a household to manage shared categories.</Body>:null}
   <View style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:12,paddingHorizontal:12}}>

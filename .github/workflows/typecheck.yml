@@ -6,6 +6,7 @@ on:
     branches:
       - feat/household-first-onboarding
       - feat/phase3-reliability-polish
+      - feat/phase4-production-readiness
       - main
 
 jobs:
@@ -23,3 +24,5 @@ jobs:
         run: npm ci
       - name: Check TypeScript
         run: npm run typecheck
+      - name: Unit tests
+        run: npm test

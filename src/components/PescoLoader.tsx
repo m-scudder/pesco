@@ -1,14 +1,14 @@
 import React,{useEffect,useRef} from 'react';
 import {Animated,Easing,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
-import {useColorScheme} from 'react-native';
+import {useAppTheme} from '@/theme/ThemeContext';
 
 /** Lightweight branded loading view; starts immediately and stops on unmount. */
 export function PescoLoader({message='Getting things ready…'}:{message?:string}){
- const dark=useColorScheme()==='dark';
- const bg=dark?'#10151C':'#F7F8FA';
- const text=dark?'#E8EDF3':'#17202C';
- const muted=dark?'#A2ADB9':'#66717D';
+ const {colors}=useAppTheme();
+ const bg=colors.background;
+ const text=colors.text;
+ const muted=colors.muted;
  const bounce=useRef(new Animated.Value(0)).current;
  const fade=useRef(new Animated.Value(0.35)).current;
  useEffect(()=>{

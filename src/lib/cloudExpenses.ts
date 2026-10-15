@@ -118,3 +118,43 @@ export async function deleteCloudExpense(id:string,expectedUpdatedAt?:string){
   if(existing.data)throw new Error('Conflict: this expense changed on another device. Review and discard the pending deletion before trying again.');
  }
 }
+
+/** Private personal expenses; ownership is enforced by Supabase RLS. */
+export async function fetchAllPersonalExpenses(userId:string):Promise<Expense[]>{
+ const db=client();
+ const all:Expense[]=[];
+ const size=200;
+ for(let offset=0;;offset+=size){
+  const {data,error}=await db.from('expenses')
+   .select('id,owner_id,household_id,scope,amount_paise,category,note,spent_on,created_at,updated_at')
+   .eq('scope','personal').eq('owner_id',userId)
+   .order('spent_on',{ascending:false}).order('created_at',{ascending:false}).order('id',{ascending:false})
+   .range(offset,offset+size-1);
+  if(error)throw error;
+  const rows=(data??[]) as ExpenseRow[];
+  all.push(...rows.map(toExpense));
+  if(rows.length<size)break;
+ }
+ return all;
+}
+
+export async function importPersonalExpense(entry:Expense){
+ const db=client();
+ const {data:{user},error:authError}=await db.auth.getUser();
+ if(authError||!user)throw new Error('Sign in required');
+ if(entry.scope!=='personal')throw new Error('Only personal expenses can be imported');
+ const input={
+  owner_id:user.id,scope:'personal',household_id:null,
+  client_key:entry.id,amount_paise:entry.amountPaise,category:entry.category,
+  note:entry.note,spent_on:entry.date
+ };
+ const {data,error}=await db.from('expenses').upsert(input,{onConflict:'owner_id,client_key',ignoreDuplicates:true})
+  .select('id').maybeSingle();
+ if(error)throw error;
+ // A conflict can return no row: confirm the matching record exists before removing local data.
+ if(!data){
+  const existing=await db.from('expenses').select('id').eq('owner_id',user.id)
+   .eq('scope','personal').eq('client_key',entry.id).maybeSingle();
+  if(existing.error||!existing.data)throw existing.error??new Error('Cloud import was not confirmed');
+ }
+}

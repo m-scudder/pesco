@@ -1,5 +1,6 @@
 import React,{useMemo,useState} from 'react';
 import {Pressable,Text,View} from 'react-native';
+import {Ionicons} from '@expo/vector-icons';
 import {useFocusEffect,useRouter} from 'expo-router';
 import {Screen} from '@/components/Screen';
 import {Body,Card} from '@/components/UI';
@@ -12,7 +13,7 @@ import {useAppTheme} from '@/theme/ThemeContext';
 export default function House(){
  const router=useRouter();
  const {colors}=useAppTheme();
- const {expenses,budgets,refresh,syncError,demoEnabled}=useData();
+ const {expenses,budgets,household,refresh,syncError,demoEnabled}=useData();
  const [month,setMonth]=useState(monthKey(localDate()));
  useFocusEffect(React.useCallback(()=>{void refresh()},[refresh]));
  const {spent,prior,difference,percentChange,selected,monthSeries,categories}=useMemo(
@@ -24,6 +25,18 @@ export default function House(){
  const {items:categoryLimits}=useCategoryBudgets('household');
  const accent=colors.household;
  const maxMonth=Math.max(1,...monthSeries.map(m=>m.amount));
+ if(!household)return <View style={{flex:1,backgroundColor:colors.background,alignItems:'center',justifyContent:'center',paddingHorizontal:24}}>
+  <View style={{alignItems:'center',gap:14,width:'100%',maxWidth:360}}>
+   <View style={{width:64,height:64,borderRadius:18,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'}}>
+    <Ionicons name="home-outline" size={30} color={colors.household}/>
+   </View>
+   <Text style={{fontFamily:'PlusJakartaSans_700Bold',fontSize:19,color:colors.text,textAlign:'center'}}>Your household starts here</Text>
+   <Text style={{fontFamily:'Inter_400Regular',fontSize:14,lineHeight:21,color:colors.muted,textAlign:'center'}}>Join a household or create your own.</Text>
+   <Pressable accessibilityRole="button" onPress={()=>router.push('/household')} style={{marginTop:8,minHeight:46,width:'100%',backgroundColor:colors.household,borderRadius:10,alignItems:'center',justifyContent:'center'}}>
+    <Text style={{fontFamily:'Inter_600SemiBold',fontSize:14,color:'#FFFFFF'}}>Create or join household</Text>
+   </Pressable>
+  </View>
+ </View>;
  return <Screen style={{gap:12}}>
   <MonthPicker month={month} onChange={setMonth}/>
   {demoEnabled?<Text style={{color:colors.muted,fontSize:11,fontFamily:'Inter_500Medium'}}>DEMO DATA · Includes read-only sample expenses</Text>:null}

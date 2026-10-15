@@ -9,8 +9,9 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.pesco",
-      "icon": "./assets/icon.png"
+      "bundleIdentifier": "com.mayankagarwal.pesco",
+      "icon": "./assets/icon.png",
+      "usesAppleSignIn": true
     },
     "android": {
       "edgeToEdgeEnabled": true,
@@ -20,11 +21,18 @@
       }
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true
     },
-    "icon": "./assets/icon.png"
+    "icon": "./assets/icon.png",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "dffcc6f7-6a84-40e6-b3b2-87e14a999ce4"
+      }
+    }
   }
 }

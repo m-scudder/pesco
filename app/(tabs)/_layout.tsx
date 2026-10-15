@@ -10,10 +10,10 @@ import { localDate } from '@/data';
 export default function TabsLayout() {
   const { colors, scope } = useAppTheme();
   const {ready,complete}=useOnboarding();
-  const {ready:authReady}=useAuth();
+  const {ready:authReady,user}=useAuth();
   const {loaded}=useData();
   if(!ready||!authReady||(complete&&!loaded))return <PescoLoader message="Gathering your expenses…"/>;
-  if(!complete)return <Redirect href="/onboarding"/>;
+  if(!user||user.is_anonymous||!user.identities?.some(identity=>identity.provider==='google'||identity.provider==='apple')||!complete)return <Redirect href="/onboarding"/>;
   const accent = scope === 'household' ? colors.household : colors.personal;
   const [year,month,day] = localDate().split('-');
   const todayLabel = `${day}/${month}`;

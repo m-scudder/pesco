@@ -1,5 +1,5 @@
 import React,{useEffect,useMemo,useState} from 'react';
-import {useFocusEffect,useRouter} from 'expo-router';
+import {useRouter} from 'expo-router';
 import {Alert,Pressable,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {Screen} from '@/components/Screen';
@@ -11,7 +11,7 @@ import {useAppTheme} from '@/theme/ThemeContext';
 
 export default function Home(){
  const {colors,scope}=useAppTheme();
- const {expenses,refresh,syncError,currentUserId,pendingCount,pendingEditCount,pendingIds,remove,demoEnabled}=useData();
+ const {expenses,refresh,syncing,syncError,currentUserId,pendingCount,pendingEditCount,pendingIds,remove,demoEnabled}=useData();
  const router=useRouter();
  const [month,setMonth]=useState(monthKey(localDate()));
  const [search,setSearch]=useState('');
@@ -23,7 +23,6 @@ export default function Home(){
  const [visibleCount,setVisibleCount]=useState(60);
  useEffect(()=>{setVisibleCount(60)},[scope,month,search,categoryFilter,contributor,minAmount,maxAmount]);
 
- useFocusEffect(React.useCallback(()=>{void refresh()},[refresh]));
  const options=useMemo(()=>['All',...Array.from(new Set(expenses.filter(e=>e.scope===scope).map(e=>e.category))).sort()], [expenses,scope]);
  const filtered=useMemo(()=>{
   const query=search.trim().toLocaleLowerCase();
@@ -57,6 +56,10 @@ export default function Home(){
   <Screen style={{paddingHorizontal:0,gap:0}}>
    <View style={{paddingHorizontal:16,paddingBottom:8,gap:8}}>
     <ScopeSwitch/>
+    {syncing?<View accessibilityLabel="Syncing expenses" style={{flexDirection:'row',alignItems:'center',justifyContent:'flex-end',gap:5}}>
+     <Ionicons name="sync-outline" size={13} color={colors.muted}/>
+     <Text style={{fontSize:11,color:colors.muted}}>Syncing expenses…</Text>
+    </View>:null}
     {demoEnabled?<Text style={{fontSize:11,color:colors.muted,fontFamily:'Inter_500Medium'}}>DEMO DATA · Sample expenses are read-only</Text>:null}
     <MonthPicker month={month} onChange={setMonth}/>
     <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
@@ -88,7 +91,7 @@ export default function Home(){
      </View>:null}
      <View style={{flexDirection:'row',gap:8}}>
       {[{label:'Min ₹',value:minAmount,set:setMinAmount},{label:'Max ₹',value:maxAmount,set:setMaxAmount}].map(item=><TextInput key={item.label}
-       accessibilityLabel={item.label} value={item.value} onChangeText={item.set} keyboardType="decimal-pad" placeholder={item.label} placeholderTextColor={colors.muted}
+       accessibilityLabel={item.label} value={item.value} onChangeText={value=>item.set(value.replace(/[^0-9]/g,""))} keyboardType="number-pad" placeholder={item.label} placeholderTextColor={colors.muted}
        style={{flex:1,height:40,borderRadius:9,borderWidth:1,borderColor:colors.border,paddingHorizontal:10,color:colors.text,backgroundColor:colors.surface}}/>)}
      </View>
      <Pressable accessibilityRole="button" onPress={()=>{setSearch('');setCategoryFilter('All');setContributor('all');setMinAmount('');setMaxAmount('')}}>
@@ -127,7 +130,8 @@ export default function Home(){
        accessibilityLabel={expense.category+', '+formatMoney(expense.amountPaise)}
        onPress={()=>{
         if(expense.id.startsWith('demo:')){Alert.alert('Demo expense','Sample records are read-only and are not shared with your partner. Disable them in Settings to view only real expenses.');return}
-        router.push({pathname:'/expense/[id]',params:{id:expense.id}});
+        const mine=expense.ownerId==='local-user'||expense.ownerId===currentUserId;
+        router.push(mine?{pathname:'/expense/new',params:{id:expense.id}}:{pathname:'/expense/[id]',params:{id:expense.id}});
        }}
        style={{flexDirection:'row',alignItems:'center',paddingHorizontal:12,paddingVertical:9,gap:9,borderBottomWidth:1,borderColor:colors.border,minHeight:56}}>
        <Text numberOfLines={2} style={{width:88,color:colors.muted,fontSize:11,lineHeight:17}}>{expense.category}</Text>

@@ -1,5 +1,5 @@
-import React,{useState} from 'react';
-import {ActivityIndicator,Pressable,Text,TextInput,View} from 'react-native';
+import React,{useEffect,useState} from 'react';
+import {ActivityIndicator,Image,Platform,Pressable,Text,TextInput,View} from 'react-native';
 import {useRouter} from 'expo-router';
 import {Screen} from '@/components/Screen';
 import {Card,Heading,Body} from '@/components/UI';
@@ -7,7 +7,11 @@ import {useAuth} from '@/lib/AuthContext';
 import {useData} from '@/data';
 import {useOnboarding} from '@/lib/OnboardingContext';
 import {useAppTheme} from '@/theme/ThemeContext';
-import {createHousehold,joinWithKey} from '@/lib/households';
+import {createHousehold,getMyHousehold,joinWithKey} from '@/lib/households';
+import {googleAuth} from '@/lib/googleAuth';
+import {nativeAppleSignIn} from '@/lib/nativeAppleAuth';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import {GoogleSignInButton} from '@/components/GoogleSignInButton';
 
 const VALID_CODE=/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
 type Mode='choose'|'create'|'join';
@@ -23,6 +27,12 @@ export default function Onboarding(){
  const [code,setCode]=useState('');
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState<string|null>(null);
+ const [signingIn,setSigningIn]=useState(false);
+ const authenticated=!!user&&!user.is_anonymous&&!!user.identities?.some(i=>i.provider==='google'||i.provider==='apple');
+ useEffect(()=>{if(!authenticated)return;let active=true;
+  void getMyHousehold().then(existing=>{if(active&&existing)void finish().then(()=>router.replace('/(tabs)'))}).catch(()=>{});
+  return()=>{active=false};
+ },[authenticated,user?.id]);
  const inputStyle={borderWidth:1 as const,borderColor:colors.border,borderRadius:9,height:44,paddingHorizontal:12,color:colors.text,fontSize:15};
 
  async function finishAndOpen(){
@@ -42,13 +52,39 @@ export default function Onboarding(){
    <Text style={{color:primary?'#fff':colors.text,fontSize:14,fontWeight:'600'}}>{label}</Text>
   </Pressable>
  );
- return <Screen style={{justifyContent:'center',paddingBottom:44}}>
-  <Heading subtitle="Household expenses, together">PESCO</Heading>
-  {mode==='choose'?<Card>
+ return <Screen style={{flexGrow:1,justifyContent:authenticated?'center':'space-between',paddingBottom:24,gap:22}}>
+  <View style={{alignItems:'center',justifyContent:'center',gap:14,...(!authenticated?{flexGrow:1}:{} )}}>
+   <Image source={require('../assets/icon.png')} accessibilityLabel="PESCO app logo" resizeMode="contain" style={{width:92,height:92,borderRadius:22}}/>
+   <Text style={{color:colors.muted,fontSize:14,fontFamily:'Inter_400Regular',textAlign:'center'}}>Household expenses, together</Text>
+  </View>
+  {!authenticated?<View style={{paddingHorizontal:0,gap:14,paddingBottom:6}}>
+   {Platform.OS==='android'?<GoogleSignInButton disabled={!configured||!ready||signingIn} loading={signingIn} onPress={()=>{void (async()=>{
+    setSigningIn(true);setError(null);
+    try{await googleAuth(user?'link':'sign-in')}
+    catch(e){setError(e instanceof Error?e.message:'Google sign-in failed')}
+    finally{setSigningIn(false)}
+   })()}}/>:null}
+   {Platform.OS==='ios'?<View style={{opacity:!configured||!ready||signingIn?0.55:1}}>
+    <AppleAuthentication.AppleAuthenticationButton
+     buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+     buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+     cornerRadius={5}
+     style={{height:52,width:'100%'}}
+     onPress={()=>{if(signingIn||!configured||!ready)return;void (async()=>{
+      setSigningIn(true);setError(null);
+      try{await nativeAppleSignIn()}
+      catch(e){setError(e instanceof Error?e.message:'Apple sign-in failed')}
+      finally{setSigningIn(false)}
+     })()}}
+    />
+   </View>:null}
+   {!configured?<Text style={{color:'#C94F4F',textAlign:'center'}}>Cloud authentication is not configured.</Text>:null}
+  </View>:mode==='choose'?<Card>
+   <Text style={{fontSize:14,fontFamily:'Inter_600SemiBold',color:colors.text,textAlign:'center',marginBottom:4}}>Set up your household</Text>
    {button('Create household',()=>{setError(null);setMode('create')})}
    {button('Join with code',()=>{setError(null);setMode('join')},false)}
    <Pressable accessibilityRole="button" onPress={()=>void submit(async()=>{})} style={{alignItems:'center',paddingVertical:10}}>
-    <Text style={{color:colors.muted,fontSize:13}}>Continue without household</Text>
+    <Text style={{color:colors.muted,fontSize:13}}>Use personal expenses only</Text>
    </Pressable>
   </Card>:<Card>
    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
