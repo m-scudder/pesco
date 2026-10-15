@@ -1,5 +1,6 @@
 import * as WebBrowser from 'expo-web-browser';
 import {supabase} from './supabase';
+import {ensureGoogleProfile} from './profileName';
 
 const redirectTo='pesco://auth/callback';
 
@@ -33,5 +34,6 @@ export async function googleAuth(mode:'link'|'sign-in'){
  const {data,error}=await supabase.auth.getUser();
  if(error||!data.user)throw error??new Error('Unable to verify Google sign-in');
  if(mode==='link'&&data.user.id!==before)throw new Error('Account identity unexpectedly changed. Stop and contact support.');
+ try{await ensureGoogleProfile(data.user)}catch(e){console.warn('Unable to initialize Google profile',e)}
  return true;
 }
