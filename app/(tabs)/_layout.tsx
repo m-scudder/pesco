@@ -13,7 +13,7 @@ export default function TabsLayout() {
   const {ready:authReady,user}=useAuth();
   const {loaded}=useData();
   if(!ready||!authReady||(complete&&!loaded))return <PescoLoader message="Gathering your expenses…"/>;
-  if(!user||user.is_anonymous||!complete)return <Redirect href="/onboarding"/>;
+  if(!user||user.is_anonymous||!user.identities?.some(identity=>identity.provider==='google')||!complete)return <Redirect href="/onboarding"/>;
   const accent = scope === 'household' ? colors.household : colors.personal;
   const [year,month,day] = localDate().split('-');
   const todayLabel = `${day}/${month}`;
