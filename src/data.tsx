@@ -202,9 +202,13 @@ export function DataProvider({children}:{children:React.ReactNode}){
     try{
      const ownerKey='pesco:legacy-personal-owner';
      const recordedOwner=await AsyncStorage.getItem(ownerKey);
-     if(!recordedOwner)await AsyncStorage.setItem(ownerKey,user.id);
-     if(!recordedOwner||recordedOwner===user.id){
-      const legacy=personalSource.current.filter(e=>e.scope==='personal');
+     const legacy=personalSource.current.filter(e=>e.scope==='personal');
+     // Reclaim an empty device ledger for the current account, but never adopt
+     // another user's existing local transactions automatically.
+     if(!recordedOwner||recordedOwner!==user.id&&legacy.length===0){
+      await AsyncStorage.setItem(ownerKey,user.id);
+     }
+     if(!recordedOwner||recordedOwner===user.id||legacy.length===0){
       for(const entry of legacy){
        await importPersonalExpense(entry);
        setLocalExpenses(previous=>previous.filter(e=>e.id!==entry.id));
