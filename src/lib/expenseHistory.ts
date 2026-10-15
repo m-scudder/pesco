@@ -8,7 +8,9 @@ export function filterHistory(expenses:Expense[],scope:Scope,from:string,to:stri
   .sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt.localeCompare(a.createdAt)||b.id.localeCompare(a.id));
 }
 function cell(value:string){
- return '"'+value.replace(/"/g,'""')+'"';
+ // Neutralize spreadsheet formulas in user-supplied descriptions and categories.
+ const safe=/^[\\s\\u0000-\\u001f]*[=+@-]/.test(value)?"'"+value:value;
+ return '"'+safe.replace(/"/g,'""')+'"';
 }
 export function expensesCsv(expenses:Expense[]){
  const header=['Date','Category','Description','Amount (INR)','Type'];

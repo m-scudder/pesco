@@ -1,4 +1,4 @@
-import React,{useMemo,useState} from 'react';
+import React,{useEffect,useMemo,useState} from 'react';
 import {useFocusEffect,useRouter} from 'expo-router';
 import {Alert,Pressable,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
@@ -11,7 +11,7 @@ import {useAppTheme} from '@/theme/ThemeContext';
 
 export default function Home(){
  const {colors,scope}=useAppTheme();
- const {expenses,refresh,syncError,currentUserId,pendingCount,pendingIds,remove,demoEnabled}=useData();
+ const {expenses,refresh,syncError,currentUserId,pendingCount,pendingEditCount,pendingIds,remove,demoEnabled}=useData();
  const router=useRouter();
  const [month,setMonth]=useState(monthKey(localDate()));
  const [search,setSearch]=useState('');
@@ -20,6 +20,8 @@ export default function Home(){
  const [contributor,setContributor]=useState<'all'|'me'|'partner'>('all');
  const [minAmount,setMinAmount]=useState('');
  const [maxAmount,setMaxAmount]=useState('');
+ const [visibleCount,setVisibleCount]=useState(60);
+ useEffect(()=>{setVisibleCount(60)},[scope,month,search,categoryFilter,contributor,minAmount,maxAmount]);
 
  useFocusEffect(React.useCallback(()=>{void refresh()},[refresh]));
  const options=useMemo(()=>['All',...Array.from(new Set(expenses.filter(e=>e.scope===scope).map(e=>e.category))).sort()], [expenses,scope]);
@@ -40,15 +42,16 @@ export default function Home(){
    return true;
   }).sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt.localeCompare(a.createdAt));
  },[expenses,scope,month,search,categoryFilter,contributor,minAmount,maxAmount,currentUserId]);
+ const visibleExpenses=useMemo(()=>filtered.slice(0,visibleCount),[filtered,visibleCount]);
  const groups=useMemo(()=>{
   const result:typeof filtered[]=[];
-  filtered.forEach(e=>{
+  visibleExpenses.forEach(e=>{
    const last=result[result.length-1];
    if(last&&last[0].date===e.date)last.push(e);
    else result.push([e]);
   });
   return result;
- },[filtered]);
+ },[visibleExpenses]);
 
  return <View style={{flex:1,backgroundColor:colors.background}}>
   <Screen style={{paddingHorizontal:0,gap:0}}>
@@ -96,6 +99,9 @@ export default function Home(){
    {scope==='household'&&pendingCount>0?<Pressable onPress={()=>{void refresh()}} style={{paddingHorizontal:16,paddingVertical:9,backgroundColor:colors.secondary}}>
     <Text style={{color:colors.text,fontSize:12}}>{pendingCount} expense{pendingCount===1?'':'s'} waiting to sync · Tap to retry</Text>
    </Pressable>:null}
+   {scope==='household'&&pendingEditCount>0?<Pressable onPress={()=>{void refresh()}} style={{paddingHorizontal:16,paddingVertical:9,backgroundColor:colors.secondary}}>
+    <Text style={{color:colors.text,fontSize:12}}>{pendingEditCount} edit/delete change{pendingEditCount===1?'':'s'} waiting to sync · Tap to retry</Text>
+   </Pressable>:null}
    {scope==='household'&&syncError?
     <Pressable onPress={()=>{void refresh()}} style={{paddingHorizontal:16,paddingVertical:10}}>
      <Text style={{color:'#C94F4F',fontSize:13}}>Sync failed · Tap to retry</Text>
@@ -110,7 +116,7 @@ export default function Home(){
      const weekday=parsed.toLocaleDateString('en-IN',{weekday:'short'});
      return <View key={date}>
       <View style={{flexDirection:'row',alignItems:'center',gap:7,paddingHorizontal:12,paddingVertical:7,backgroundColor:colors.secondary,borderTopWidth:1,borderBottomWidth:1,borderColor:colors.border}}>
-       <Text style={{fontSize:20,fontWeight:'700',color:colors.text}}>{parsed.getDate()}</Text>
+       <Text style={{fontSize:20,fontFamily:'PlusJakartaSans_700Bold',color:colors.text}}>{parsed.getDate()}</Text>
        <View style={{backgroundColor:colors.surface,borderRadius:5,paddingHorizontal:6,paddingVertical:2}}>
         <Text style={{fontSize:12,color:colors.muted,fontWeight:'600'}}>{weekday}</Text>
        </View>
@@ -121,19 +127,12 @@ export default function Home(){
        accessibilityLabel={expense.category+', '+formatMoney(expense.amountPaise)}
        onPress={()=>{
         if(expense.id.startsWith('demo:')){Alert.alert('Demo expense','Sample records are read-only and are not shared with your partner. Disable them in Settings to view only real expenses.');return}
-        if(pendingIds.includes(expense.id)){
-         Alert.alert('Waiting to sync','This expense is saved on this device. Once online, it will sync with your household.',[
-          {text:'Keep it',style:'cancel'},
-          {text:'Cancel expense',style:'destructive',onPress:()=>{void remove(expense.id)}}
-         ]);
-         return;
-        }
         router.push({pathname:'/expense/[id]',params:{id:expense.id}});
        }}
        style={{flexDirection:'row',alignItems:'center',paddingHorizontal:12,paddingVertical:9,gap:9,borderBottomWidth:1,borderColor:colors.border,minHeight:56}}>
        <Text numberOfLines={2} style={{width:88,color:colors.muted,fontSize:11,lineHeight:17}}>{expense.category}</Text>
        <View style={{flex:1,gap:2}}>
-        <Text numberOfLines={2} style={{color:colors.text,fontSize:15,fontWeight:'500'}}>{expense.note?.trim()||expense.category}</Text>
+        <Text numberOfLines={2} style={{color:colors.text,fontSize:14,fontFamily:'Inter_500Medium'}}>{expense.note?.trim()||expense.category}</Text>
         {scope==='household'?
          <Text style={{color:colors.muted,fontSize:12}}>{expense.ownerId==='local-user'||expense.ownerId===currentUserId?'You':'Partner'}</Text>:null}
        </View>
@@ -145,6 +144,10 @@ export default function Home(){
      </View>;
     })
    }
+   {filtered.length>visibleCount?<Pressable accessibilityRole="button" onPress={()=>setVisibleCount(count=>count+60)}
+    style={{margin:12,padding:12,borderRadius:10,alignItems:'center',backgroundColor:colors.secondary}}>
+    <Text style={{color:colors.text,fontSize:13,fontFamily:'Inter_600SemiBold'}}>Show more ({filtered.length-visibleCount} remaining)</Text>
+   </Pressable>:null}
   </Screen>
   <AddExpenseButton/>
  </View>;

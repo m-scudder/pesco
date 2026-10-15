@@ -78,17 +78,43 @@ export async function addCloudExpense(input:CloudExpenseInput,requestId?:string)
  if(error)throw error;
  return toExpense(data as ExpenseRow);
 }
-export async function editCloudExpense(id:string,input:CloudExpenseInput){
+export async function editCloudExpense(id:string,input:CloudExpenseInput,expectedUpdatedAt?:string){
  assertInput(input);
- const db=client();const {data,error}=await db.from('expenses')
-  .update({amount_paise:input.amountPaise,category:input.category,note:input.note,spent_on:input.date})
-  .eq('id',id).eq('scope',input.scope)
-  .select('id,owner_id,household_id,scope,amount_paise,category,note,spent_on,created_at,updated_at').single();
+ const db=client();const {data:{user},error:authError}=await db.auth.getUser();
+ if(authError||!user)throw new Error('Sign in required');
+ let query=db.from('expenses')
+  .update({amount_paise:input.amountPaise,category:input.category,note:input.note,spent_on:input.date,updated_at:new Date().toISOString()})
+  .eq('id',id).eq('scope',input.scope).eq('owner_id',user.id);
+ if(expectedUpdatedAt)query=query.eq('updated_at',expectedUpdatedAt);
+ const {data,error}=await query.select('id,owner_id,household_id,scope,amount_paise,category,note,spent_on,created_at,updated_at').maybeSingle();
  if(error)throw error;
+ if(!data){
+  // A retry may follow a successful server commit whose acknowledgement was lost.
+  // Accept that case only if the persisted record exactly matches the pending edit.
+  const existing=await db.from('expenses')
+   .select('id,owner_id,household_id,scope,amount_paise,category,note,spent_on,created_at,updated_at')
+   .eq('id',id).eq('owner_id',user.id).maybeSingle();
+  if(existing.error)throw existing.error;
+  if(existing.data){
+   const row=existing.data as ExpenseRow;
+   if(row.amount_paise===input.amountPaise&&row.category===input.category&&
+      row.note===input.note&&row.spent_on===input.date&&row.household_id===input.householdId)
+    return toExpense(row);
+  }
+  throw new Error('Conflict: this expense has changed or been removed on another device. Review and discard the pending change before trying again.');
+ }
  return toExpense(data as ExpenseRow);
 }
-export async function deleteCloudExpense(id:string){
- const db=client();const {data,error}=await db.from('expenses').delete().eq('id',id).select('id').single();
+export async function deleteCloudExpense(id:string,expectedUpdatedAt?:string){
+ const db=client();const {data:{user},error:authError}=await db.auth.getUser();
+ if(authError||!user)throw new Error('Sign in required');
+ let query=db.from('expenses').delete().eq('id',id).eq('owner_id',user.id);
+ if(expectedUpdatedAt)query=query.eq('updated_at',expectedUpdatedAt);
+ const {data,error}=await query.select('id').maybeSingle();
  if(error)throw error;
- if(!data)throw new Error('Expense not found');
+ if(!data){
+  const existing=await db.from('expenses').select('id').eq('id',id).maybeSingle();
+  if(existing.error)throw existing.error;
+  if(existing.data)throw new Error('Conflict: this expense changed on another device. Review and discard the pending deletion before trying again.');
+ }
 }

@@ -60,6 +60,19 @@ export async function flushPending(userId:string,householdId:string){
  try{return await run}finally{activeFlushes.delete(keyForFlush)}
 }
 
+export async function editPending(userId:string,id:string,draft:CloudExpenseInput){
+ return locked(async()=>{
+  if(uploading.has(id))throw new Error('This expense is uploading. Try again after sync.');
+  const existing=await loadPending(userId);
+  const entry=existing.find(item=>item.id===id);
+  if(!entry)throw new Error('Queued expense not found');
+  if(entry.draft.householdId!==draft.householdId)throw new Error('Cannot change household');
+  const next=existing.map(item=>item.id===id?{...item,draft}:item);
+  await savePending(userId,next);
+  return next;
+ });
+}
+
 export async function cancelPending(userId:string,id:string){
  return locked(async()=>{
   if(uploading.has(id))throw new Error('This expense is uploading. Try again when sync finishes.');

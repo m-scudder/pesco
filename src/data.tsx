@@ -8,7 +8,8 @@ import {addCloudExpense,deleteCloudExpense,editCloudExpense,fetchAllHouseholdExp
 import {supabase} from './lib/supabase';
 import {makeDemoExpenses} from './lib/demoExpenses';
 import {generateHouseholdRecurring} from './lib/householdRecurring';
-import {queueHouseholdExpense,flushPending,loadPending,cancelPending,type PendingExpense} from './lib/pendingExpenses';
+import {queueHouseholdExpense,flushPending,loadPending,cancelPending,editPending,type PendingExpense} from './lib/pendingExpenses';
+import {loadMutations,flushMutations,queueMutation,discardMutation,type PendingMutation} from './lib/pendingMutations';
 
 export const CATEGORIES=['Groceries','Food & Drinks','Shopping','Utilities','Rent','Transport','Health','Entertainment','Education','Travel','Other'] as const;
 export type Expense={id:string;scope:Scope;amountPaise:number;category:string;note:string;date:string;createdAt:string;updatedAt:string;ownerId:string};
@@ -29,7 +30,7 @@ function recurringDates(rule:RecurringRule,today:string):string[]{
  return output;
 }
 type Store={
- loaded:boolean;demoEnabled:boolean;setDemoEnabled:(enabled:boolean)=>void;pendingCount:number;pendingIds:string[];pendingEntries:PendingExpense[];expenses:Expense[];recurringRules:RecurringRule[];addRecurring:(draft:Omit<RecurringRule,'id'|'active'>)=>void;setRecurringActive:(id:string,active:boolean)=>void;updateRecurring:(id:string,draft:Omit<RecurringRule,'id'|'active'>)=>void;deleteRecurring:(id:string)=>void;budgets:Budgets;household:Household|null;syncing:boolean;syncError:string|null;
+ loaded:boolean;demoEnabled:boolean;setDemoEnabled:(enabled:boolean)=>void;pendingCount:number;pendingEditCount:number;pendingMutations:PendingMutation[];discardPendingMutation:(id:string)=>Promise<void>;pendingIds:string[];pendingEntries:PendingExpense[];expenses:Expense[];recurringRules:RecurringRule[];addRecurring:(draft:Omit<RecurringRule,'id'|'active'>)=>void;setRecurringActive:(id:string,active:boolean)=>void;updateRecurring:(id:string,draft:Omit<RecurringRule,'id'|'active'>)=>void;deleteRecurring:(id:string)=>void;budgets:Budgets;household:Household|null;syncing:boolean;syncError:string|null;
  localHouseholdCount:number;currentUserId:string|null;
  refresh:()=>Promise<void>;add:(draft:ExpenseDraft)=>Promise<void>;update:(id:string,draft:ExpenseDraft)=>Promise<void>;
  remove:(id:string)=>Promise<void>;importLocalHousehold:()=>Promise<number>;
@@ -60,6 +61,8 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const verifiedUser=useRef<string|null>(null);
  const recurringGeneratedOn=useRef<string|null>(null);
  const [pending,setPending]=useState<PendingExpense[]>([]);
+ const [mutations,setMutations]=useState<PendingMutation[]>([]);
+ const mutationEpoch=useRef(0);
  const [queueError,setQueueError]=useState<string|null>(null);
  useEffect(()=>{
   let active=true;
@@ -76,7 +79,9 @@ export function DataProvider({children}:{children:React.ReactNode}){
  },[user?.id]);
  useEffect(()=>{
   let live=true;
-  if(!user){setPending([]);return}
+  if(!user){setPending([]);setMutations([]);return}
+  const mutationLoadEpoch=mutationEpoch.current;
+  loadMutations(user.id).then(items=>{if(live&&mutationLoadEpoch===mutationEpoch.current)setMutations(items)}).catch(e=>{if(live)setQueueError(String(e))});
   loadPending(user.id).then(items=>{if(live)setPending(items)}).catch(e=>{if(live)setQueueError(String(e))});
   return()=>{live=false};
  },[user?.id]);
@@ -162,6 +167,10 @@ export function DataProvider({children}:{children:React.ReactNode}){
     }finally{pendingBusy.current=false}
    }
    if(membership){
+    const epoch=mutationEpoch.current;
+    const result=await flushMutations(user.id,membership.id);
+    if(epoch===mutationEpoch.current){mutationEpoch.current++;setMutations(result.items)}
+    if(result.error)setQueueError(result.error);
     const checkKey=membership.id+':'+localDate();
     if(recurringGeneratedOn.current!==checkKey){
      try{await generateHouseholdRecurring(membership.id);recurringGeneratedOn.current=checkKey}
@@ -189,7 +198,8 @@ export function DataProvider({children}:{children:React.ReactNode}){
   setHousehold(null);setCloudExpenses([]);setCloudReady(false);setSyncError(null);
   if(!user)return;
   void refresh();
-  const interval=setInterval(()=>{void refresh()},15000);
+  // Realtime refreshes normally provide prompt updates; polling is a fallback after missed events.
+  const interval=setInterval(()=>{if(AppState.currentState==='active')void refresh()},60000);
   const app=AppState.addEventListener('change',s=>{if(s==='active')void refresh()});
   return()=>{
    clearInterval(interval);app.remove();
@@ -208,6 +218,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
     filter:'household_id=eq.'+household.id
    },()=>{void refresh()})
    .subscribe(status=>{
+    if(status==='SUBSCRIBED')void refresh();
     if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
      console.warn('Household Realtime disconnected:',status);
     }
@@ -217,12 +228,15 @@ export function DataProvider({children}:{children:React.ReactNode}){
 
  const realExpenses=useMemo(()=>[
   ...localExpenses.filter(e=>e.scope==='personal'||(!household&&e.scope==='household')),
-  ...(household?cloudExpenses:[]),
+  ...(household?cloudExpenses.filter(e=>!mutations.some(op=>op.id===e.id&&op.kind==='delete')).map(e=>{
+   const op=mutations.find(item=>item.id===e.id&&item.kind==='update');
+   return op?.draft?{...e,amountPaise:op.draft.amountPaise,category:op.draft.category,note:op.draft.note,date:op.draft.date}:e;
+  }):[]),
   ...pending.filter(p=>household&&p.draft.householdId===household.id&&!cloudExpenses.some(e=>e.id===p.id)).map(p=>({
    id:p.id,scope:'household' as Scope,amountPaise:p.draft.amountPaise,category:p.draft.category,note:p.draft.note,date:p.draft.date,
    ownerId:p.userId,createdAt:p.queuedAt,updatedAt:p.queuedAt
   }))
- ],[localExpenses,cloudExpenses,household,pending]);
+ ],[localExpenses,cloudExpenses,household,pending,mutations]);
  const demoExpenses=useMemo(()=>__DEV__?makeDemoExpenses():[],[]);
  const expenses=useMemo(()=>demoEnabled&&__DEV__?[...realExpenses,...demoExpenses]:realExpenses,[demoEnabled,realExpenses,demoExpenses]);
 
@@ -241,14 +255,22 @@ export function DataProvider({children}:{children:React.ReactNode}){
 
  const update=useCallback(async(id:string,draft:ExpenseDraft)=>{
   if(id.startsWith('demo:'))throw new Error('Demo records are read-only. Turn off sample data in Settings to view actual records.');
-  if(pending.some(entry=>entry.id===id))throw new Error('Wait until this expense syncs before editing it.');
+  const queued=pending.find(entry=>entry.id===id);
+  if(queued){
+   if(!user||!household)throw new Error('Household unavailable');
+   if(draft.scope!=='household')throw new Error('Changing the expense scope is unavailable');
+   setPending(await editPending(user.id,id,{...draft,householdId:household.id}));
+   return;
+  }
   const cloud=cloudExpenses.find(e=>e.id===id);
   if(cloud){
    if(!household)throw new Error('Household no longer available');
    if(cloud.ownerId!==user?.id)throw new Error('Only the creator can edit this expense');
    if(draft.scope!==cloud.scope)throw new Error('Changing the expense scope is unavailable');
-   await editCloudExpense(id,{...draft,householdId:household.id});
-   await refresh();
+   const latest=await queueMutation(user!.id,household.id,id,'update',{...draft,householdId:household.id},cloud.updatedAt);
+   mutationEpoch.current++;
+   setMutations(latest);
+   void refresh();
    return;
   }
   setLocalExpenses(prev=>prev.map(e=>e.id===id?{...e,...draft,updatedAt:new Date().toISOString()}:e));
@@ -264,9 +286,13 @@ export function DataProvider({children}:{children:React.ReactNode}){
   const cloud=cloudExpenses.find(e=>e.id===id);
   if(cloud){
    if(cloud.ownerId!==user?.id)throw new Error('Only the creator can delete this expense');
-   await deleteCloudExpense(id);await refresh();
+   if(!household||!user)throw new Error('Household unavailable');
+   const latest=await queueMutation(user.id,household.id,id,'delete',undefined,cloud.updatedAt);
+   mutationEpoch.current++;
+   setMutations(latest);
+   void refresh();
   }else setLocalExpenses(prev=>prev.filter(e=>e.id!==id));
- },[cloudExpenses,user?.id,refresh,pending]);
+ },[cloudExpenses,user?.id,household,refresh,pending]);
 
  const importLocalHousehold=useCallback(async()=>{
   if(!household)throw new Error('Join a household first');
@@ -288,13 +314,21 @@ export function DataProvider({children}:{children:React.ReactNode}){
   }
  },[household,localExpenses,refresh]);
 
+ const discardPendingMutation=useCallback(async(id:string)=>{
+  if(!user)throw new Error('Sign in required');
+  const latest=await discardMutation(user.id,id);
+  mutationEpoch.current++;
+  setMutations(latest);
+  void refresh();
+ },[user?.id,refresh]);
+
  const setBudget=useCallback((scope:Scope,value:number|null)=>setBudgets(prev=>({...prev,[scope]:value})),[]);
  const clearAll=useCallback(()=>{setLocalExpenses([]);setBudgets(defaultBudgets);setRecurringRules([]);setGenerated([])},[]);
  const value=useMemo<Store>(()=>({
-  loaded:localLoaded&&(!user||cloudReady),demoEnabled:__DEV__&&demoEnabled,setDemoEnabled:changeDemoEnabled,pendingCount:pending.filter(x=>x.draft.householdId===household?.id).length,pendingIds:pending.filter(x=>x.draft.householdId===household?.id).map(x=>x.id),pendingEntries:pending,expenses,recurringRules,addRecurring,setRecurringActive,updateRecurring,deleteRecurring,budgets,household,syncing,syncError:syncError??queueError,
+  loaded:localLoaded&&(!user||cloudReady),demoEnabled:__DEV__&&demoEnabled,setDemoEnabled:changeDemoEnabled,pendingEditCount:mutations.filter(item=>item.householdId===household?.id).length,pendingMutations:mutations,discardPendingMutation,pendingCount:pending.filter(x=>x.draft.householdId===household?.id).length,pendingIds:pending.filter(x=>x.draft.householdId===household?.id).map(x=>x.id),pendingEntries:pending,expenses,recurringRules,addRecurring,setRecurringActive,updateRecurring,deleteRecurring,budgets,household,syncing,syncError:syncError??queueError,
   currentUserId:user?.id??null,localHouseholdCount:household?localExpenses.filter(e=>e.scope==='household').length:0,
   refresh,add,update,remove,importLocalHousehold,setBudget,clearAll
- }),[localLoaded,user?.id,cloudReady,demoEnabled,changeDemoEnabled,expenses,pending,queueError,recurringRules,addRecurring,setRecurringActive,updateRecurring,deleteRecurring,budgets,household,syncing,syncError,localExpenses,refresh,add,update,remove,importLocalHousehold,setBudget,clearAll]);
+ }),[localLoaded,user?.id,cloudReady,demoEnabled,changeDemoEnabled,expenses,pending,mutations,discardPendingMutation,queueError,recurringRules,addRecurring,setRecurringActive,updateRecurring,deleteRecurring,budgets,household,syncing,syncError,localExpenses,refresh,add,update,remove,importLocalHousehold,setBudget,clearAll]);
  return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 export function useData(){const store=useContext(Context);if(!store)throw new Error('Missing DataProvider');return store}
