@@ -12,10 +12,11 @@ function callbackTokens(url:string){
  if(failure)throw new Error(failure);
  return {accessToken:params.get('access_token'),refreshToken:params.get('refresh_token'),code:params.get('code')};
 }
-export async function socialAuth(provider:'google'|'apple',mode:'link'|'sign-in'){
+export async function googleAuth(mode:'link'|'sign-in'){
  if(!supabase)throw new Error('Supabase is not configured.');
  const before=mode==='link'?(await supabase.auth.getUser()).data.user?.id:null;
  if(mode==='link'&&!before)throw new Error('You must be signed in to link Google.');
+ const provider='google';
  const response=mode==='link'
   ?await supabase.auth.linkIdentity({provider,options:{redirectTo,skipBrowserRedirect:true}})
   :await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo,skipBrowserRedirect:true}});
@@ -37,6 +38,3 @@ export async function socialAuth(provider:'google'|'apple',mode:'link'|'sign-in'
  try{await ensureGoogleProfile(data.user)}catch(e){console.warn('Unable to initialize Google profile',e)}
  return true;
 }
-
-export const googleAuth=(mode:'link'|'sign-in')=>socialAuth('google',mode);
-export const appleAuth=(mode:'link'|'sign-in')=>socialAuth('apple',mode);
