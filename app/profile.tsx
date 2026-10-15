@@ -7,12 +7,14 @@ import {useAuth} from '@/lib/AuthContext';
 import {supabase} from '@/lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useData} from '@/data';
+import {googleDisplayName} from '@/lib/profileName';
 
 export default function Profile(){
  const {colors}=useAppTheme();
  const router=useRouter();
  const {pendingCount,pendingEditCount,expenses,recurringRules,budgets,clearAll}=useData();
  const {user,ready}=useAuth();
+ const googleName=googleDisplayName(user);
  const [name,setName]=useState('');
  const [initial,setInitial]=useState('');
  const [busy,setBusy]=useState(false);
@@ -27,8 +29,9 @@ export default function Profile(){
   try{
    const {data,error:readError}=await supabase.from('profiles').select('display_name').eq('id',user.id).maybeSingle();
    if(readError)throw readError;
-   const current=data?.display_name??'';
-   setName(current);setInitial(current);setError(null);
+   const current=data?.display_name?.trim()??'';
+   const nickname=current&&current!=='Member'&&current!==googleDisplayName(user)?current:'';
+   setName(nickname);setInitial(nickname);setError(null);
   }catch(e){setError(e instanceof Error?e.message:'Unable to load profile')}
   finally{setLoading(false)}
  },[ready,user?.id]);
@@ -36,13 +39,13 @@ export default function Profile(){
  const save=async()=>{
   if(!supabase||!user)return;
   const clean=name.trim().replace(/\s+/g,' ');
-  if(!clean||clean.length>80){Alert.alert('Invalid name','Enter a name between 1 and 80 characters.');return}
+  if(clean.length>80){Alert.alert('Invalid nickname','Use up to 80 characters.');return}
   setBusy(true);
   try{
-   const {error:saveError}=await supabase.from('profiles').upsert({id:user.id,display_name:clean},{onConflict:'id'});
+   const {error:saveError}=await supabase.from('profiles').upsert({id:user.id,display_name:clean||googleName},{onConflict:'id'});
    if(saveError)throw saveError;
    setName(clean);setInitial(clean);
-   Alert.alert('Saved','Your name is now visible to your household partner.');
+   Alert.alert('Saved',clean?'Your nickname will be shown to your household.':'Your Google name will be shown to your household.');
   }catch(e){Alert.alert('Could not save',e instanceof Error?e.message:'Try again')}
   finally{setBusy(false)}
  };
@@ -93,38 +96,35 @@ export default function Profile(){
    })()}}
   ])}
  ]);
- return <Screen modal style={{gap:14}}>
+ return <Screen modal style={{gap:12}}>
   {loading?<ActivityIndicator color={colors.household}/>:<>
-   <View style={{alignItems:'center',paddingVertical:12,gap:8}}>
-    <View style={{height:74,width:74,borderRadius:37,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'}}>
-     <Text style={{fontSize:30,color:colors.household,fontFamily:'PlusJakartaSans_700Bold'}}>{(name.trim()[0]||'P').toLocaleUpperCase()}</Text>
+   <View style={{alignItems:'center',paddingVertical:12,gap:6}}>
+    <View style={{height:64,width:64,borderRadius:32,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'}}>
+     <Text style={{fontSize:26,color:colors.household,fontFamily:'PlusJakartaSans_700Bold'}}>{(name.trim()[0]||googleName[0]||'P').toLocaleUpperCase()}</Text>
     </View>
-    <Text style={{color:colors.muted,fontSize:13}}>Your profile</Text>
+    <Text style={{color:colors.text,fontFamily:'Inter_600SemiBold',fontSize:17}}>{googleName}</Text>
+    <Text style={{color:colors.muted,fontSize:12}}>{user?.email??'Google account'}</Text>
    </View>
-   <View style={{borderRadius:14,borderColor:colors.border,borderWidth:1,backgroundColor:colors.surface,padding:14,gap:9}}>
-    <Text style={{color:colors.text,fontSize:14,fontFamily:'Inter_600SemiBold'}}>Display name</Text>
-    <TextInput accessibilityLabel="Display name" value={name} onChangeText={setName} maxLength={80}
-     placeholder="Your name" placeholderTextColor={colors.muted} autoCapitalize="words"
-     style={{height:44,borderRadius:9,borderColor:colors.border,borderWidth:1,paddingHorizontal:12,color:colors.text,fontSize:15}}/>
-    <Text style={{fontSize:12,color:colors.muted}}>Your household partner can see this name.</Text>
+   <View style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:12,padding:12,gap:8}}>
+    <Text style={{color:colors.text,fontSize:13,fontFamily:'Inter_600SemiBold'}}>Nickname <Text style={{color:colors.muted,fontFamily:'Inter_400Regular'}}>(optional)</Text></Text>
+    <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
+     <TextInput accessibilityLabel="Nickname" value={name} onChangeText={setName} maxLength={80} placeholder={googleName} placeholderTextColor={colors.muted} autoCapitalize="words"
+      style={{flex:1,height:42,borderRadius:9,borderWidth:1,borderColor:colors.border,paddingHorizontal:10,color:colors.text,fontSize:14}}/>
+     {name.trim()!==initial?<Pressable accessibilityRole="button" disabled={busy} onPress={()=>{void save()}}
+      style={{minHeight:42,minWidth:66,alignItems:'center',justifyContent:'center',backgroundColor:colors.household,borderRadius:9,paddingHorizontal:12,opacity:busy?0.6:1}}>
+      <Text style={{color:'#fff',fontSize:13,fontFamily:'Inter_600SemiBold'}}>{busy?'Saving…':'Save'}</Text>
+     </Pressable>:null}
+    </View>
    </View>
-   <Pressable accessibilityRole="button" disabled={busy||name.trim()===initial||!name.trim()} onPress={()=>{void save()}}
-    style={{backgroundColor:colors.household,minHeight:46,borderRadius:11,justifyContent:'center',alignItems:'center',opacity:busy||name.trim()===initial?0.6:1}}>
-    <Text style={{color:'#fff',fontFamily:'Inter_600SemiBold'}}>{busy?'Saving…':'Save profile'}</Text>
-   </Pressable>
-   <View style={{borderRadius:14,borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface,padding:14,gap:9}}>
-    <Text style={{color:colors.text,fontSize:14,fontFamily:'Inter_600SemiBold'}}>Connected account</Text>
-    <Text style={{color:colors.muted,fontSize:13}}>{user?.email??'No email available'}</Text>
-    <Text style={{color:colors.muted,fontSize:12}}>Google · {user?.identities?.some(x=>x.provider==='google')?'Connected':'Not connected'}</Text>
-   </View>
-   <Pressable accessibilityRole="button" disabled={loggingOut||deleting||busy} onPress={logout} style={{marginTop:10,paddingVertical:13,alignItems:'center',borderRadius:10,backgroundColor:colors.secondary}}>
+   <Pressable accessibilityRole="button" disabled={loggingOut||deleting||busy} onPress={logout}
+    style={{paddingVertical:13,alignItems:'center',borderRadius:10,backgroundColor:colors.secondary}}>
     <Text style={{color:colors.text,fontSize:13,fontFamily:'Inter_600SemiBold'}}>{loggingOut?'Logging out…':'Log out'}</Text>
    </Pressable>
-   <Pressable accessibilityRole="button" disabled={deleting||busy} onPress={deleteAccount} style={{marginTop:12,paddingVertical:13,alignItems:'center',borderRadius:10,borderWidth:1,borderColor:'#C94F4F'}}>
+   <Pressable accessibilityRole="button" disabled={deleting||loggingOut||busy} onPress={deleteAccount}
+    style={{paddingVertical:12,alignItems:'center',borderRadius:10}}>
     <Text style={{color:'#C94F4F',fontSize:13,fontFamily:'Inter_600SemiBold'}}>{deleting?'Deleting account…':'Delete account'}</Text>
    </Pressable>
-   <Text style={{color:colors.muted,fontSize:11,textAlign:'center'}}>Permanently removes your account and its expense history.</Text>
-   {error?<Pressable onPress={()=>{void load()}}><Text style={{color:'#C94F4F'}}>Could not load profile · Retry</Text></Pressable>:null}
+   {error?<Pressable onPress={()=>{void load()}}><Text style={{color:'#C94F4F',fontSize:12}}>Could not load nickname · Retry</Text></Pressable>:null}
   </>}
  </Screen>;
 }
