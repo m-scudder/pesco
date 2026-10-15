@@ -32,10 +32,8 @@ export function AuthProvider({children}:{children:React.ReactNode}){
     // Do not silently erase a possibly recoverable local session.
     throw validationError??new Error('Unable to validate the saved session');
    }
-   const result=await supabase.auth.signInAnonymously();
-   if(result.error)throw result.error;
-   if(!result.data.session)throw new Error('Anonymous sign-in returned no session');
-   setSession(result.data.session);
+   // Google sign-in is mandatory; never create a fresh anonymous identity here.
+   setSession(null);
   }catch(err){setError(err instanceof Error?err.message:String(err))}
   finally{setReady(true)}
  }
