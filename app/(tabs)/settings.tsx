@@ -90,7 +90,7 @@ export default function Settings(){
    <SettingsRow icon="cloud-upload-outline" label="Pending uploads" subtitle={pendingEntries.length+pendingEditCount>0?(pendingEntries.length+pendingEditCount)+" pending change(s)":"No pending uploads"} onPress={()=>router.push('/sync')} last/>
 
   </SettingsSection>
-  <View style={{flexGrow:1,minHeight:30}}/>
+  <View style={{height:8}}/>
   <View style={{gap:10,alignItems:'center'}}>
    <Pressable accessibilityRole="button" disabled={loggingOut||deleting} onPress={logout} style={{width:'100%',minHeight:46,backgroundColor:colors.secondary,borderWidth:1,borderColor:colors.border,borderRadius:10,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,opacity:loggingOut||deleting?0.6:1}}>
     <Ionicons name="log-out-outline" size={18} color={colors.text}/><Text style={{color:colors.text,fontSize:14,fontFamily:'Inter_600SemiBold'}}>{loggingOut?'Logging out…':'Log out'}</Text>
