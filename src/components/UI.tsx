@@ -1,6 +1,7 @@
-import React from 'react';
+import React,{useEffect} from 'react';
 import {Pressable,StyleSheet,Text,View} from 'react-native';
 import {useAppTheme} from '@/theme/ThemeContext';
+import {useData} from '@/data';
 export function Heading({children,subtitle}:{children:React.ReactNode;subtitle?:string}){
  const {colors}=useAppTheme();return <View style={{gap:3}}><Text style={[styles.title,{color:colors.text,fontFamily:'PlusJakartaSans_700Bold'}]}>{children}</Text>{subtitle?<Text style={{color:colors.muted,fontSize:12,fontFamily:'Inter_400Regular'}}>{subtitle}</Text>:null}</View>
 }
@@ -12,6 +13,9 @@ export function Body({children,muted=false}:{children:React.ReactNode;muted?:boo
 }
 export function ScopeSwitch(){
  const {colors,scope,setScope}=useAppTheme();
+ const {household}=useData();
+ useEffect(()=>{if(!household&&scope!=='personal')setScope('personal')},[household,scope,setScope]);
+ if(!household)return null;
  return <View style={[styles.switch,{backgroundColor:colors.secondary}]}>{(['household','personal'] as const).map(item=>{
  const selected=scope===item;return <Pressable accessibilityRole="button" accessibilityState={{selected}} key={item} onPress={()=>setScope(item)} style={[styles.segment,selected&&{backgroundColor:colors.surface}]}><Text style={{fontSize:13,color:selected?(item==='household'?colors.household:colors.personal):colors.muted,fontWeight:selected?'700':'500',fontFamily:selected?'Inter_700Bold':'Inter_500Medium'}}>{item==='household'?'Household':'Personal'}</Text></Pressable>
  })}</View>
