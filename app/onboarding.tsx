@@ -63,7 +63,7 @@ export default function Onboarding(){
     catch(e){setError(e instanceof Error?e.message:'Google sign-in failed')}
     finally{setSigningIn(false)}
    })()}}/>
-   {Platform.OS==='ios'?<Pressable accessibilityRole="button" accessibilityLabel="Continue with Apple" disabled={signingIn||!configured||!ready}
+   {Platform.OS==='ios'&&process.env.EXPO_PUBLIC_ENABLE_APPLE_SIGN_IN==='true'?<Pressable accessibilityRole="button" accessibilityLabel="Continue with Apple" disabled={signingIn||!configured||!ready}
     onPress={()=>{void (async()=>{setSigningIn(true);setError(null);try{await appleAuth(user?'link':'sign-in')}catch(e){setError(e instanceof Error?e.message:'Apple sign-in failed')}finally{setSigningIn(false)}})()}}
     style={{height:52,width:'100%',backgroundColor:colors.text,borderRadius:5,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,opacity:signingIn?0.55:1}}>
     <Ionicons name="logo-apple" size={20} color={colors.background}/>
