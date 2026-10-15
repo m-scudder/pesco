@@ -7,6 +7,7 @@ import type {Scope} from '@/theme/palette';
 
 export type CategoryBudget={category:string;amountPaise:number};
 const PERSONAL_KEY='pesco:personal-category-budgets:v1';
+let nextBudgetChannelId=0;
 
 export function useCategoryBudgets(scope:Scope){
  const {household}=useData();
@@ -35,7 +36,7 @@ export function useCategoryBudgets(scope:Scope){
   const app=AppState.addEventListener('change',state=>{if(state==='active')void refresh()});
   if(scope!=='household'||!householdId||!supabase)return()=>app.remove();
   const db=supabase;
-  const channel=db.channel('category-budgets-'+householdId).on('postgres_changes',
+  const channel=db.channel('category-budgets-'+householdId+'-'+(++nextBudgetChannelId)).on('postgres_changes',
    {event:'*',schema:'public',table:'category_budgets',filter:'household_id=eq.'+householdId},
    ()=>{void refresh()}).subscribe();
   return()=>{app.remove();void db.removeChannel(channel)};
