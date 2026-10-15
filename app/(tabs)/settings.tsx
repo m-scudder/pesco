@@ -42,7 +42,7 @@ export default function Settings(){
  return <Screen style={{gap:20,paddingBottom:90}}>
   <SettingsSection title="Manage">
    <SettingsRow icon="person-circle-outline" label="My profile" subtitle="Manage your name and household identity" onPress={()=>router.push('/profile')}/>
-   <SettingsRow icon="shield-checkmark-outline" label="Account recovery" subtitle="Verify email and protect household access" onPress={()=>router.push('/account-security')}/>
+   <SettingsRow icon="shield-checkmark-outline" label="Account recovery" subtitle="Connect Google to protect household access" onPress={()=>router.push('/account-security')}/>
    <SettingsRow icon="people-outline" label="Household" subtitle="Members, house name and partner invitations" onPress={()=>router.push('/household')}/>
    <SettingsRow icon="repeat-outline" label="Recurring bills" subtitle="Automatically record monthly personal expenses" onPress={()=>router.push('/recurring')}/>
    <SettingsRow icon="wallet-outline" label="Monthly budgets" subtitle="Manage household and personal limits" onPress={()=>router.push('/budget')}/>
