@@ -26,7 +26,7 @@ export default function Onboarding(){
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState<string|null>(null);
  const [signingIn,setSigningIn]=useState(false);
- const authenticated=!!user&&!user.is_anonymous;
+ const authenticated=!!user&&!user.is_anonymous&&!!user.identities?.some(i=>i.provider==='google');
  useEffect(()=>{if(!authenticated)return;let active=true;
   void getMyHousehold().then(existing=>{if(active&&existing)void finish().then(()=>router.replace('/(tabs)'))}).catch(()=>{});
   return()=>{active=false};
@@ -55,7 +55,7 @@ export default function Onboarding(){
   {!authenticated?<View style={{borderRadius:16,padding:20,backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,gap:14}}>
    <Text style={{color:colors.text,fontSize:20,fontFamily:'PlusJakartaSans_700Bold',textAlign:'center'}}>Welcome to PESCO</Text>
    <Text style={{color:colors.muted,textAlign:'center',fontSize:13,lineHeight:20}}>Track your personal and household spending in one simple place.</Text>
-   <Pressable accessibilityRole="button" disabled={signingIn||!configured||!ready} onPress={()=>{void (async()=>{setSigningIn(true);setError(null);try{await googleAuth(user?.is_anonymous?'link':'sign-in')}catch(e){setError(e instanceof Error?e.message:'Google sign-in failed')}finally{setSigningIn(false)}})()}} style={{minHeight:50,borderRadius:10,backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,flexDirection:'row',gap:12,alignItems:'center',justifyContent:'center',opacity:signingIn?0.6:1}}><Ionicons name="logo-google" size={20} color="#4285F4"/><Text style={{color:colors.text,fontSize:15,fontFamily:'Inter_600SemiBold'}}>{signingIn?'Connecting…':'Continue with Google'}</Text></Pressable>
+   <Pressable accessibilityRole="button" disabled={signingIn||!configured||!ready} onPress={()=>{void (async()=>{setSigningIn(true);setError(null);try{await googleAuth(user?'link':'sign-in')}catch(e){setError(e instanceof Error?e.message:'Google sign-in failed')}finally{setSigningIn(false)}})()}} style={{minHeight:50,borderRadius:10,backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,flexDirection:'row',gap:12,alignItems:'center',justifyContent:'center',opacity:signingIn?0.6:1}}><Ionicons name="logo-google" size={20} color="#4285F4"/><Text style={{color:colors.text,fontSize:15,fontFamily:'Inter_600SemiBold'}}>{signingIn?'Connecting…':'Continue with Google'}</Text></Pressable>
    <Text style={{color:colors.muted,textAlign:'center',fontSize:11}}>Sign in securely to continue. Existing PESCO accounts keep their household data.</Text>
    {!configured?<Text style={{color:'#C94F4F'}}>Cloud authentication is not configured.</Text>:null}
   </View>:mode==='choose'?<Card>
