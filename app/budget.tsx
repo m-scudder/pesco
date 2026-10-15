@@ -8,12 +8,12 @@ import {useAppTheme} from '@/theme/ThemeContext';
 import type {Scope} from '@/theme/palette';
 
 export default function Budget(){
- const {budgets,setBudget}=useData();
+ const {budgets,setBudget,household}=useData();
  return <Screen modal style={{gap:12}}>
-  {(['household','personal'] as Scope[]).map(scope=>
+  {(household?(['household','personal'] as Scope[]):(['personal'] as Scope[])).map(scope=>
    <BudgetForm key={scope} scope={scope} value={budgets[scope]} onSave={amount=>setBudget(scope,amount)}/>
   )}
-  <CategoryBudgetSection scope="household"/>
+  {household?<CategoryBudgetSection scope="household"/>:null}
   <CategoryBudgetSection scope="personal"/>
  </Screen>;
 }
