@@ -55,7 +55,7 @@ export default function Onboarding(){
    <Image source={require('../assets/icon.png')} accessibilityLabel="PESCO app logo" resizeMode="contain" style={{width:92,height:92,borderRadius:22}}/>
    <Text style={{color:colors.muted,fontSize:14,fontFamily:'Inter_400Regular',textAlign:'center'}}>Household expenses, together</Text>
   </View>
-  {!authenticated?<View style={{paddingHorizontal:8,gap:14,paddingBottom:6}}>
+  {!authenticated?<View style={{paddingHorizontal:0,gap:14,paddingBottom:6}}>
    <GoogleSignInButton disabled={!configured||!ready} loading={signingIn} onPress={()=>{void (async()=>{
     setSigningIn(true);setError(null);
     try{await googleAuth(user?'link':'sign-in')}
