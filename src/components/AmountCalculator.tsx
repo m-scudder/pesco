@@ -5,7 +5,7 @@ import {initialCalculator,pressCalculator,type CalculatorState} from '@/lib/calc
 
 const keys=['C','⌫','÷','×','7','8','9','−','4','5','6','+','1','2','3','=','0','00','Done'];
 export function AmountCalculator({value,onChange,onDone}:{value:string;onChange:(text:string)=>void;onDone:()=>void}){
- const {colors,scope}=useAppTheme();
+ const {colors}=useAppTheme();
  const [state,setState]=useState<CalculatorState>(()=>initialCalculator(String(Math.round(Number(value)||0))));
  // The calculator is mounted only while open, so reopening starts with
  // the most recently accepted amount. No effect loop is necessary.
@@ -21,13 +21,11 @@ export function AmountCalculator({value,onChange,onDone}:{value:string;onChange:
   }
   const next=label==='00'?pressCalculator(pressCalculator(state,'0'),'0'):pressCalculator(state,label==='−'?'-':label);
   setState(next);
+  // Keep the single amount display in the expense form in sync with every key.
+  if(!next.error)onChange(next.display);
  }
  return <View style={{backgroundColor:colors.surface,borderRadius:12,padding:10,borderWidth:1,borderColor:colors.border,gap:8}}>
-  <View style={{paddingHorizontal:6,paddingVertical:6,alignItems:'flex-end',minHeight:54}}>
-   <Text accessibilityLabel="Calculator amount" numberOfLines={1} style={{color:colors.text,fontSize:28,fontWeight:'700'}}>₹{state.display}</Text>
-   {state.error?<Text style={{color:'#C94F4F',fontSize:12}}>{state.error}</Text>:
-    state.operator?<Text style={{fontSize:12,color:colors.muted}}>{(state.accumulator??0)/100} {state.operator}</Text>:null}
-  </View>
+  {state.error?<Text accessibilityRole="alert" style={{color:'#C94F4F',fontSize:12,paddingHorizontal:6}}>{state.error}</Text>:null}
   <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>
    {keys.map(label=>{
     const isDone=label==='Done';const isOperation=['+','−','×','÷','='].includes(label);
