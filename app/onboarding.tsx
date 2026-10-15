@@ -50,11 +50,11 @@ export default function Onboarding(){
    <Text style={{color:primary?'#fff':colors.text,fontSize:14,fontWeight:'600'}}>{label}</Text>
   </Pressable>
  );
- return <Screen style={{justifyContent:'center',paddingBottom:44,gap:18}}>
-  <View style={{alignItems:'center',gap:6,paddingTop:40}}><Heading subtitle="Your expenses, together">PESCO</Heading></View>
+ return <Screen style={{flexGrow:1,justifyContent:'center',paddingBottom:44,gap:22}}>
+  <View style={{alignItems:'center',gap:14,paddingTop:12}}><View style={{width:66,height:66,borderRadius:20,alignItems:'center',justifyContent:'center',backgroundColor:colors.secondary}}><Ionicons name="book-outline" size={32} color={colors.household}/></View><Text style={{color:colors.text,fontSize:30,fontFamily:'PlusJakartaSans_700Bold'}}>PESCO</Text><Text style={{color:colors.muted,fontSize:14,fontFamily:'Inter_400Regular'}}>Household expenses, together</Text></View>
   {!authenticated?<View style={{borderRadius:16,padding:20,backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,gap:14}}>
-   <Text style={{color:colors.text,fontSize:20,fontFamily:'PlusJakartaSans_700Bold',textAlign:'center'}}>Welcome to PESCO</Text>
-   <Text style={{color:colors.muted,textAlign:'center',fontSize:13,lineHeight:20}}>Track your personal and household spending in one simple place.</Text>
+   <Text style={{color:colors.text,fontSize:16,fontFamily:'Inter_600SemiBold',textAlign:'center'}}>Your shared expense journal</Text>
+   <Text style={{color:colors.muted,textAlign:'center',fontSize:13,lineHeight:20}}>Keep personal and household expenses organized in one place.</Text>
    <Pressable accessibilityRole="button" disabled={signingIn||!configured||!ready} onPress={()=>{void (async()=>{setSigningIn(true);setError(null);try{await googleAuth(user?'link':'sign-in')}catch(e){setError(e instanceof Error?e.message:'Google sign-in failed')}finally{setSigningIn(false)}})()}} style={{minHeight:50,borderRadius:10,backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,flexDirection:'row',gap:12,alignItems:'center',justifyContent:'center',opacity:signingIn?0.6:1}}><Ionicons name="logo-google" size={20} color="#4285F4"/><Text style={{color:colors.text,fontSize:15,fontFamily:'Inter_600SemiBold'}}>{signingIn?'Connecting…':'Continue with Google'}</Text></Pressable>
    <Text style={{color:colors.muted,textAlign:'center',fontSize:11}}>Sign in securely to continue. Existing PESCO accounts keep their household data.</Text>
    {!configured?<Text style={{color:'#C94F4F'}}>Cloud authentication is not configured.</Text>:null}
