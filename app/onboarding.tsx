@@ -10,6 +10,7 @@ import {useAppTheme} from '@/theme/ThemeContext';
 import {createHousehold,getMyHousehold,joinWithKey} from '@/lib/households';
 import {googleAuth,appleAuth} from '@/lib/googleAuth';
 import {GoogleSignInButton} from '@/components/GoogleSignInButton';
+import {Ionicons} from '@expo/vector-icons';
 
 const VALID_CODE=/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
 type Mode='choose'|'create'|'join';
@@ -65,7 +66,7 @@ export default function Onboarding(){
    {Platform.OS==='ios'?<Pressable accessibilityRole="button" accessibilityLabel="Continue with Apple" disabled={signingIn||!configured||!ready}
     onPress={()=>{void (async()=>{setSigningIn(true);setError(null);try{await appleAuth(user?'link':'sign-in')}catch(e){setError(e instanceof Error?e.message:'Apple sign-in failed')}finally{setSigningIn(false)}})()}}
     style={{height:52,width:'100%',backgroundColor:colors.text,borderRadius:5,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,opacity:signingIn?0.55:1}}>
-    <Text style={{color:colors.background,fontSize:19,fontWeight:'600'}}>●</Text>
+    <Ionicons name="logo-apple" size={20} color={colors.background}/>
     <Text style={{color:colors.background,fontFamily:'Inter_600SemiBold',fontSize:14}}>Continue with Apple</Text>
    </Pressable>:null}
    {!configured?<Text style={{color:'#C94F4F',textAlign:'center'}}>Cloud authentication is not configured.</Text>:null}
