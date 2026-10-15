@@ -127,7 +127,8 @@ export default function Home(){
        accessibilityLabel={expense.category+', '+formatMoney(expense.amountPaise)}
        onPress={()=>{
         if(expense.id.startsWith('demo:')){Alert.alert('Demo expense','Sample records are read-only and are not shared with your partner. Disable them in Settings to view only real expenses.');return}
-        router.push({pathname:'/expense/[id]',params:{id:expense.id}});
+        const mine=expense.ownerId==='local-user'||expense.ownerId===currentUserId;
+        router.push(mine?{pathname:'/expense/new',params:{id:expense.id}}:{pathname:'/expense/[id]',params:{id:expense.id}});
        }}
        style={{flexDirection:'row',alignItems:'center',paddingHorizontal:12,paddingVertical:9,gap:9,borderBottomWidth:1,borderColor:colors.border,minHeight:56}}>
        <Text numberOfLines={2} style={{width:88,color:colors.muted,fontSize:11,lineHeight:17}}>{expense.category}</Text>
