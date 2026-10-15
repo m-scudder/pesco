@@ -1,5 +1,5 @@
 import React from 'react';
-import {Alert,Pressable,Switch,Text,View} from 'react-native';
+import {Pressable,Switch,Text,View} from 'react-native';
 import {useRouter} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {Screen} from '@/components/Screen';
@@ -38,11 +38,10 @@ function SettingsRow({icon,label,subtitle,onPress,right,danger=false,last=false}
 export default function Settings(){
  const router=useRouter();
  const {resolved,setAppearance,colors}=useAppTheme();
- const {expenses,clearAll,pendingEntries,demoEnabled,setDemoEnabled}=useData();
+ const {pendingEntries,pendingEditCount,demoEnabled,setDemoEnabled}=useData();
  return <Screen style={{gap:20,paddingBottom:90}}>
   <SettingsSection title="Manage">
    <SettingsRow icon="person-circle-outline" label="My profile" subtitle="Manage your name and household identity" onPress={()=>router.push('/profile')}/>
-   <SettingsRow icon="shield-checkmark-outline" label="Account recovery" subtitle="Connect Google to protect household access" onPress={()=>router.push('/account-security')}/>
    <SettingsRow icon="people-outline" label="Household" subtitle="Members, house name and partner invitations" onPress={()=>router.push('/household')}/>
    <SettingsRow icon="repeat-outline" label="Recurring bills" subtitle="Automatically record monthly personal expenses" onPress={()=>router.push('/recurring')}/>
    <SettingsRow icon="wallet-outline" label="Monthly budgets" subtitle="Manage household and personal limits" onPress={()=>router.push('/budget')}/>
@@ -61,13 +60,8 @@ export default function Settings(){
   </SettingsSection>:null}
   <SettingsSection title="Data">
    <SettingsRow icon="time-outline" label="Expense history & CSV" subtitle="Search all dates and share CSV records" onPress={()=>router.push('/history')}/>
-   <SettingsRow icon="cloud-upload-outline" label="Pending uploads" subtitle={pendingEntries.length?pendingEntries.length+" expense(s) waiting to sync":"No pending uploads"} onPress={()=>router.push('/sync')}/>
-   <SettingsRow icon="save-outline" label={expenses.filter(e=>e.scope==='personal').length+' personal expenses'} subtitle="Stored locally on this device"/>
-   <SettingsRow icon="trash-outline" label="Clear local data" subtitle="Remove local expenses, budgets and personal recurring rules" danger last
-    onPress={()=>Alert.alert('Delete local data?','This removes personal and legacy local expenses, budgets, and personal recurring rules. Shared cloud expenses and pending uploads are not deleted. This cannot be undone.',[
-     {text:'Cancel',style:'cancel'},
-     {text:'Delete',style:'destructive',onPress:clearAll}
-    ])}/>
+   <SettingsRow icon="cloud-upload-outline" label="Pending uploads" subtitle={pendingEntries.length+pendingEditCount>0?(pendingEntries.length+pendingEditCount)+" pending change(s)":"No pending uploads"} onPress={()=>router.push('/sync')} last/>
+
   </SettingsSection>
  </Screen>;
 }
