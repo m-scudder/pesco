@@ -8,9 +8,10 @@ import {useData} from '@/data';
 import {useOnboarding} from '@/lib/OnboardingContext';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {createHousehold,getMyHousehold,joinWithKey} from '@/lib/households';
-import {googleAuth,appleAuth} from '@/lib/googleAuth';
+import {googleAuth} from '@/lib/googleAuth';
+import {nativeAppleSignIn} from '@/lib/nativeAppleAuth';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import {GoogleSignInButton} from '@/components/GoogleSignInButton';
-import {Ionicons} from '@expo/vector-icons';
 
 const VALID_CODE=/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
 type Mode='choose'|'create'|'join';
@@ -57,18 +58,26 @@ export default function Onboarding(){
    <Text style={{color:colors.muted,fontSize:14,fontFamily:'Inter_400Regular',textAlign:'center'}}>Household expenses, together</Text>
   </View>
   {!authenticated?<View style={{paddingHorizontal:0,gap:14,paddingBottom:6}}>
-   <GoogleSignInButton disabled={!configured||!ready} loading={signingIn} onPress={()=>{void (async()=>{
+   {Platform.OS==='android'?<GoogleSignInButton disabled={!configured||!ready||signingIn} loading={signingIn} onPress={()=>{void (async()=>{
     setSigningIn(true);setError(null);
     try{await googleAuth(user?'link':'sign-in')}
     catch(e){setError(e instanceof Error?e.message:'Google sign-in failed')}
     finally{setSigningIn(false)}
-   })()}}/>
-   {Platform.OS==='ios'&&process.env.EXPO_PUBLIC_ENABLE_APPLE_SIGN_IN==='true'?<Pressable accessibilityRole="button" accessibilityLabel="Continue with Apple" disabled={signingIn||!configured||!ready}
-    onPress={()=>{void (async()=>{setSigningIn(true);setError(null);try{await appleAuth(user?'link':'sign-in')}catch(e){setError(e instanceof Error?e.message:'Apple sign-in failed')}finally{setSigningIn(false)}})()}}
-    style={{height:52,width:'100%',backgroundColor:colors.text,borderRadius:5,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,opacity:signingIn?0.55:1}}>
-    <Ionicons name="logo-apple" size={20} color={colors.background}/>
-    <Text style={{color:colors.background,fontFamily:'Inter_600SemiBold',fontSize:14}}>Continue with Apple</Text>
-   </Pressable>:null}
+   })()}}/>:null}
+   {Platform.OS==='ios'?<View style={{opacity:!configured||!ready||signingIn?0.55:1}}>
+    <AppleAuthentication.AppleAuthenticationButton
+     buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+     buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+     cornerRadius={5}
+     style={{height:52,width:'100%'}}
+     onPress={()=>{if(signingIn||!configured||!ready)return;void (async()=>{
+      setSigningIn(true);setError(null);
+      try{await nativeAppleSignIn()}
+      catch(e){setError(e instanceof Error?e.message:'Apple sign-in failed')}
+      finally{setSigningIn(false)}
+     })()}}
+    />
+   </View>:null}
    {!configured?<Text style={{color:'#C94F4F',textAlign:'center'}}>Cloud authentication is not configured.</Text>:null}
   </View>:mode==='choose'?<Card>
    <Text style={{fontSize:14,fontFamily:'Inter_600SemiBold',color:colors.text,textAlign:'center',marginBottom:4}}>Set up your household</Text>
