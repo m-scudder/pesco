@@ -231,6 +231,10 @@ export function DataProvider({children}:{children:React.ReactNode}){
   };
  },[user?.id,refresh]);
 
+ useEffect(()=>{
+  if(user&&localLoaded&&localExpenses.some(item=>item.scope==='personal'))void refresh();
+ },[user?.id,localLoaded,localExpenses,refresh]);
+
  // Subscribe after membership is known. Re-subscribe if the household changes.
  // Realtime events invalidate the household feed, which is fetched under RLS.
  useEffect(()=>{
