@@ -19,10 +19,14 @@ export function useAccountActions(){
    Alert.alert('Unsynced changes','Please sync or discard pending household changes before logging out.');
    return;
   }
-  const hasLocalData=expenses.some(x=>x.scope==='personal'||(x.scope==='household'&&x.ownerId==='local-user'))||
+  if(expenses.some(x=>x.scope==='personal'&&x.ownerId==='local-user')){
+   Alert.alert('Personal backup pending','Wait for personal expenses to finish syncing before logging out.');
+   return;
+  }
+  const hasLocalData=expenses.some(x=>x.scope==='household'&&x.ownerId==='local-user')||
    recurringRules.length>0||budgets.household!==null||budgets.personal!==null;
   Alert.alert('Log out of PESCO?',hasLocalData
-   ?'Personal expenses, local budgets and recurring rules are stored only on this device. Logging out will erase these device-only records. Shared cloud expenses will remain. Export anything you need first.'
+   ?'Some budgets and recurring rules are stored only on this device. Logging out will erase these device-only settings. Shared cloud expenses will remain. Export anything you need first.'
    :'You will need to sign in with Google again. Your shared household expenses stay in the cloud.',[
    {text:'Cancel',style:'cancel'},
    {text:hasLocalData?'Erase local data & log out':'Log out',style:hasLocalData?'destructive':'default',onPress:()=>{void (async()=>{
