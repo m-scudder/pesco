@@ -6,6 +6,7 @@ on:
     branches:
       - feat/household-first-onboarding
       - feat/phase3-reliability-polish
+      - feat/phase4-production-readiness
       - main
 
 jobs:
