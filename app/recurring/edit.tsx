@@ -52,7 +52,7 @@ export default function RecurringEditor(){
      const displayed=shownDue(start,day);
      setFirstDue(displayed);
      setOriginal({display:displayed,startsOn:start,day});
-     setAmount((amountValue/100).toFixed(2));
+     setAmount(String(amountValue/100));
      setNote(selected.note);
      setCategory(selected.category);
     }
@@ -73,7 +73,7 @@ export default function RecurringEditor(){
  const save=async()=>{
   if(busy)return;
   const value=parseMoney(amount.replace(/,/g,''));
-  if(value===null){Alert.alert('Invalid amount','Enter a positive amount with up to two decimals.');return}
+  if(value===null){Alert.alert('Invalid amount','Enter a positive whole-rupee amount.');return}
   if(!options.includes(category)){Alert.alert('Invalid category','Choose a category.');return}
   const unchanged=!!original&&firstDue===original.display;
   const day=unchanged?original.day:Number(firstDue.slice(8,10));
@@ -111,7 +111,7 @@ export default function RecurringEditor(){
     <View style={{flexDirection:'row',alignItems:'center',minHeight:42}}>
      <View style={fieldLabel()}><Text style={{fontFamily:'Inter_400Regular',fontSize:13,color:colors.muted}}>Amount</Text></View>
      <Text style={{color:colors.muted,fontSize:14,marginRight:4}}>₹</Text>
-     <TextInput accessibilityLabel="Monthly amount" keyboardType="decimal-pad" value={amount} onChangeText={setAmount} placeholder="0.00" placeholderTextColor={colors.muted}
+     <TextInput accessibilityLabel="Monthly amount" keyboardType="number-pad" value={amount} onChangeText={v=>setAmount(v.replace(/[^0-9]/g,''))} placeholder="0" placeholderTextColor={colors.muted}
       style={{flex:1,color:colors.text,fontSize:16,fontFamily:'Inter_500Medium',paddingVertical:7}}/>
     </View>
     {line()}
