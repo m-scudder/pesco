@@ -9,7 +9,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.pesco",
+      "bundleIdentifier": "com.mayankagarwal.pesco",
       "icon": "./assets/icon.png"
     },
     "android": {
