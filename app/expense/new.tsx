@@ -3,7 +3,8 @@ import {Alert,Keyboard,Modal,Platform,Pressable,ScrollView,Text,TextInput,View} 
 import DateTimePicker,{DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 import {Stack,useLocalSearchParams,useRouter} from 'expo-router';
 import {Screen} from '@/components/Screen';
-import {Body,Card,ScopeSwitch} from '@/components/UI';
+import {ScopeSwitch} from '@/components/UI';
+import {Ionicons} from '@expo/vector-icons';
 import {AmountCalculator} from '@/components/AmountCalculator';
 import {localDate,parseMoney,useData} from '@/data';
 import {useCategories} from '@/lib/CategoryContext';
@@ -64,12 +65,50 @@ export default function ExpenseEditor(){
  }
  const pickerCard={backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1 as const,borderRadius:16,padding:16,width:'100%' as const,maxWidth:420};
  const line=()=> <View style={{height:1,backgroundColor:colors.border}}/>;
- return <><Stack.Screen options={{title:editing?'Edit expense':'Add expense'}}/><Screen modal><ScopeSwitch/><Card><View style={{flexDirection:'row',alignItems:'center',minHeight:44}}><View style={{width:84}}><Body>Date</Body></View><Pressable accessibilityRole="button" accessibilityLabel="Choose expense date" onPress={openDatePicker} style={{flex:1,minHeight:44,justifyContent:'center'}}>
- <Text style={{color:colors.text,fontSize:15}}>{new Date(date+'T12:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}  ▾</Text>
- </Pressable></View>{line()}<View style={{flexDirection:'row',alignItems:'center',minHeight:44}}><View style={{width:84}}><Body>Amount</Body></View><Pressable accessibilityRole="button" accessibilityLabel="Amount, open calculator" onPress={()=>{Keyboard.dismiss();setDatePickerOpen(false);setCategoryOpen(false);setCalculatorOpen(open=>!open)}} style={{flex:1,minHeight:44,justifyContent:'center'}}><Text style={{color:amount?colors.text:colors.muted,fontSize:20}}>{amount?'₹'+amount:'₹0.00'}</Text></Pressable></View>{line()}<Pressable accessibilityRole="button" accessibilityLabel="Choose category" onPress={()=>{Keyboard.dismiss();setCalculatorOpen(false);setDatePickerOpen(false);setCategoryOpen(true)}} style={{flexDirection:'row',alignItems:'center',minHeight:44}}>
- <View style={{width:84}}><Body>Category</Body></View>
- <Text style={{flex:1,color:colors.text,fontSize:15}}>{category||'Select category'}  ▾</Text>
- </Pressable>{line()}<View style={{flexDirection:'row',alignItems:'center',minHeight:44}}><View style={{width:84}}><Body>Note</Body></View><TextInput accessibilityLabel="Optional note" value={note} onChangeText={setNote} maxLength={500} placeholder="Optional" placeholderTextColor={colors.muted} style={{flex:1,color:colors.text}}/></View></Card><Modal visible={datePickerOpen} transparent animationType="fade" presentationStyle="overFullScreen" onRequestClose={()=>setDatePickerOpen(false)}>
+ return <><Stack.Screen options={{title:editing?'Edit expense':'Add expense'}}/>
+ <Screen modal>
+  <View style={{alignItems:'center',paddingTop:18,paddingBottom:22,gap:7}}>
+   <Text style={{color:colors.muted,fontFamily:'Inter_500Medium',fontSize:12,letterSpacing:0.8}}>AMOUNT</Text>
+   <Pressable accessibilityRole="button" accessibilityLabel="Amount, open calculator" onPress={()=>{Keyboard.dismiss();setDatePickerOpen(false);setCategoryOpen(false);setCalculatorOpen(v=>!v)}}
+    style={{minHeight:58,minWidth:180,justifyContent:'center',alignItems:'center',paddingHorizontal:16}}>
+    <Text adjustsFontSizeToFit numberOfLines={1} style={{color:amount?colors.text:colors.muted,fontSize:30,fontFamily:'PlusJakartaSans_600SemiBold',fontVariant:['tabular-nums']}}>{amount?'₹ '+amount:'₹ 0.00'}</Text>
+   </Pressable>
+   <Text style={{color:colors.muted,fontSize:12}}>INR · Tap to edit</Text>
+  </View>
+  <View style={{marginBottom:18}}><ScopeSwitch/></View>
+  <View style={{backgroundColor:colors.surface,borderRadius:12,borderWidth:1,borderColor:colors.border,paddingHorizontal:16}}>
+   <Pressable accessibilityRole="button" accessibilityLabel="Choose category" onPress={()=>{Keyboard.dismiss();setCalculatorOpen(false);setDatePickerOpen(false);setCategoryOpen(true)}}
+    style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:68}}>
+    <Ionicons name="pricetag-outline" size={19} color={colors.muted}/>
+    <View style={{flex:1,gap:4}}>
+     <Text style={{fontSize:11,color:colors.muted,fontFamily:'Inter_500Medium'}}>CATEGORY</Text>
+     <Text style={{fontSize:15,color:colors.text,fontFamily:'Inter_500Medium'}}>{category||'Select category'}</Text>
+    </View>
+    <Ionicons name="chevron-forward" size={17} color={colors.muted}/>
+   </Pressable>
+   {line()}
+   <Pressable accessibilityRole="button" accessibilityLabel="Choose expense date" onPress={openDatePicker}
+    style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:68}}>
+    <Ionicons name="calendar-outline" size={19} color={colors.muted}/>
+    <View style={{flex:1,gap:4}}>
+     <Text style={{fontSize:11,color:colors.muted,fontFamily:'Inter_500Medium'}}>DATE</Text>
+     <Text style={{fontSize:15,color:colors.text,fontFamily:'Inter_500Medium'}}>{new Date(date+'T12:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</Text>
+    </View>
+    <Ionicons name="chevron-forward" size={17} color={colors.muted}/>
+   </Pressable>
+   {line()}
+   <View style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:68}}>
+    <Ionicons name="document-text-outline" size={19} color={colors.muted}/>
+    <View style={{flex:1,gap:4,paddingVertical:10}}>
+     <Text style={{fontSize:11,color:colors.muted,fontFamily:'Inter_500Medium'}}>NOTE</Text>
+     <TextInput accessibilityLabel="Optional note" value={note} onChangeText={setNote} maxLength={500}
+      placeholder="Add a note (optional)" placeholderTextColor={colors.muted}
+      style={{fontSize:15,color:colors.text,padding:0,fontFamily:'Inter_400Regular'}}/>
+    </View>
+   </View>
+  </View>
+  <View style={{flex:1,minHeight:20}}/>
+  <Modal visible={datePickerOpen} transparent animationType="fade" presentationStyle="overFullScreen" onRequestClose={()=>setDatePickerOpen(false)}>
  <View style={{flex:1,justifyContent:'center',paddingHorizontal:24,backgroundColor:'rgba(0,0,0,0.55)'}}>
   <Pressable onPress={()=>setDatePickerOpen(false)} style={{position:'absolute',top:0,bottom:0,left:0,right:0}} accessibilityLabel="Dismiss date picker"/>
   <View style={pickerCard}>
@@ -104,7 +143,7 @@ export default function ExpenseEditor(){
   </View>
  </View>
  </Modal>
- {calculatorOpen?<AmountCalculator value={amount} onChange={setAmount} onDone={()=>setCalculatorOpen(false)}/>:null}<Pressable disabled={submitting||!loaded||calculatorOpen} onPress={()=>{void save()}} style={{backgroundColor:scope==='household'?colors.household:colors.personal,padding:13,borderRadius:10,alignItems:'center'}}><Text style={{color:'#fff',fontWeight:'700'}}>{editing?'Save changes':'Save expense'}</Text></Pressable>{editing?<Pressable accessibilityRole="button" accessibilityLabel="Delete expense" disabled={submitting} onPress={confirmDelete}
+ {calculatorOpen?<AmountCalculator value={amount} onChange={setAmount} onDone={()=>setCalculatorOpen(false)}/>:null}<Pressable disabled={submitting||!loaded||calculatorOpen} onPress={()=>{void save()}} style={{backgroundColor:scope==='household'?colors.household:colors.personal,padding:15,borderRadius:7,alignItems:'center',marginTop:16,minHeight:50}}><Text style={{color:'#fff',fontFamily:'Inter_600SemiBold',fontSize:15}}>{submitting?'Saving…':editing?'Save changes':'Save expense'}</Text></Pressable>{editing?<Pressable accessibilityRole="button" accessibilityLabel="Delete expense" disabled={submitting} onPress={confirmDelete}
  style={{paddingVertical:16,alignItems:'center',opacity:submitting?0.5:1}}>
  <Text style={{color:'#C54B4B',fontFamily:'Inter_600SemiBold',fontSize:14}}>Delete expense</Text>
  </Pressable>:null}</Screen></>
