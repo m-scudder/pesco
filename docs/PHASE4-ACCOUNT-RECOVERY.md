@@ -1,37 +1,25 @@
-# Phase 4 — Account Recovery Setup and QA
+# Phase 4 — Google Account Recovery Setup
 
-## Supabase configuration
-- Enable **Anonymous Sign-Ins** (already used by PESCO).
-- Enable **Email** authentication, email confirmation, and **Manual Linking** in Supabase Auth settings. Manual linking is required for conversion of an anonymous identity.
-- Configure SMTP delivery and email templates before public release. Default development email limits are not suitable for scale.
-- Configure allowed redirect URLs/deep links for verification and password recovery. The initial in-app verification-code flow avoids depending solely on links; reset-password links still require a supported app return flow.
-- Do not enable a second anonymous identity automatically on expired-session errors. Recover the prior session whenever possible.
+PESCO uses **Google OAuth through Supabase**. Existing anonymous users must **link** Google to their current session; returning users sign in with Google. Do not use `signInWithOAuth` to protect an existing anonymous user because it could switch their Supabase user ID.
 
-## Protect an existing account (same device)
-1. Create or join a household. Add one expense.
-2. Open **Settings → Account recovery**.
-3. Enter a new email and choose **Send verification email**.
-4. Verify through the email-change OTP (if provided), or follow the verification link and return to the app.
-5. Confirm the screen recognizes the verified identity and asks for a password.
-6. Set a password of at least 12 characters.
-7. Verify your household and the existing expense still belong to the **same Supabase user ID** after identity linking.
-8. Repeat the flow with an unverified email and make sure password creation is blocked.
+## Required configuration
+1. In Google Cloud Console, configure the OAuth consent screen and create a **Web** OAuth client for Supabase. Add Supabase's **OAuth callback URL** (from Authentication → Providers → Google) as an authorized redirect URI in Google Cloud.
+2. In Supabase Authentication → Providers, enable **Google** and enter the Google OAuth client ID and secret.
+3. In Supabase Authentication settings, enable **Manual Linking** to let anonymous users attach their Google identity.
+4. In Supabase Authentication → URL Configuration → Additional Redirect URLs, allow `pesco://auth/callback`.
+5. `app.json` already declares scheme `pesco`. Test on a newly built iOS/Android dev client. Rebuild after adding `expo-web-browser`:
+   - `npm ci && npx expo run:ios`
+   - `npm ci && npx expo run:android`
+6. No Google OAuth client secret belongs in source control, Expo `EXPO_PUBLIC_*` variables, or the app binary.
 
-## Recover on a fresh device
-1. Install PESCO on a second device with no prior local expense data.
-2. Select **Recover existing account** on onboarding.
-3. Sign in with the verified email and password.
-4. Verify household membership and cloud expenses return without joining via invite code again.
-5. On an existing device containing household data, verify the recovery sign-in is blocked; use Settings → Account recovery instead.
+## Acceptance checks
+- Existing household user: Settings → Account recovery → Continue with Google. Confirm Supabase UID is unchanged and old household expenses are visible. Google now appears under Auth user identities.
+- Cancel browser login: original session stays active; no account changes.
+- Existing account on another device: fresh install → Continue with Google → same Google identity → same cloud household membership, categories, shared budgets, expenses.
+- Guard on device with an active household/personal expenses prevents switching to another Google account.
+- Wrong Google account previously linked elsewhere produces a visible error and does not silently migrate the user's expenses.
+- Verify account recovery in iOS and Android standalone builds; test web authentication redirects and app restart.
+- Personal expenses and personal budgets remain device-local and are not part of cloud recovery.
 
-## Privacy / identity caveats
-- **Do not sign out of an anonymous account** before linking and verifying its email; the original household identity may be unrecoverable.
-- Personal expenses, personal categories and overall local budgets are currently device-local, not restored by account recovery. Cloud household expenses and shared categories/budgets are restored.
-- Password-reset email sending is implemented; consuming password-reset deep links inside the app requires an additional verified end-to-end test before claiming full reset support.
-- Multiple account switching on one device remains disabled; this avoids accidental exposure of local personal data across identities.
-
-## Release readiness backlog
-- Unit tests for CSV serialization, expense filtering and offline conflict resolution.
-- Two-account RLS integration tests (including nonmember and former member scenarios).
-- Encrypted or account-scoped local personal data and explicit backup policy.
-- Production Supabase environment, email deliverability/rate limits, EAS build credentials, privacy policy and App Store / Play Console submissions.
+## Remaining Phase 4 gates
+Data isolation for multiple accounts, backup/recovery for device-local personal data, automated end-to-end tests, production environment and store builds remain separate work.
