@@ -12,15 +12,15 @@ function callbackTokens(url:string){
  if(failure)throw new Error(failure);
  return {accessToken:params.get('access_token'),refreshToken:params.get('refresh_token'),code:params.get('code')};
 }
-export async function googleAuth(mode:'link'|'sign-in'){
+export async function socialAuth(provider:'google'|'apple',mode:'link'|'sign-in'){
  if(!supabase)throw new Error('Supabase is not configured.');
  const before=mode==='link'?(await supabase.auth.getUser()).data.user?.id:null;
  if(mode==='link'&&!before)throw new Error('You must be signed in to link Google.');
  const response=mode==='link'
-  ?await supabase.auth.linkIdentity({provider:'google',options:{redirectTo,skipBrowserRedirect:true}})
+  ?await supabase.auth.linkIdentity({provider,options:{redirectTo,skipBrowserRedirect:true}})
   :await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo,skipBrowserRedirect:true}});
  if(response.error)throw response.error;
- if(!response.data.url)throw new Error('Google authorization URL unavailable');
+ if(!response.data.url)throw new Error('Authentication URL unavailable');
  const result=await WebBrowser.openAuthSessionAsync(response.data.url,redirectTo);
  if(result.type!=='success')return false;
  const {accessToken,refreshToken,code}=callbackTokens(result.url);
@@ -30,10 +30,13 @@ export async function googleAuth(mode:'link'|'sign-in'){
  }else if(accessToken&&refreshToken){
   const {error}=await supabase.auth.setSession({access_token:accessToken,refresh_token:refreshToken});
   if(error)throw error;
- }else throw new Error('Google did not return a valid authorization response');
+ }else throw new Error('Provider did not return a valid authorization response');
  const {data,error}=await supabase.auth.getUser();
- if(error||!data.user)throw error??new Error('Unable to verify Google sign-in');
+ if(error||!data.user)throw error??new Error('Unable to verify sign-in');
  if(mode==='link'&&data.user.id!==before)throw new Error('Account identity unexpectedly changed. Stop and contact support.');
  try{await ensureGoogleProfile(data.user)}catch(e){console.warn('Unable to initialize Google profile',e)}
  return true;
 }
+
+export const googleAuth=(mode:'link'|'sign-in')=>socialAuth('google',mode);
+export const appleAuth=(mode:'link'|'sign-in')=>socialAuth('apple',mode);
