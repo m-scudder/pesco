@@ -9,12 +9,12 @@
 
 ## Before running on devices
 - Apply migration `20261015161000_personal_expense_cloud_keys.sql` in every target Supabase environment. This was applied to the connected development environment.
-- In Supabase → Authentication → Providers enable Apple after registering the Apple Service ID and signing key. Configure the standard Supabase Apple callback URL in Apple Developer. Once it is working in a dev build, set `EXPO_PUBLIC_ENABLE_APPLE_SIGN_IN=true` in the build environment to show the iOS button. **Apple login does not work until configured.**
-- Apple Developer account, app identifiers, signing/entitlements, and OAuth callback are required. Do not commit signing keys to Git.
+- Native iOS Apple sign-in is enabled through `expo-apple-authentication`, `ios.usesAppleSignIn: true`, and Supabase `signInWithIdToken`. In Supabase Apple provider, use `com.mayankagarwal.pesco` as the native Client ID. A browser OAuth key and Services ID are not required.
+- Apple Developer App ID `com.mayankagarwal.pesco` must have Sign in with Apple capability; a newly signed native iOS build is required.
 - Set the permanent production iOS bundle identifier and Android package identifier before release. `com.anonymous.pesco` is a development placeholder. Ensure the corresponding identifiers match Apple/Google authentication settings.
 - Set up EAS project and store signing credentials (`eas build:configure`); then build `eas build --profile preview --platform all`.
 - Provide a public privacy-policy URL and support contact. Declare personal financial data and account deletion accurately in the store privacy forms.
-- Verify Google OAuth consent branding and Apple button/login behavior on real devices.
+- Verify Google OAuth on Android and native Apple sign-in on a physical iPhone; test both Apple real email and Hide My Email.
 
 ## Personal expense recovery and isolation QA
 1. Sign in as account A, create personal expenses on device A, and verify they appear in the remote `expenses` table with `scope='personal'`, `household_id is null`, and `owner_id=A`.
@@ -36,7 +36,7 @@
 - Run builds on iOS and Android to check OAuth redirects.
 
 ## Known release blockers
-- Apple provider cannot be activated without Apple Developer credentials and Supabase provider setup.
+- Apple provider and App ID are configured, but native Apple sign-in must be validated on a real iPhone with a fresh signed build.
 - No signed iOS/Android production artifacts or store submissions have been generated.
 - Device-only budgets, recurring rules, and personal category customizations are not yet backed up; a dedicated backup policy is still required.
 - Automated tests cover expense history and CSV safety; full RLS multi-user integration and offline sync end-to-end tests remain manual.
