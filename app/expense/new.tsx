@@ -9,7 +9,7 @@ import {localDate,parseMoney,useData} from '@/data';
 import {useCategories} from '@/lib/CategoryContext';
 import {useAppTheme} from '@/theme/ThemeContext';
 export default function ExpenseEditor(){
- const {id}=useLocalSearchParams<{id?:string}>();const router=useRouter();const {expenses,add,update,loaded,household,currentUserId}=useData();const {colors,resolved,scope,setScope}=useAppTheme();const editing=id?expenses.find(e=>e.id===id):undefined;
+ const {id}=useLocalSearchParams<{id?:string}>();const router=useRouter();const {expenses,add,update,remove,loaded,household,currentUserId}=useData();const {colors,resolved,scope,setScope}=useAppTheme();const editing=id?expenses.find(e=>e.id===id):undefined;
  const {names:categoryNames}=useCategories();
  const availableCategories=categoryNames(scope);
  const options=editing&&!availableCategories.includes(editing.category)?[editing.category,...availableCategories]:availableCategories;
@@ -36,6 +36,19 @@ export default function ExpenseEditor(){
  }
  await commit();
 }
+ function confirmDelete(){
+  if(!editing||submitting)return;
+  Alert.alert('Delete expense?','This cannot be undone.',[
+   {text:'Cancel',style:'cancel'},
+   {text:'Delete',style:'destructive',onPress:()=>{
+    setSubmitting(true);
+    void remove(editing.id).then(()=>router.back()).catch(error=>{
+     setSubmitting(false);
+     Alert.alert('Could not delete',error instanceof Error?error.message:'Please try again');
+    });
+   }}
+  ]);
+ }
  function formatISO(picked:Date){
   return picked.getFullYear()+'-'+String(picked.getMonth()+1).padStart(2,'0')+'-'+String(picked.getDate()).padStart(2,'0');
  }
@@ -91,5 +104,8 @@ export default function ExpenseEditor(){
   </View>
  </View>
  </Modal>
- {calculatorOpen?<AmountCalculator value={amount} onChange={setAmount} onDone={()=>setCalculatorOpen(false)}/>:null}<Pressable disabled={submitting||!loaded||calculatorOpen} onPress={()=>{void save()}} style={{backgroundColor:scope==='household'?colors.household:colors.personal,padding:13,borderRadius:10,alignItems:'center'}}><Text style={{color:'#fff',fontWeight:'700'}}>{editing?'Save changes':'Save expense'}</Text></Pressable></Screen></>
+ {calculatorOpen?<AmountCalculator value={amount} onChange={setAmount} onDone={()=>setCalculatorOpen(false)}/>:null}<Pressable disabled={submitting||!loaded||calculatorOpen} onPress={()=>{void save()}} style={{backgroundColor:scope==='household'?colors.household:colors.personal,padding:13,borderRadius:10,alignItems:'center'}}><Text style={{color:'#fff',fontWeight:'700'}}>{editing?'Save changes':'Save expense'}</Text></Pressable>{editing?<Pressable accessibilityRole="button" accessibilityLabel="Delete expense" disabled={submitting} onPress={confirmDelete}
+ style={{paddingVertical:16,alignItems:'center',opacity:submitting?0.5:1}}>
+ <Text style={{color:'#C54B4B',fontFamily:'Inter_600SemiBold',fontSize:14}}>Delete expense</Text>
+ </Pressable>:null}</Screen></>
 }
