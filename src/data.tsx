@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {Scope} from './theme/palette';
 import {useAuth} from './lib/AuthContext';
 import {getMyHousehold,type Household} from './lib/households';
-import {addCloudExpense,deleteCloudExpense,editCloudExpense,fetchAllHouseholdExpenses} from './lib/cloudExpenses';
+import {addCloudExpense,deleteCloudExpense,editCloudExpense,fetchAllHouseholdExpenses,fetchAllPersonalExpenses,importPersonalExpense} from './lib/cloudExpenses';
 import {supabase} from './lib/supabase';
 import {makeDemoExpenses} from './lib/demoExpenses';
 import {generateHouseholdRecurring} from './lib/householdRecurring';
@@ -52,6 +52,8 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const [generated,setGenerated]=useState<string[]>([]);
  const [household,setHousehold]=useState<Household|null>(null);
  const [cloudExpenses,setCloudExpenses]=useState<Expense[]>([]);
+ const [cloudPersonal,setCloudPersonal]=useState<Expense[]>([]);
+ const personalImportBusy=useRef(false);
  const [syncError,setSyncError]=useState<string|null>(null);
  const [syncing,setSyncing]=useState(false);
  const [cloudReady,setCloudReady]=useState(false);
@@ -178,24 +180,44 @@ export function DataProvider({children}:{children:React.ReactNode}){
     }
    }
    const rows=membership?await fetchAllHouseholdExpenses(membership.id):[];
+   if(localLoaded&&!personalImportBusy.current){
+    personalImportBusy.current=true;
+    try{
+     const ownerKey='pesco:legacy-personal-owner';
+     const recordedOwner=await AsyncStorage.getItem(ownerKey);
+     if(!recordedOwner)await AsyncStorage.setItem(ownerKey,user.id);
+     if(!recordedOwner||recordedOwner===user.id){
+      const legacy=localExpenses.filter(e=>e.scope==='personal');
+      for(const entry of legacy){
+       await importPersonalExpense(entry);
+       setLocalExpenses(previous=>previous.filter(e=>e.id!==entry.id));
+      }
+     }else if(localExpenses.some(e=>e.scope==='personal')){
+      setQueueError('Personal data on this device belongs to a different account and was not imported.');
+     }
+    }catch(e){
+     setQueueError('Personal cloud backup pending: '+(e instanceof Error?e.message:String(e)));
+    }finally{personalImportBusy.current=false}
+   }
+   const personalRows=await fetchAllPersonalExpenses(user.id);
    try{await AsyncStorage.setItem('pesco:household-cache:'+user.id,JSON.stringify({household:membership,expenses:rows}))}
    catch(e){console.warn('Could not update offline household cache',e)}
    if(request===requested.current){
     verifiedUser.current=user.id;
-    setHousehold(membership);setCloudExpenses(rows);setSyncError(null);setCloudReady(true);
+    setHousehold(membership);setCloudExpenses(rows);setCloudPersonal(personalRows);setSyncError(null);setCloudReady(true);
    }
   }catch(e){
    if(request===requested.current){
     setSyncError(e instanceof Error?e.message:'Could not sync expenses');setCloudReady(true);
    }
   }finally{if(request===requested.current)setSyncing(false)}
- },[user?.id,configured]);
+ },[user?.id,configured,localLoaded]);
 
  useEffect(()=>{
   requested.current++;
   verifiedUser.current=null;
   recurringGeneratedOn.current=null;
-  setHousehold(null);setCloudExpenses([]);setCloudReady(false);setSyncError(null);
+  setHousehold(null);setCloudExpenses([]);setCloudPersonal([]);setCloudReady(false);setSyncError(null);
   if(!user)return;
   void refresh();
   // Realtime refreshes normally provide prompt updates; polling is a fallback after missed events.
@@ -227,7 +249,8 @@ export function DataProvider({children}:{children:React.ReactNode}){
  },[user?.id,household?.id,refresh]);
 
  const realExpenses=useMemo(()=>[
-  ...localExpenses.filter(e=>e.scope==='personal'||(!household&&e.scope==='household')),
+  ...localExpenses.filter(e=>(e.scope==='personal'&&!cloudPersonal.some(remote=>remote.id===e.id))||(!household&&e.scope==='household')),
+  ...cloudPersonal,
   ...(household?cloudExpenses.filter(e=>!mutations.some(op=>op.id===e.id&&op.kind==='delete')).map(e=>{
    const op=mutations.find(item=>item.id===e.id&&item.kind==='update');
    return op?.draft?{...e,amountPaise:op.draft.amountPaise,category:op.draft.category,note:op.draft.note,date:op.draft.date}:e;
@@ -236,7 +259,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
    id:p.id,scope:'household' as Scope,amountPaise:p.draft.amountPaise,category:p.draft.category,note:p.draft.note,date:p.draft.date,
    ownerId:p.userId,createdAt:p.queuedAt,updatedAt:p.queuedAt
   }))
- ],[localExpenses,cloudExpenses,household,pending,mutations]);
+ ],[localExpenses,cloudExpenses,cloudPersonal,household,pending,mutations]);
  const demoExpenses=useMemo(()=>__DEV__?makeDemoExpenses():[],[]);
  const expenses=useMemo(()=>demoEnabled&&__DEV__?[...realExpenses,...demoExpenses]:realExpenses,[demoEnabled,realExpenses,demoExpenses]);
 
@@ -251,6 +274,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
   }
   const now=new Date().toISOString();
   setLocalExpenses(prev=>[{...draft,id:now+'-'+Math.random().toString(36).slice(2),ownerId:'local-user',createdAt:now,updatedAt:now},...prev]);
+  void refresh();
  },[household,refresh,user?.id]);
 
  const update=useCallback(async(id:string,draft:ExpenseDraft)=>{
@@ -273,8 +297,13 @@ export function DataProvider({children}:{children:React.ReactNode}){
    void refresh();
    return;
   }
+  if(cloudPersonal.some(e=>e.id===id)){
+   await editCloudExpense(id,{...draft,householdId:null});
+   await refresh();
+   return;
+  }
   setLocalExpenses(prev=>prev.map(e=>e.id===id?{...e,...draft,updatedAt:new Date().toISOString()}:e));
- },[cloudExpenses,household,user?.id,refresh,pending]);
+ },[cloudExpenses,cloudPersonal,household,user?.id,refresh,pending]);
 
  const remove=useCallback(async(id:string)=>{
   if(id.startsWith('demo:'))throw new Error('Demo records cannot be deleted. Turn off sample data in Settings.');
@@ -291,8 +320,11 @@ export function DataProvider({children}:{children:React.ReactNode}){
    mutationEpoch.current++;
    setMutations(latest);
    void refresh();
+  }else if(cloudPersonal.some(e=>e.id===id)){
+   await deleteCloudExpense(id);
+   await refresh();
   }else setLocalExpenses(prev=>prev.filter(e=>e.id!==id));
- },[cloudExpenses,user?.id,household,refresh,pending]);
+ },[cloudExpenses,cloudPersonal,user?.id,household,refresh,pending]);
 
  const importLocalHousehold=useCallback(async()=>{
   if(!household)throw new Error('Join a household first');
