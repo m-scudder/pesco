@@ -47,6 +47,8 @@ export function DataProvider({children}:{children:React.ReactNode}){
  useEffect(()=>{if(!__DEV__)return;AsyncStorage.getItem('pesco:debug-demo-enabled').then(v=>{if(v!==null)setDemoEnabled(v==='true')}).catch(()=>{})},[]);
  const changeDemoEnabled=useCallback((value:boolean)=>{if(!__DEV__)return;setDemoEnabled(value);void AsyncStorage.setItem('pesco:debug-demo-enabled',String(value))},[]);
  const [localExpenses,setLocalExpenses]=useState<Expense[]>([]);
+ const personalSource=useRef(localExpenses);
+ personalSource.current=localExpenses;
  const [budgets,setBudgets]=useState<Budgets>(defaultBudgets);
  const [recurringRules,setRecurringRules]=useState<RecurringRule[]>([]);
  const [generated,setGenerated]=useState<string[]>([]);
@@ -187,12 +189,12 @@ export function DataProvider({children}:{children:React.ReactNode}){
      const recordedOwner=await AsyncStorage.getItem(ownerKey);
      if(!recordedOwner)await AsyncStorage.setItem(ownerKey,user.id);
      if(!recordedOwner||recordedOwner===user.id){
-      const legacy=localExpenses.filter(e=>e.scope==='personal');
+      const legacy=personalSource.current.filter(e=>e.scope==='personal');
       for(const entry of legacy){
        await importPersonalExpense(entry);
        setLocalExpenses(previous=>previous.filter(e=>e.id!==entry.id));
       }
-     }else if(localExpenses.some(e=>e.scope==='personal')){
+     }else if(personalSource.current.some(e=>e.scope==='personal')){
       setQueueError('Personal data on this device belongs to a different account and was not imported.');
      }
     }catch(e){
