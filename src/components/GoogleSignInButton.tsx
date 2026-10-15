@@ -16,8 +16,8 @@ export function GoogleSignInButton({onPress,disabled=false,loading=false}:{onPre
  const {resolved}=useAppTheme();
  const dark=resolved==='dark';
  return <Pressable accessibilityRole="button" accessibilityLabel="Continue with Google" disabled={disabled||loading} onPress={onPress}
-  style={{height:48,width:'100%',maxWidth:360,alignSelf:'center',backgroundColor:dark?'#131314':'#FFFFFF',borderWidth:1,borderColor:dark?'#8E918F':'#747775',borderRadius:4,flexDirection:'row',alignItems:'center',justifyContent:'center',opacity:disabled||loading?0.55:1}}>
-  <View style={{position:'absolute',left:14,justifyContent:'center'}}><GoogleMark/></View>
+  style={{height:48,width:'100%',maxWidth:300,alignSelf:'center',backgroundColor:dark?'#131314':'#FFFFFF',borderWidth:1,borderColor:dark?'#8E918F':'#747775',borderRadius:10,flexDirection:'row',alignItems:'center',justifyContent:'center',opacity:disabled||loading?0.55:1}}>
+  <View style={{position:'absolute',left:18,justifyContent:'center'}}><GoogleMark/></View>
   <Text style={{color:dark?'#E3E3E3':'#1F1F1F',fontSize:14,fontFamily:'Inter_500Medium'}}>{loading?'Connecting…':'Continue with Google'}</Text>
  </Pressable>;
 }
