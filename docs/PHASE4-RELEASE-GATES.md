@@ -9,7 +9,7 @@
 
 ## Before running on devices
 - Apply migration `20261015161000_personal_expense_cloud_keys.sql` in every target Supabase environment. This was applied to the connected development environment.
-- In Supabase → Authentication → Providers enable Apple after registering the Apple Service ID and signing key. Configure the standard Supabase Apple callback URL in Apple Developer. **Apple login does not work until configured.**
+- In Supabase → Authentication → Providers enable Apple after registering the Apple Service ID and signing key. Configure the standard Supabase Apple callback URL in Apple Developer. Once it is working in a dev build, set `EXPO_PUBLIC_ENABLE_APPLE_SIGN_IN=true` in the build environment to show the iOS button. **Apple login does not work until configured.**
 - Apple Developer account, app identifiers, signing/entitlements, and OAuth callback are required. Do not commit signing keys to Git.
 - Set the permanent production iOS bundle identifier and Android package identifier before release. `com.anonymous.pesco` is a development placeholder. Ensure the corresponding identifiers match Apple/Google authentication settings.
 - Set up EAS project and store signing credentials (`eas build:configure`); then build `eas build --profile preview --platform all`.
