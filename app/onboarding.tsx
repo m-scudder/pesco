@@ -1,6 +1,5 @@
 import React,{useEffect,useState} from 'react';
-import {ActivityIndicator,Pressable,Text,TextInput,View} from 'react-native';
-import {Ionicons} from '@expo/vector-icons';
+import {ActivityIndicator,Image,Pressable,Text,TextInput,View} from 'react-native';
 import {useRouter} from 'expo-router';
 import {Screen} from '@/components/Screen';
 import {Card,Heading,Body} from '@/components/UI';
@@ -10,6 +9,7 @@ import {useOnboarding} from '@/lib/OnboardingContext';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {createHousehold,getMyHousehold,joinWithKey} from '@/lib/households';
 import {googleAuth} from '@/lib/googleAuth';
+import {GoogleSignInButton} from '@/components/GoogleSignInButton';
 
 const VALID_CODE=/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
 type Mode='choose'|'create'|'join';
@@ -51,13 +51,18 @@ export default function Onboarding(){
   </Pressable>
  );
  return <Screen style={{flexGrow:1,justifyContent:'center',paddingBottom:44,gap:22}}>
-  <View style={{alignItems:'center',gap:14,paddingTop:12}}><View style={{width:66,height:66,borderRadius:20,alignItems:'center',justifyContent:'center',backgroundColor:colors.secondary}}><Ionicons name="book-outline" size={32} color={colors.household}/></View><Text style={{color:colors.text,fontSize:30,fontFamily:'PlusJakartaSans_700Bold'}}>PESCO</Text><Text style={{color:colors.muted,fontSize:14,fontFamily:'Inter_400Regular'}}>Household expenses, together</Text></View>
-  {!authenticated?<View style={{borderRadius:16,padding:20,backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,gap:14}}>
-   <Text style={{color:colors.text,fontSize:16,fontFamily:'Inter_600SemiBold',textAlign:'center'}}>Your shared expense journal</Text>
-   <Text style={{color:colors.muted,textAlign:'center',fontSize:13,lineHeight:20}}>Keep personal and household expenses organized in one place.</Text>
-   <Pressable accessibilityRole="button" disabled={signingIn||!configured||!ready} onPress={()=>{void (async()=>{setSigningIn(true);setError(null);try{await googleAuth(user?'link':'sign-in')}catch(e){setError(e instanceof Error?e.message:'Google sign-in failed')}finally{setSigningIn(false)}})()}} style={{minHeight:50,borderRadius:10,backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,flexDirection:'row',gap:12,alignItems:'center',justifyContent:'center',opacity:signingIn?0.6:1}}><Ionicons name="logo-google" size={20} color="#4285F4"/><Text style={{color:colors.text,fontSize:15,fontFamily:'Inter_600SemiBold'}}>{signingIn?'Connecting…':'Continue with Google'}</Text></Pressable>
-   <Text style={{color:colors.muted,textAlign:'center',fontSize:11}}>Sign in securely to continue. Existing PESCO accounts keep their household data.</Text>
-   {!configured?<Text style={{color:'#C94F4F'}}>Cloud authentication is not configured.</Text>:null}
+  <View style={{alignItems:'center',gap:14,paddingTop:12}}>
+   <Image source={require('../assets/icon.png')} accessibilityLabel="PESCO app logo" resizeMode="contain" style={{width:92,height:92,borderRadius:22}}/>
+   <Text style={{color:colors.muted,fontSize:14,fontFamily:'Inter_400Regular',textAlign:'center'}}>Household expenses, together</Text>
+  </View>
+  {!authenticated?<View style={{paddingHorizontal:12,gap:14}}>
+   <GoogleSignInButton disabled={!configured||!ready} loading={signingIn} onPress={()=>{void (async()=>{
+    setSigningIn(true);setError(null);
+    try{await googleAuth(user?'link':'sign-in')}
+    catch(e){setError(e instanceof Error?e.message:'Google sign-in failed')}
+    finally{setSigningIn(false)}
+   })()}}/>
+   {!configured?<Text style={{color:'#C94F4F',textAlign:'center'}}>Cloud authentication is not configured.</Text>:null}
   </View>:mode==='choose'?<Card>
    <Text style={{fontSize:14,fontFamily:'Inter_600SemiBold',color:colors.text,textAlign:'center',marginBottom:4}}>Set up your household</Text>
    {button('Create household',()=>{setError(null);setMode('create')})}
