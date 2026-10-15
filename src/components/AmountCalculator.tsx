@@ -3,23 +3,23 @@ import {Pressable,Text,View} from 'react-native';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {initialCalculator,pressCalculator,type CalculatorState} from '@/lib/calculator';
 
-const keys=['C','⌫','÷','×','7','8','9','−','4','5','6','+','1','2','3','=','0','.','Done'];
+const keys=['C','⌫','÷','×','7','8','9','−','4','5','6','+','1','2','3','=','0','00','Done'];
 export function AmountCalculator({value,onChange,onDone}:{value:string;onChange:(text:string)=>void;onDone:()=>void}){
  const {colors,scope}=useAppTheme();
- const [state,setState]=useState<CalculatorState>(()=>initialCalculator(value));
+ const [state,setState]=useState<CalculatorState>(()=>initialCalculator(String(Math.round(Number(value)||0))));
  // The calculator is mounted only while open, so reopening starts with
  // the most recently accepted amount. No effect loop is necessary.
- const accent=scope==='household'?colors.household:colors.personal;
+ const accent=colors.household;
  function tap(label:string){
   if(label==='Done'){
    if(state.error)return;
    // Resolve pending arithmetic on Done as well as '='.
    const completed=state.operator&&state.startNew?{...state,accumulator:null,operator:null}:pressCalculator(state,'=');
    if(completed.error){setState(completed);return}
-   onChange(String(Number(completed.display)));
+   onChange(String(Math.round(Number(completed.display))));
    onDone();return;
   }
-  const next=pressCalculator(state,label==='−'?'-':label);
+  const next=label==='00'?pressCalculator(pressCalculator(state,'0'),'0'):pressCalculator(state,label==='−'?'-':label);
   setState(next);
  }
  return <View style={{backgroundColor:colors.surface,borderRadius:12,padding:10,borderWidth:1,borderColor:colors.border,gap:8}}>
