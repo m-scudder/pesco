@@ -13,9 +13,12 @@ import {useAccountActions} from '@/lib/useAccountActions';
 
 function SettingsSection({title,children}:{title:string;children:React.ReactNode}){
  const {colors}=useAppTheme();
- return <View style={{gap:8}}>
-  <Text style={{color:colors.muted,fontSize:11,fontFamily:'Inter_600SemiBold',letterSpacing:0.9,textTransform:'uppercase',paddingHorizontal:4}}>{title}</Text>
-  <View style={{backgroundColor:colors.surface,borderRadius:15,borderWidth:1,borderColor:colors.border,overflow:'hidden'}}>{children}</View>
+ return <View style={{backgroundColor:colors.surface,borderRadius:19,overflow:'hidden',borderWidth:1,borderColor:colors.border}}>
+  <View style={{paddingHorizontal:17,paddingTop:18,paddingBottom:8,flexDirection:'row',alignItems:'center',gap:11}}>
+   <View style={{width:3,height:25,borderRadius:2,backgroundColor:colors.household}}/>
+   <Text style={{color:colors.text,fontSize:17,fontFamily:'PlusJakartaSans_700Bold'}}>{title}</Text>
+  </View>
+  <View>{children}</View>
  </View>;
 }
 
@@ -26,17 +29,15 @@ function SettingsRow({icon,label,subtitle,onPress,right,danger=false,last=false}
  const {colors}=useAppTheme();
  return <View>
   <Pressable accessibilityRole={onPress?'button':undefined} onPress={onPress} disabled={!onPress&&!right}
-   style={{flexDirection:'row',alignItems:'center',gap:12,paddingHorizontal:14,paddingVertical:12,minHeight:62}}>
-   <View style={{width:36,height:36,borderRadius:10,backgroundColor:colors.secondary,justifyContent:'center',alignItems:'center'}}>
-    <Ionicons name={icon} size={19} color={danger?'#E35D5B':colors.household}/>
-   </View>
+   style={{flexDirection:'row',alignItems:'center',gap:15,paddingHorizontal:20,paddingVertical:14,minHeight:58}}>
+   <Ionicons name={icon} size={21} color={danger?'#E35D5B':colors.muted}/>
    <View style={{flex:1,gap:3}}>
-    <Text style={{color:danger?'#E35D5B':colors.text,fontSize:14,fontFamily:'Inter_600SemiBold'}}>{label}</Text>
-    {subtitle?<Text style={{color:colors.muted,fontSize:12,fontFamily:'Inter_400Regular',lineHeight:17}}>{subtitle}</Text>:null}
+    <Text style={{color:danger?'#E35D5B':colors.text,fontSize:14,fontFamily:'Inter_500Medium'}}>{label}</Text>
+    {subtitle?<Text style={{color:colors.muted,fontSize:11,fontFamily:'Inter_400Regular',lineHeight:16}}>{subtitle}</Text>:null}
    </View>
-   {right??(onPress?<Ionicons name="chevron-forward" size={17} color={colors.muted}/>:null)}
+   {right??(onPress?<Ionicons name="chevron-forward" size={19} color={colors.muted}/>:null)}
   </Pressable>
-  {!last?<View style={{height:1,backgroundColor:colors.border,marginLeft:62}}/>:null}
+  {!last?<View style={{height:1,backgroundColor:colors.border,marginLeft:55,marginRight:18}}/>:null}
  </View>;
 }
 
@@ -55,7 +56,7 @@ export default function Settings(){
   return()=>{active=false};
  },[user?.id]));
  const version=Constants.expoConfig?.version??'0.1.0';
- return <Screen style={{gap:18,paddingBottom:95,flexGrow:1}}>
+ return <Screen style={{gap:16,paddingBottom:95,flexGrow:1}}>
   <Pressable accessibilityRole="button" accessibilityLabel="Edit my profile" onPress={()=>router.push('/profile')}
    style={{flexDirection:'row',alignItems:'center',gap:12,paddingVertical:6,paddingHorizontal:3}}>
    <View style={{width:54,height:54,borderRadius:27,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'}}>
