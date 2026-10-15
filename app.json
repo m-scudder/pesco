@@ -10,7 +10,8 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mayankagarwal.pesco",
-      "icon": "./assets/icon.png"
+      "icon": "./assets/icon.png",
+      "usesAppleSignIn": true
     },
     "android": {
       "edgeToEdgeEnabled": true,
@@ -20,7 +21,8 @@
       }
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true
