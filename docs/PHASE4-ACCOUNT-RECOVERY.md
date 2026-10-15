@@ -1,25 +1,36 @@
-# Phase 4 — Google Account Recovery Setup
+# Phase 4 — Mandatory Google sign-in and account deletion QA
 
-PESCO uses **Google OAuth through Supabase**. Existing anonymous users must **link** Google to their current session; returning users sign in with Google. Do not use `signInWithOAuth` to protect an existing anonymous user because it could switch their Supabase user ID.
+## New app flow
+1. Fresh install shows a centered PESCO welcome screen with **Continue with Google**; no household actions are shown until successful Google auth.
+2. Cancel Google auth: app stays on the welcome screen. Household and Stats tabs cannot open.
+3. Complete Google sign-in: first-time user sees **Create household**, **Join with code**, or **Use personal expenses only**.
+4. On a fresh device, sign in with Google for a user already in a household: membership is detected and Home opens without requiring an invite again.
+5. Existing legacy anonymous session: Continue with Google **links** to that identity, rather than signing in to another UID. Verify existing expenses and membership remain accessible.
+6. Relaunch an authenticated app and ensure Home opens without re-authentication.
 
-## Required configuration
-1. In Google Cloud Console, configure the OAuth consent screen and create a **Web** OAuth client for Supabase. Add Supabase's **OAuth callback URL** (from Authentication → Providers → Google) as an authorized redirect URI in Google Cloud.
-2. In Supabase Authentication → Providers, enable **Google** and enter the Google OAuth client ID and secret.
-3. In Supabase Authentication settings, enable **Manual Linking** to let anonymous users attach their Google identity.
-4. In Supabase Authentication → URL Configuration → Additional Redirect URLs, allow `pesco://auth/callback`.
-5. `app.json` already declares scheme `pesco`. Test on a newly built iOS/Android dev client. Rebuild after adding `expo-web-browser`:
-   - `npm ci && npx expo run:ios`
-   - `npm ci && npx expo run:android`
-6. No Google OAuth client secret belongs in source control, Expo `EXPO_PUBLIC_*` variables, or the app binary.
+## Profile and Settings
+- Settings contains **My profile**, **Household**, Categories, budgets, etc.; no Account recovery row.
+- My profile shows display name, Google email, provider connected status and **Delete account**.
+- Settings → Data contains **Expense history & CSV** and **Pending uploads** only; personal-expense total and Clear local data are gone.
+- Check light/dark mode and small phone screens for balanced layout.
 
-## Acceptance checks
-- Existing household user: Settings → Account recovery → Continue with Google. Confirm Supabase UID is unchanged and old household expenses are visible. Google now appears under Auth user identities.
-- Cancel browser login: original session stays active; no account changes.
-- Existing account on another device: fresh install → Continue with Google → same Google identity → same cloud household membership, categories, shared budgets, expenses.
-- Guard on device with an active household/personal expenses prevents switching to another Google account.
-- Wrong Google account previously linked elsewhere produces a visible error and does not silently migrate the user's expenses.
-- Verify account recovery in iOS and Android standalone builds; test web authentication redirects and app restart.
-- Personal expenses and personal budgets remain device-local and are not part of cloud recovery.
+## Account deletion — disposable test accounts only
+1. Set up an isolated household with a disposable Google test user, and optionally a partner test user.
+2. Open My profile → Delete account. Cancel at either confirmation stage; verify nothing changed.
+3. Verify an account with pending uploads cannot be deleted until its pending changes are resolved.
+4. Confirm deletion with a disposable account. Verify the function returns success, the session closes, and the app returns to onboarding.
+5. Sign in again with that Google identity. It should represent a **fresh account** without the deleted user's old expenses.
+6. In a two-member household where the owner is deleted, verify remaining partner retains household ownership and only their own expense records persist.
+7. In a one-member household, verify the empty household is cleaned up.
+8. Confirm direct RPC access to `prepare_account_deletion` is forbidden to unauthenticated and normal authenticated clients.
+9. Do not test deletion against real user accounts or financial history.
 
-## Remaining Phase 4 gates
-Data isolation for multiple accounts, backup/recovery for device-local personal data, automated end-to-end tests, production environment and store builds remain separate work.
+## Google consent domain
+The `<project>.supabase.co` Google sign-in text is the upstream Supabase OAuth callback host, **not an app leak**. Supabase Auth custom domains (paid add-on) can provide a branded host such as `auth.pesco.example`. Google OAuth branding verification may also improve displayed app identity. Updating Expo UI alone does not alter Google's upstream consent host.
+
+## Before merge
+- GitHub TypeScript CI passes.
+- Test fresh/new Google accounts, legacy identity linking and returning accounts on iOS and Android.
+- Test account deletion end-to-end with **disposable** accounts; verify partner data preservation.
+- Verify owned Google identities are not accessible after deletion and cloud data is fully cleaned.
+- Review remaining local personal-data backup requirements for production launch.
