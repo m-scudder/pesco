@@ -2,7 +2,7 @@ name: Refresh dependency lockfile
 on:
   push:
     branches: [feat/phase4-production-readiness]
-    paths: [package.json]
+    paths: [package.json, .github/workflows/update-lockfile.yml]
 permissions:
   contents: write
 jobs:
