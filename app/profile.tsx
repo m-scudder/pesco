@@ -11,7 +11,7 @@ import {useData} from '@/data';
 export default function Profile(){
  const {colors}=useAppTheme();
  const router=useRouter();
- const {pendingCount,pendingEditCount,clearAll}=useData();
+ const {pendingCount,pendingEditCount,expenses,recurringRules,budgets,clearAll}=useData();
  const {user,ready}=useAuth();
  const [name,setName]=useState('');
  const [initial,setInitial]=useState('');
@@ -19,6 +19,7 @@ export default function Profile(){
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState<string|null>(null);
  const [deleting,setDeleting]=useState(false);
+ const [loggingOut,setLoggingOut]=useState(false);
  const load=useCallback(async()=>{
   if(!ready)return;
   if(!supabase||!user){setLoading(false);return}
@@ -44,6 +45,33 @@ export default function Profile(){
    Alert.alert('Saved','Your name is now visible to your household partner.');
   }catch(e){Alert.alert('Could not save',e instanceof Error?e.message:'Try again')}
   finally{setBusy(false)}
+ };
+ const logout=()=>{
+  if(loggingOut||deleting||busy)return;
+  if(pendingCount+pendingEditCount>0){
+   Alert.alert('Unsynced changes','Please sync or discard pending household changes before logging out.');
+   return;
+  }
+  const hasLocalData=expenses.some(x=>x.scope==='personal'||(x.scope==='household'&&x.ownerId==='local-user'))||
+   recurringRules.length>0||budgets.household!==null||budgets.personal!==null;
+  Alert.alert('Log out of PESCO?',hasLocalData
+   ?'Personal expenses, local budgets and recurring rules are stored only on this device. Logging out will erase these device-only records. Shared cloud expenses will remain. Export anything you need first.'
+   :'You will need to sign in with Google again. Your shared household expenses stay in the cloud.',[
+   {text:'Cancel',style:'cancel'},
+   {text:hasLocalData?'Erase local data & log out':'Log out',style:hasLocalData?'destructive':'default',onPress:()=>{void (async()=>{
+    if(!supabase)return;
+    setLoggingOut(true);
+    try{
+     const {error}=await supabase.auth.signOut({scope:'local'});
+     if(error)throw error;
+     clearAll();
+     // User-scoped queue/cache data remains inaccessible after logout; remove private local categories.
+     await AsyncStorage.removeItem('pesco:personal-categories:v1');
+     router.replace('/onboarding');
+    }catch(e){Alert.alert('Could not log out',e instanceof Error?e.message:'Please try again')}
+    finally{setLoggingOut(false)}
+   })()}}
+  ]);
  };
  const deleteAccount=()=>Alert.alert('Delete your PESCO account?','This permanently deletes your account and your expenses. If you own a shared household, ownership will pass to your partner when possible. This cannot be undone.',[
   {text:'Cancel',style:'cancel'},
@@ -89,6 +117,9 @@ export default function Profile(){
     <Text style={{color:colors.muted,fontSize:13}}>{user?.email??'No email available'}</Text>
     <Text style={{color:colors.muted,fontSize:12}}>Google · {user?.identities?.some(x=>x.provider==='google')?'Connected':'Not connected'}</Text>
    </View>
+   <Pressable accessibilityRole="button" disabled={loggingOut||deleting||busy} onPress={logout} style={{marginTop:10,paddingVertical:13,alignItems:'center',borderRadius:10,backgroundColor:colors.secondary}}>
+    <Text style={{color:colors.text,fontSize:13,fontFamily:'Inter_600SemiBold'}}>{loggingOut?'Logging out…':'Log out'}</Text>
+   </Pressable>
    <Pressable accessibilityRole="button" disabled={deleting||busy} onPress={deleteAccount} style={{marginTop:12,paddingVertical:13,alignItems:'center',borderRadius:10,borderWidth:1,borderColor:'#C94F4F'}}>
     <Text style={{color:'#C94F4F',fontSize:13,fontFamily:'Inter_600SemiBold'}}>{deleting?'Deleting account…':'Delete account'}</Text>
    </Pressable>
