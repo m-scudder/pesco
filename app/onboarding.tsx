@@ -47,7 +47,7 @@ export default function Onboarding(){
   {mode==='choose'?<Card>
    {button('Create household',()=>{setError(null);setMode('create')})}
    {button('Join with code',()=>{setError(null);setMode('join')},false)}
-   {button('Recover existing account',()=>router.push('/sign-in'),false)}
+   {button('Continue with Google',()=>router.push('/sign-in'),false)}
    <Pressable accessibilityRole="button" onPress={()=>void submit(async()=>{})} style={{alignItems:'center',paddingVertical:10}}>
     <Text style={{color:colors.muted,fontSize:13}}>Continue without household</Text>
    </Pressable>
