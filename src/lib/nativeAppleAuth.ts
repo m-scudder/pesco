@@ -28,6 +28,22 @@ export async function nativeAppleSignIn(){
  });
  if(error)throw error;
  if(!data.user)throw new Error('Apple sign-in did not return an account.');
- try{await ensureGoogleProfile(data.user)}catch(error){console.warn('Could not initialize profile',error)}
+ try{
+  const given=credential.fullName?.givenName?.trim()??'';
+  const family=credential.fullName?.familyName?.trim()??'';
+  const appleName=[given,family].filter(Boolean).join(' ');
+  if(appleName){
+   const {data:profile,error:readError}=await supabase.from('profiles')
+    .select('display_name').eq('id',data.user.id).maybeSingle();
+   if(readError)throw readError;
+   if(!profile?.display_name?.trim()||profile.display_name==='Member'){
+    const {error:saveError}=await supabase.from('profiles')
+     .upsert({id:data.user.id,display_name:appleName},{onConflict:'id'});
+    if(saveError)throw saveError;
+   }
+  }else{
+   await ensureGoogleProfile(data.user);
+  }
+ }catch(error){console.warn('Could not initialize profile',error)}
  return true;
 }
