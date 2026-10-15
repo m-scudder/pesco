@@ -50,12 +50,12 @@ export default function Onboarding(){
    <Text style={{color:primary?'#fff':colors.text,fontSize:14,fontWeight:'600'}}>{label}</Text>
   </Pressable>
  );
- return <Screen style={{flexGrow:1,justifyContent:authenticated?'center':'space-between',paddingBottom:44,gap:22}}>
+ return <Screen style={{flexGrow:1,justifyContent:authenticated?'center':'space-between',paddingBottom:24,gap:22}}>
   <View style={{alignItems:'center',justifyContent:'center',gap:14,...(!authenticated?{flexGrow:1}:{} )}}>
    <Image source={require('../assets/icon.png')} accessibilityLabel="PESCO app logo" resizeMode="contain" style={{width:92,height:92,borderRadius:22}}/>
    <Text style={{color:colors.muted,fontSize:14,fontFamily:'Inter_400Regular',textAlign:'center'}}>Household expenses, together</Text>
   </View>
-  {!authenticated?<View style={{paddingHorizontal:12,gap:14,paddingBottom:12}}>
+  {!authenticated?<View style={{paddingHorizontal:8,gap:14,paddingBottom:6}}>
    <GoogleSignInButton disabled={!configured||!ready} loading={signingIn} onPress={()=>{void (async()=>{
     setSigningIn(true);setError(null);
     try{await googleAuth(user?'link':'sign-in')}
