@@ -28,17 +28,18 @@ export default function History(){
  const exportRecords=useMemo(()=>records.filter(x=>includeDemo||!x.id.startsWith('demo:')),[records,includeDemo]);
  React.useEffect(()=>{setVisibleCount(50)},[scope,from,to,query]);
  const visible=records.slice(0,visibleCount);
- const total=records.reduce((value,item)=>value+item.amountPaise,0);
+
  const choose=(target:'from'|'to')=>{
   if(Platform.OS==='android'){
-   DateTimePickerAndroid.open({mode:'date',value:new Date((target==='from'?from:to)+'T12:00:00'),
-    onChange:(event,date)=>{if(event.type==='set'&&date)(target==='from'?setFrom:setTo)(dateString(date))}});
+   DateTimePickerAndroid.open({mode:'date',maximumDate:new Date(),value:new Date((target==='from'?from:to)+'T12:00:00'),
+    onChange:(event,date)=>{if(event.type==='set'&&date)(target==='from'?setFrom:setTo)(dateString(date)>localDate()?localDate():dateString(date))}});
   }else{
    setPendingDate(new Date((target==='from'?from:to)+'T12:00:00'));
    setPicker(target);
   }
  };
  const share=async()=>{
+  if(from>to||to>localDate()||from>localDate()){Alert.alert('Invalid date range','Choose dates up to today, with From before To.');return}
   if(!exportRecords.length){Alert.alert('Nothing to export','No matching non-demo expenses in this date range.');return}
   setSharing(true);
   try{
@@ -75,7 +76,7 @@ export default function History(){
   {demoEnabled?<Text style={{fontSize:fontSizes.caption,color:colors.muted}}>DEMO DATA · Included in history preview, excluded from CSV by default</Text>:null}
   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
    <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{records.length} records</Text>
-   <Text style={{fontSize:fontSizes.input,color:colors.text,fontFamily:fontFamilies.semibold}}>{formatMoney(total)}</Text>
+
   </View>
   <View style={{backgroundColor:colors.surface,borderRadius:11,borderColor:colors.border,borderWidth:1,paddingHorizontal:12}}>
    {records.length===0?<Text style={{color:colors.muted,paddingVertical:16,fontSize:fontSizes.label}}>No matching expenses</Text>:visible.map((expense,index)=><View key={expense.id}
@@ -101,15 +102,15 @@ export default function History(){
     <Pressable onPress={()=>setPicker(null)} accessibilityLabel="Dismiss date picker" style={{position:'absolute',top:0,bottom:0,left:0,right:0}}/>
     <View style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:14,padding:14}}>
      <Text style={{color:colors.text,fontFamily:fontFamilies.semibold,fontSize:fontSizes.input}}>{picker==='from'?'From date':'To date'}</Text>
-     <DateTimePicker value={pendingDate} mode="date" display="spinner" themeVariant={resolved} textColor={colors.text}
+     <DateTimePicker value={pendingDate} maximumDate={new Date()} mode="date" display="spinner" themeVariant={resolved} textColor={colors.text}
       style={{height:210,width:'100%'}} onChange={(event,date)=>{if(event.type==='set'&&date)setPendingDate(date)}}/>
      <View style={{flexDirection:'row',justifyContent:'flex-end',gap:18}}>
       <Pressable accessibilityRole="button" onPress={()=>setPicker(null)} style={{padding:10}}>
        <Text style={{color:colors.muted,fontFamily:fontFamilies.medium,fontSize:fontSizes.label}}>Cancel</Text>
       </Pressable>
       <Pressable accessibilityRole="button" onPress={()=>{
-       if(picker==='from')setFrom(dateString(pendingDate));
-       if(picker==='to')setTo(dateString(pendingDate));
+       if(picker==='from')setFrom(dateString(pendingDate)>localDate()?localDate():dateString(pendingDate));
+       if(picker==='to')setTo(dateString(pendingDate)>localDate()?localDate():dateString(pendingDate));
        setPicker(null);
       }} style={{padding:10}}>
        <Text style={{color:colors.household,fontFamily:fontFamilies.semibold,fontSize:fontSizes.label}}>Done</Text>
