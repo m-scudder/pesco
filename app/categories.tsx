@@ -1,3 +1,4 @@
+import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
 import React,{useEffect,useMemo,useState} from 'react';
 import {Alert,Pressable,Text,TextInput,View} from 'react-native';
 import {Screen} from '@/components/Screen';
@@ -46,12 +47,12 @@ export default function Categories(){
   ]);
  const button=(label:string,onPress:()=>void,muted=false)=><Pressable accessibilityRole="button" disabled={busy} onPress={onPress}
   style={{paddingHorizontal:9,paddingVertical:8,minHeight:36,justifyContent:'center'}}>
-  <Text style={{fontSize:13,fontFamily:'Inter_600SemiBold',color:muted?colors.muted:colors.household}}>{label}</Text>
+  <Text style={{fontSize:fontSizes.label,fontFamily:fontFamilies.semibold,color:muted?colors.muted:colors.household}}>{label}</Text>
  </Pressable>;
  const editor=<View style={{flexDirection:'row',alignItems:'center',gap:5}}>
   <TextInput accessibilityLabel="Category name" autoFocus value={draft} maxLength={40} onChangeText={setDraft}
    autoCapitalize="words" placeholder="Category name" placeholderTextColor={colors.muted}
-   onSubmitEditing={()=>{void save()}} style={{flex:1,minWidth:0,height:42,borderWidth:1,borderColor:colors.border,borderRadius:9,color:colors.text,paddingHorizontal:10,fontSize:14}}/>
+   onSubmitEditing={()=>{void save()}} style={{flex:1,minWidth:0,height:42,borderWidth:1,borderColor:colors.border,borderRadius:9,color:colors.text,paddingHorizontal:10,fontSize:fontSizes.body}}/>
   {button('Save',()=>{void save()})}
   {button('Cancel',cancel,true)}
  </View>;
@@ -59,15 +60,15 @@ export default function Categories(){
   {activeHousehold?<View style={{flexDirection:'row',padding:3,borderRadius:10,backgroundColor:colors.secondary}}> 
    {(['household','personal'] as const).map(value=><Pressable key={value} accessibilityRole="button" accessibilityState={{selected:scope===value}} onPress={()=>changeScope(value)}
     style={{flex:1,alignItems:'center',justifyContent:'center',minHeight:36,borderRadius:8,backgroundColor:scope===value?colors.surface:undefined}}>
-    <Text style={{fontFamily:scope===value?'Inter_600SemiBold':'Inter_400Regular',fontSize:13,color:scope===value?colors.text:colors.muted}}>{value==='household'?'Household':'Personal'}</Text>
+    <Text style={{fontFamily:scope===value?'Inter_600SemiBold':'Inter_400Regular',fontSize:fontSizes.label,color:scope===value?colors.text:colors.muted}}>{value==='household'?'Household':'Personal'}</Text>
    </Pressable>)}
   </View>:null}
-  <Text style={{color:colors.muted,fontSize:12}}>{scope==='household'?'Categories created here sync with your partner.':'Personal categories stay on this device.'}</Text>
+  <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{scope==='household'?'Categories created here sync with your partner.':'Personal categories stay on this device.'}</Text>
   {scope==='household'&&!activeHousehold?<Body muted>Join or create a household to manage shared categories.</Body>:null}
   <View style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:12,paddingHorizontal:12}}>
    {list.map((item,index)=><View key={item.origin+':'+item.id} style={{minHeight:50,borderBottomWidth:index===list.length-1?0:1,borderColor:colors.border,justifyContent:'center'}}>
     {editing?.id===item.id?editor:<View style={{flexDirection:'row',alignItems:'center',gap:6}}>
-     <Text style={{flex:1,color:colors.text,fontSize:14}}>{item.name}</Text>
+     <Text style={{flex:1,color:colors.text,fontSize:fontSizes.body}}>{item.name}</Text>
      {button('Edit',()=>start(item))}
      {button('Remove',()=>confirmRemove(item),true)}
     </View>}
@@ -76,9 +77,9 @@ export default function Categories(){
   </View>
   {creating?editor:<Pressable disabled={scope==='household'&&!activeHousehold} onPress={()=>start()} accessibilityRole="button"
    style={{minHeight:44,borderRadius:10,backgroundColor:colors.secondary,opacity:scope==='household'&&!activeHousehold?0.4:1,justifyContent:'center',alignItems:'center'}}>
-   <Text style={{fontFamily:'Inter_600SemiBold',fontSize:14,color:colors.household}}>+ Add category</Text>
+   <Text style={{fontFamily:fontFamilies.semibold,fontSize:fontSizes.body,color:colors.household}}>+ Add category</Text>
   </Pressable>}
   {loading?<Body muted>Updating…</Body>:null}
-  {error?<Pressable onPress={()=>{void refresh()}}><Text style={{color:'#C94F4F',fontSize:13}}>Could not sync categories · Retry</Text></Pressable>:null}
+  {error?<Pressable onPress={()=>{void refresh()}}><Text style={{color:'#C94F4F',fontSize:fontSizes.label}}>Could not sync categories · Retry</Text></Pressable>:null}
  </Screen>;
 }
