@@ -257,6 +257,11 @@ export function DataProvider({children}:{children:React.ReactNode}){
   uploadBusy.current=true;
   try{
    const id=user.id,houseId=household.id;
+   const [queuedExpenses,queuedMutations]=await Promise.all([loadPending(id),loadMutations(id)]);
+   const creates=queuedExpenses.filter(item=>item.draft.householdId===houseId).length;
+   const edits=queuedMutations.filter(item=>item.householdId===houseId).length;
+   // Interval ticks are cheap no-ops when the outbox is already empty.
+   if(creates===0&&edits===0)return;
    const pendingResult=await flushPending(id,houseId);
    // Do not drop optimistic entries here: cloud refresh may still be in flight.
    // The refresh path removes an entry after its server record is visible.
@@ -265,7 +270,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
    setQueueError(pendingResult.errorMessage??mutationResult.error);
    // Read committed rows before clearing the optimistic edit/delete overlay.
    // Otherwise old values flash back while the cloud refresh is in flight.
-   if(pendingResult.sent>0||!mutationResult.error)
+   if(pendingResult.sent>0||(edits>0&&!mutationResult.error))
     await refreshRef.current();
    if(currentMutationEpoch===mutationEpoch.current){
     mutationEpoch.current++;
