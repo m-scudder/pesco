@@ -137,7 +137,8 @@ export function DataProvider({children}:{children:React.ReactNode}){
     if(!raw){
      // One-time migration from the previous device-wide store. Never import it again.
      const legacy=await AsyncStorage.getItem(LEGACY_STORAGE_KEY);
-     if(legacy){
+     const legacyOwner=await AsyncStorage.getItem('pesco:legacy-personal-owner');
+     if(legacy&&(!legacyOwner||legacyOwner===userId)){
       await AsyncStorage.setItem(userStorageKey(userId),legacy);
       await AsyncStorage.removeItem(LEGACY_STORAGE_KEY);
       raw=legacy;
