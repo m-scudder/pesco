@@ -118,5 +118,5 @@ export default function Insights(){
    })}
    {groups.length===0?<Text style={{color:colors.muted,textAlign:'center',paddingVertical:30}}>No transactions for this month</Text>:null}
   </>}
- </Screen>;
+ </Screen></MonthSwipeView>;
 }
