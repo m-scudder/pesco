@@ -9,7 +9,6 @@ import {MonthPicker} from '@/components/MonthPicker';
 import {MonthSwipeView} from '@/components/MonthSwipeView';
 import {formatMoney,localDate,monthKey,useData} from '@/data';
 import {buildInsights,monthlyCategoryChanges} from '@/lib/insights';
-import {useCategoryBudgets} from '@/lib/useCategoryBudgets';
 import {useAppTheme} from '@/theme/ThemeContext';
 
 export default function House(){
@@ -18,13 +17,12 @@ export default function House(){
  const {expenses,budgets,household,refresh,syncError,demoEnabled}=useData();
  const [month,setMonth]=useState(monthKey(localDate()));
  useFocusEffect(React.useCallback(()=>{void refresh()},[refresh]));
- const {spent,prior,difference,percentChange,selected,monthSeries,categories}=useMemo(
+ const {spent,prior,difference,percentChange,selected,monthSeries}=useMemo(
   ()=>buildInsights(expenses,'household',month,null),[expenses,month]);
  const categoryChanges=useMemo(()=>monthlyCategoryChanges(expenses,'household',month),[expenses,month]);
  const increased=categoryChanges.filter(x=>x.difference>0);
  const decreased=categoryChanges.filter(x=>x.difference<0);
  const budget=budgets.household;
- const {items:categoryLimits}=useCategoryBudgets('household');
  const accent=colors.household;
  const maxMonth=Math.max(1,...monthSeries.map(m=>m.amount));
  if(!household)return <View style={{flex:1,backgroundColor:colors.background,alignItems:'center',justifyContent:'center',paddingHorizontal:24}}>
@@ -67,20 +65,6 @@ export default function House(){
    </>:<Pressable onPress={()=>router.push('/budget')}>
     <Text style={{fontSize:fontSizes.caption,color:accent}}>Set household budget ›</Text>
    </Pressable>}
-  </Card>
-  <Text style={{color:colors.text,fontSize:fontSizes.body,fontFamily:fontFamilies.semibold}}>Spending by category</Text>
-  <Card>
-   {categories.length===0?<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>No household spending this month</Text>:categories.slice(0,6).map(item=><View key={item.name} style={{gap:6,marginVertical:3}}>
-    <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',gap:10}}>
-     <Text numberOfLines={1} style={{color:colors.text,fontSize:fontSizes.label,fontFamily:fontFamilies.medium,flex:1}}>{item.name}</Text>
-     <Text style={{color:colors.text,fontSize:fontSizes.label,fontFamily:fontFamilies.medium}}>{formatMoney(item.amount)}</Text>
-    </View>
-    {categoryLimits.find(limit=>limit.category===item.name)?<Text style={{fontSize:fontSizes.caption,color:item.amount>(categoryLimits.find(limit=>limit.category===item.name)?.amountPaise??Infinity)?'#C94F4F':colors.muted}}>Limit {formatMoney(categoryLimits.find(limit=>limit.category===item.name)!.amountPaise)}{item.amount>categoryLimits.find(limit=>limit.category===item.name)!.amountPaise?' · Over limit':''}</Text>:null}
-    <View style={{height:5,borderRadius:4,backgroundColor:colors.secondary,overflow:'hidden'}}>
-     <View style={{height:'100%',width:`${item.percent}%` as const,backgroundColor:accent,borderRadius:4}}/>
-    </View>
-   </View>)}
-   {categories.length>6?<Text style={{fontSize:fontSizes.caption,color:colors.muted}}>Plus {categories.length-6} more categories</Text>:null}
   </Card>
   <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
    <Text style={{color:colors.text,fontSize:fontSizes.body,fontFamily:fontFamilies.semibold}}>Monthly review</Text>
