@@ -69,3 +69,17 @@ export async function reconcileHouseholdLedger(userId:string,householdId:string,
  });
  return loadHouseholdLedger(userId,householdId);
 }
+
+
+export async function upsertSyncedHouseholdExpense(userId:string,householdId:string,row:Expense):Promise<void>{
+ await (await db()).runAsync(
+  `INSERT INTO expense_ledger(user_id,expense_id,household_id,data,sync_state)
+   VALUES(?,?,?,?,'synced')
+   ON CONFLICT(user_id,expense_id) DO UPDATE SET
+   data=excluded.data,sync_state='synced'`,
+  userId,row.id,householdId,JSON.stringify(row));
+}
+export async function removeSyncedHouseholdExpense(userId:string,id:string):Promise<void>{
+ await (await db()).runAsync(
+  "DELETE FROM expense_ledger WHERE user_id=? AND expense_id=? AND sync_state='synced'",userId,id);
+}
