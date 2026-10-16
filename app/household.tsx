@@ -79,11 +79,11 @@ export default function HouseholdSetup(){
       </View>
       <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>Joined {new Date(member.joined_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</Text>
       {household.created_by===user.id&&!member.is_owner?(
-       <Pressable accessibilityRole="button" onPress={()=>Alert.alert('Remove partner?', 'This will immediately revoke their access to this household and its shared expenses. Existing expenses will remain.',[
+       <Pressable accessibilityRole="button" onPress={()=>Alert.alert('Remove '+(member.display_name==='Member'?'member':member.display_name)+'?', 'This will immediately revoke their access to this household and its shared expenses. Existing expenses will remain.',[
         {text:'Cancel',style:'cancel'},
         {text:'Remove',style:'destructive',onPress:()=>{void submit(()=>removeHouseholdPartner(household.id,member.user_id))}}
        ])} style={{paddingVertical:7,alignSelf:'flex-start'}}>
-        <Text style={{color:'#C94F4F',fontSize:fontSizes.label,fontWeight:fontWeights.semibold}}>Remove Partner</Text>
+        <Text style={{color:'#C94F4F',fontSize:fontSizes.label,fontWeight:fontWeights.semibold}}>{member.display_name==='Member'?'Remove member':'Remove '+member.display_name}</Text>
        </Pressable>
       ):null}
      </View>)}
