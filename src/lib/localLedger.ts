@@ -45,10 +45,10 @@ export async function seedHouseholdLedger(userId:string,householdId:string,rows:
 // A locally added row stays in the ledger until a server snapshot includes it.
 export async function upsertLocalHouseholdExpense(userId:string,householdId:string,row:Expense):Promise<void>{
  await (await db()).runAsync(
-  `INSERT INTO expense_ledger(user_id,expense_id,household_id,data,sync_state)
-   VALUES(?,?,?,?,'local')
-   ON CONFLICT(user_id,expense_id) DO UPDATE SET data=excluded.data,sync_state='local'`,
-  userId,row.id,householdId,JSON.stringify(row));
+  `INSERT INTO expense_ledger(user_id,expense_id,household_id,data,sync_state,seen_at)
+   VALUES(?,?,?,?,'local',?)
+   ON CONFLICT(user_id,expense_id) DO UPDATE SET data=excluded.data,sync_state='local',seen_at=excluded.seen_at`,
+  userId,row.id,householdId,JSON.stringify(row),Date.now());
 }
 export async function removeHouseholdLedgerExpense(userId:string,id:string):Promise<void>{
  await (await db()).runAsync('DELETE FROM expense_ledger WHERE user_id=? AND expense_id=?',userId,id);
