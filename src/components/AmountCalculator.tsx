@@ -14,7 +14,7 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
  function tap(label:string){
   const key=label==='−'?'-':label==='Back'?'⌫':label;
   const next=pressCalculator(state,key==='OK'?'=':key);
-  if(next===state)return;
+  if(next===state){if(key==='OK')onDone();return;}
   setState(next);
   if(next.error)return;
   onDisplayChange?.(calculatorExpression(next));
