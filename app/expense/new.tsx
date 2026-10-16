@@ -20,11 +20,11 @@ export default function ExpenseEditor(){
  const scrollRef=useRef<ScrollView>(null);
  const [noteFocused,setNoteFocused]=useState(false);
  const [calculatorDisplay,setCalculatorDisplay]=useState('');
- const [amountConfirmed,setAmountConfirmed]=useState(Boolean(id));
+
  const [amount,setAmount]=useState('');const [category,setCategory]=useState<string>('Groceries');const [note,setNote]=useState('');const [date,setDate]=useState(localDate());const [categoryOpen,setCategoryOpen]=useState(false);const [submitting,setSubmitting]=useState(false);const [calculatorOpen,setCalculatorOpen]=useState(!id);
  useEffect(()=>{if(!editing&&availableCategories.length&&!availableCategories.includes(category)){setCategory(availableCategories[0])}},[scope,availableCategories.join('|'),editing?.id]);
- useEffect(()=>{if(editing){setAmount(String(editing.amountPaise/100));setAmountConfirmed(true);setCategory(editing.category);setNote(editing.note);setDate(editing.date);setScope(editing.scope)}},[editing?.id]);
- async function save(){if(submitting)return;if(!amountConfirmed){Alert.alert('Confirm amount','Tap the checkmark on the calculator to apply your amount before saving.');setCalculatorOpen(true);return;}const paise=parseMoney(amount);if(paise===null){Alert.alert('Invalid amount','Enter a positive amount with up to two decimal places.');return}const parsed=new Date(date+'T12:00:00');if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(parsed.valueOf())||parsed.getFullYear()!==Number(date.slice(0,4))||parsed.getMonth()+1!==Number(date.slice(5,7))||parsed.getDate()!==Number(date.slice(8,10))){Alert.alert('Invalid date','Use YYYY-MM-DD.');return}
+ useEffect(()=>{if(editing){setAmount(String(editing.amountPaise/100));setCategory(editing.category);setNote(editing.note);setDate(editing.date);setScope(editing.scope)}},[editing?.id]);
+ async function save(){if(submitting)return;const paise=parseMoney(amount);if(paise===null){Alert.alert('Invalid amount','Enter a positive amount with up to two decimal places.');return}const parsed=new Date(date+'T12:00:00');if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(parsed.valueOf())||parsed.getFullYear()!==Number(date.slice(0,4))||parsed.getMonth()+1!==Number(date.slice(5,7))||parsed.getDate()!==Number(date.slice(8,10))){Alert.alert('Invalid date','Use YYYY-MM-DD.');return}
  if(!category.trim()||(!options.includes(category)&&!editing)){Alert.alert('Category required','Choose a category or add one in Settings.');return}
  const draft={scope,amountPaise:paise,category,note:note.trim(),date};
  if(scope==='household'&&!household){Alert.alert('Household required','Create or join a household to share expenses.');return}
@@ -70,7 +70,7 @@ export default function ExpenseEditor(){
     style={{minHeight:50,minWidth:160,justifyContent:'center',alignItems:'center',paddingHorizontal:16}}>
     <Text adjustsFontSizeToFit numberOfLines={1} style={{color:amount?colors.text:colors.muted,fontSize:fontSizes.display,fontFamily:fontFamilies.displaySemibold,fontVariant:['tabular-nums']}}>{'₹ '+(calculatorOpen?calculatorDisplay||'0':amount||'0')}</Text>
    </Pressable>
-   {calculatorOpen?<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>Tap ✓ to apply amount</Text>:null}
+
   </View>
   <View style={{marginBottom:5,gap:6}}><ScopeSwitch/><Text accessibilityRole="text" style={{textAlign:'center',fontSize:fontSizes.caption,color:colors.muted}}>{scope==='household'?'Shared expense · Visible to household members':'Personal expense · Visible only to you'}</Text></View>
   <View style={{backgroundColor:colors.surface,borderRadius:12,borderWidth:1,borderColor:colors.border,paddingHorizontal:16}}>
@@ -120,7 +120,7 @@ export default function ExpenseEditor(){
   <BottomCategoryPicker options={options} selected={category} onSelect={name=>{setCategory(name);setCategoryOpen(false)}} onClose={()=>setCategoryOpen(false)} onEdit={()=>{setCategoryOpen(false);router.push('/categories')}}/>
  </View>:null}
  {!noteFocused&&calculatorOpen?<View style={{paddingHorizontal:12,paddingTop:6,paddingBottom:8,backgroundColor:colors.background,borderTopWidth:1,borderTopColor:colors.border}}>
-  <AmountCalculator value={amount} onChange={value=>{setAmount(value);setAmountConfirmed(true)}} onDisplayChange={display=>{setCalculatorDisplay(display);setAmountConfirmed(false)}} onDone={()=>setCalculatorOpen(false)}/>
+  <AmountCalculator value={amount} onChange={setAmount} onDisplayChange={setCalculatorDisplay} onDone={()=>setCalculatorOpen(false)}/>
  </View>:null}
  </KeyboardAvoidingView></>
 }
