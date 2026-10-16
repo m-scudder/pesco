@@ -90,7 +90,8 @@ export default function Categories(){
    </Pressable>)}
   </View>:null}
   <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{scope==='household'?'Shared categories sync with your partner.':'Personal categories stay on this device.'}</Text>
-  <View style={{flexDirection:'row',gap:8,alignItems:'center'}}>
+  <View style={{flexDirection:'row',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+   <Text style={{fontSize:fontSizes.caption,color:colors.muted,fontFamily:fontFamilies.semibold}}>Sort by</Text>
    {(['name','createdAt','createdBy'] as const).map(field=><Pressable key={field} accessibilityRole="button" onPress={()=>toggleSort(field)}
     style={{flexDirection:'row',alignItems:'center',gap:5,paddingHorizontal:10,paddingVertical:8,borderRadius:8,backgroundColor:sortField===field?colors.secondary:colors.surface,borderWidth:1,borderColor:colors.border}}>
     <Text style={{fontSize:fontSizes.caption,color:sortField===field?colors.text:colors.muted}}>{field==='name'?'Name':field==='createdAt'?'Created at':'Created by'}</Text>
