@@ -22,7 +22,8 @@
     },
     "plugins": [
       "expo-router",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      "./plugins/withAndroidLauncherIcons.cjs"
     ],
     "experiments": {
       "typedRoutes": true
