@@ -6,12 +6,14 @@ import {useLocalSearchParams,useRouter} from 'expo-router';
 import {Screen} from '@/components/Screen';
 import {formatMoney,useData} from '@/data';
 import {useAppTheme} from '@/theme/ThemeContext';
+import {useHouseholdPartnerName} from '@/lib/useHouseholdPartnerName';
 
 export default function Detail(){
  const {id}=useLocalSearchParams<{id:string}>();
  const {expenses,remove,currentUserId}=useData();
  const {colors}=useAppTheme();
  const router=useRouter();
+ const partnerName=useHouseholdPartnerName();
  const expense=expenses.find(item=>item.id===id);
  if(!expense)return <Screen modal><Text style={{color:colors.muted,fontSize:fontSizes.body}}>Expense not found.</Text></Screen>;
  const editable=expense.ownerId==='local-user'||expense.ownerId===currentUserId;
@@ -35,7 +37,7 @@ export default function Detail(){
     <Ionicons name={expense.scope==='household'?'people-outline':'person-outline'} size={15} color={colors.household}/>
     <Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.label,color:colors.text}}>{type} expense</Text>
     <View style={{width:3,height:3,borderRadius:2,backgroundColor:colors.muted}}/>
-    <Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.label,color:colors.muted}}>{editable?'Added by you':'Added by partner'}</Text>
+    <Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.label,color:colors.muted}}>{editable?'Added by you':'Added by '+partnerName}</Text>
    </View>
   </View>
   <View style={{backgroundColor:colors.surface,borderRadius:14,borderWidth:1,borderColor:colors.border,paddingHorizontal:16}}>
