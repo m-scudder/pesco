@@ -1,5 +1,6 @@
 import React,{useState} from 'react';
 import {Pressable,Text,View} from 'react-native';
+import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {initialCalculator,pressCalculator,type CalculatorState} from '@/lib/calculator';
 
@@ -68,7 +69,7 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
     return <Pressable key={label} accessibilityRole="button" accessibilityLabel={isDone?'Use amount':label==='Back'?'Backspace':label==='C'?'Clear calculator':label}
      onPress={()=>tap(label)} style={{width:'23%',flexGrow:1,minHeight:43,borderRadius:7,alignItems:'center',justifyContent:'center',
       backgroundColor:isDone?accent:isOperation?colors.secondary:colors.background}}>
-     <Text style={{fontSize:isDone?14:19,fontWeight:isDone?'700':'500',color:isDone?'#fff':colors.text}}>{label}</Text>
+     {label==='Back'?<Ionicons name="backspace-outline" size={23} color={colors.text}/>:isDone?<Ionicons name="return-down-back" size={24} color="#fff"/>:<Text style={{fontSize:19,fontWeight:'500',color:colors.text}}>{label}</Text>}
     </Pressable>;
    })}
   </View>
