@@ -57,6 +57,8 @@ export function pressCalculator(s:CalculatorState,key:string):CalculatorState{
  if(key==='+'||key==='-'||key==='×'||key==='÷'){
   if(s.error)return s;
   const operand=toPaise(s.display);
+  // Expense amounts cannot begin with a subtraction (e.g. "0−124").
+  if(s.operator===null&&operand===0)return s;
   if(s.operator&&s.accumulator!==null&&!s.startNew){
    const result=calculate(s.accumulator,operand,s.operator);
    if(result===null)return {...s,error:'Invalid calculation'};
