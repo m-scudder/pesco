@@ -52,20 +52,20 @@ export default function Categories(){
  const editor=<View style={{flexDirection:'row',alignItems:'center',gap:5}}>
   <TextInput accessibilityLabel="Category name" autoFocus value={draft} maxLength={40} onChangeText={setDraft}
    autoCapitalize="words" placeholder="Category name" placeholderTextColor={colors.muted}
-   onSubmitEditing={()=>{void save()}} style={{flex:1,minWidth:0,height:42,borderWidth:1,borderColor:colors.border,borderRadius:0,color:colors.text,paddingHorizontal:10,fontSize:fontSizes.body}}/>
+   onSubmitEditing={()=>{void save()}} style={{flex:1,minWidth:0,height:42,borderWidth:1,borderColor:colors.border,borderRadius:9,color:colors.text,paddingHorizontal:10,fontSize:fontSizes.body}}/>
   {button('Save',()=>{void save()})}
   {button('Cancel',cancel,true)}
  </View>;
  return <Screen modal style={{gap:12}}>
-  {activeHousehold?<View style={{flexDirection:'row',padding:3,borderRadius:0,backgroundColor:colors.secondary}}> 
+  {activeHousehold?<View style={{flexDirection:'row',padding:3,borderRadius:10,backgroundColor:colors.secondary}}> 
    {(['household','personal'] as const).map(value=><Pressable key={value} accessibilityRole="button" accessibilityState={{selected:scope===value}} onPress={()=>changeScope(value)}
-    style={{flex:1,alignItems:'center',justifyContent:'center',minHeight:36,borderRadius:0,backgroundColor:scope===value?colors.surface:undefined}}>
+    style={{flex:1,alignItems:'center',justifyContent:'center',minHeight:36,borderRadius:8,backgroundColor:scope===value?colors.surface:undefined}}>
     <Text style={{fontFamily:scope===value?'Inter_600SemiBold':'Inter_400Regular',fontSize:fontSizes.label,color:scope===value?colors.text:colors.muted}}>{value==='household'?'Household':'Personal'}</Text>
    </Pressable>)}
   </View>:null}
   <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{scope==='household'?'Categories created here sync with your partner.':'Personal categories stay on this device.'}</Text>
   {scope==='household'&&!activeHousehold?<Body muted>Join or create a household to manage shared categories.</Body>:null}
-  <View style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:0,paddingHorizontal:12}}>
+  <View style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:12,paddingHorizontal:12}}>
    {list.map((item,index)=><View key={item.origin+':'+item.id} style={{minHeight:50,borderBottomWidth:index===list.length-1?0:1,borderColor:colors.border,justifyContent:'center'}}>
     {editing?.id===item.id?editor:<View style={{flexDirection:'row',alignItems:'center',gap:6}}>
      <Text style={{flex:1,color:colors.text,fontSize:fontSizes.body}}>{item.name}</Text>
@@ -76,7 +76,7 @@ export default function Categories(){
    {list.length===0?<View style={{paddingVertical:14}}><Body muted>No categories</Body></View>:null}
   </View>
   {creating?editor:<Pressable disabled={scope==='household'&&!activeHousehold} onPress={()=>start()} accessibilityRole="button"
-   style={{minHeight:44,borderRadius:0,backgroundColor:colors.secondary,opacity:scope==='household'&&!activeHousehold?0.4:1,justifyContent:'center',alignItems:'center'}}>
+   style={{minHeight:44,borderRadius:10,backgroundColor:colors.secondary,opacity:scope==='household'&&!activeHousehold?0.4:1,justifyContent:'center',alignItems:'center'}}>
    <Text style={{fontFamily:fontFamilies.semibold,fontSize:fontSizes.body,color:colors.household}}>+ Add category</Text>
   </Pressable>}
   {loading?<Body muted>Updating…</Body>:null}

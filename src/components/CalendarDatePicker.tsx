@@ -20,7 +20,7 @@ export function CalendarDatePicker({visible,value,onChange,onClose}:{visible:boo
  return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} presentationStyle="overFullScreen">
   <View style={{flex:1,justifyContent:'flex-end',backgroundColor:'rgba(0,0,0,0.45)'}}>
    <Pressable accessibilityLabel="Close calendar" onPress={onClose} style={{flex:1}}/>
-   <View style={{backgroundColor:colors.surface,borderTopLeftRadius:0,borderTopRightRadius:0,paddingHorizontal:16,paddingTop:14,paddingBottom:Math.max(insets.bottom,16)}}>
+   <View style={{backgroundColor:colors.surface,borderTopLeftRadius:20,borderTopRightRadius:20,paddingHorizontal:16,paddingTop:14,paddingBottom:Math.max(insets.bottom,16)}}>
     <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingBottom:12}}>
      <Text style={{color:colors.text,fontSize:16,fontWeight:'600'}}>Date</Text>
      <Pressable onPress={onClose} accessibilityLabel="Close date picker" style={{padding:8}}><Ionicons name="close" size={22} color={colors.text}/></Pressable>
@@ -40,7 +40,7 @@ export function CalendarDatePicker({visible,value,onChange,onClose}:{visible:boo
       const candidate=iso(dayDate);
       const selected=inMonth&&candidate===value;
       return <View key={i} style={{width:'14.2857%',height:49,alignItems:'center',justifyContent:'center'}}>
-       {inMonth?<Pressable accessibilityRole="button" accessibilityLabel={dayDate.toDateString()} accessibilityState={{selected}} onPress={()=>{onChange(candidate);onClose()}} style={{width:40,height:40,alignItems:'center',justifyContent:'center',borderRadius:0,backgroundColor:selected?colors.household:'transparent',borderWidth:candidate===today&&!selected?1:0,borderColor:colors.border}}>
+       {inMonth?<Pressable accessibilityRole="button" accessibilityLabel={dayDate.toDateString()} accessibilityState={{selected}} onPress={()=>{onChange(candidate);onClose()}} style={{width:40,height:40,alignItems:'center',justifyContent:'center',borderRadius:10,backgroundColor:selected?colors.household:'transparent',borderWidth:candidate===today&&!selected?1:0,borderColor:colors.border}}>
         <Text style={{fontSize:15,color:selected?'#fff':colors.text,fontWeight:selected?'700':'400'}}>{day}</Text>
        </Pressable>:null}
       </View>;

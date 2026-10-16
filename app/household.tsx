@@ -43,11 +43,11 @@ export default function HouseholdSetup(){
  }
  const action=(label:string,press:()=>void,primary=true,disabled=false)=>(
   <Pressable accessibilityRole="button" disabled={busy||disabled} onPress={press}
-   style={{borderRadius:0,minHeight:42,paddingHorizontal:14,alignItems:'center',justifyContent:'center',backgroundColor:primary?colors.household:colors.secondary,opacity:busy||disabled?0.5:1}}>
+   style={{borderRadius:10,minHeight:42,paddingHorizontal:14,alignItems:'center',justifyContent:'center',backgroundColor:primary?colors.household:colors.secondary,opacity:busy||disabled?0.5:1}}>
    <Text style={{color:primary?'#fff':colors.text,fontWeight:fontWeights.semibold,fontSize:fontSizes.body}}>{label}</Text>
   </Pressable>
  );
- const input={borderColor:colors.border,borderWidth:1 as const,borderRadius:0,paddingHorizontal:12,height:44,color:colors.text,fontSize:fontSizes.input};
+ const input={borderColor:colors.border,borderWidth:1 as const,borderRadius:9,paddingHorizontal:12,height:44,color:colors.text,fontSize:fontSizes.input};
  if(!configured)return <Screen modal style={{gap:12}}><Card><Body muted>Add the Supabase URL and publishable key to .env.</Body></Card></Screen>;
  if(!ready||loading)return <Screen modal style={{gap:12}}><ActivityIndicator/></Screen>;
  if(!user)return <Screen modal style={{gap:12}}><Card><Body muted>{authError||'Connection unavailable'}</Body>{action('Retry',()=>{void retry()})}</Card></Screen>;

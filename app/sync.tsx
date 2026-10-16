@@ -19,12 +19,12 @@ export default function PendingUploads(){
    </Text>
   </View>
   <Pressable accessibilityRole="button" disabled={syncing} onPress={()=>{void refresh()}}
-   style={{borderRadius:0,backgroundColor:colors.household,padding:13,alignItems:'center',opacity:syncing?0.6:1}}>
+   style={{borderRadius:11,backgroundColor:colors.household,padding:13,alignItems:'center',opacity:syncing?0.6:1}}>
    <Text style={{color:'#fff',fontFamily:fontFamilies.semibold}}>{syncing?'Syncing…':'Retry pending uploads'}</Text>
   </Pressable>
   {syncError?<Text style={{color:'#C94F4F',fontSize:fontSizes.caption}}>{syncError}</Text>:null}
   {pendingMutations.map(change=><View key={'mutation:'+change.id}
-    style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:0,padding:13,gap:7}}>
+    style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:13,padding:13,gap:7}}>
    <Text style={{color:colors.text,fontSize:fontSizes.body,fontFamily:fontFamilies.semibold}}>
     {change.kind==='delete'?'Delete expense':'Update expense'} · Waiting to sync
    </Text>
@@ -40,7 +40,7 @@ export default function PendingUploads(){
   </View>)}
   {pendingEntries.map(entry=>{
    const oldHousehold=entry.draft.householdId!==household?.id;
-   return <View key={entry.id} style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:0,padding:13,gap:6}}>
+   return <View key={entry.id} style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:13,padding:13,gap:6}}>
     <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:12}}>
      <Text numberOfLines={2} style={{flex:1,color:colors.text,fontSize:fontSizes.input,fontFamily:fontFamilies.semibold}}>{entry.draft.note||entry.draft.category}</Text>
      <Text style={{color:colors.text,fontSize:fontSizes.input}}>{formatMoney(entry.draft.amountPaise)}</Text>

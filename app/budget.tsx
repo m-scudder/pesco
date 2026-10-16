@@ -29,13 +29,13 @@ function BudgetForm({scope,value,onSave}:{scope:Scope;value:number|null;onSave:(
   if(parsed===null){Alert.alert('Invalid amount','Enter a positive monthly budget.');return}
   onSave(parsed);
  };
- return <View style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:0,padding:14,gap:12}}>
+ return <View style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:12,padding:14,gap:12}}>
   <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
    <Text style={{fontSize:fontSizes.section,fontWeight:fontWeights.semibold,color:colors.text}}>{scope==='household'?'Household':'Personal'}</Text>
    {value!==null?<Pressable accessibilityRole="button" accessibilityLabel={'Remove '+scope+' budget'} onPress={()=>{onSave(null);setAmount('')}}><Text style={{fontSize:fontSizes.caption,color:colors.muted}}>Remove</Text></Pressable>:null}
   </View>
   <View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
-   <View style={{flex:1,flexDirection:'row',alignItems:'center',borderColor:colors.border,borderWidth:1,borderRadius:0,minHeight:44,paddingHorizontal:12}}>
+   <View style={{flex:1,flexDirection:'row',alignItems:'center',borderColor:colors.border,borderWidth:1,borderRadius:10,minHeight:44,paddingHorizontal:12}}>
     <Text style={{color:colors.muted,fontSize:fontSizes.section,marginRight:7}}>₹</Text>
     <TextInput
      accessibilityLabel={scope==='household'?'Household monthly budget':'Personal monthly budget'}
@@ -44,7 +44,7 @@ function BudgetForm({scope,value,onSave}:{scope:Scope;value:number|null;onSave:(
      selectTextOnFocus style={{flex:1,color:colors.text,fontSize:fontSizes.section,paddingVertical:8}}
     />
    </View>
-   <Pressable accessibilityRole="button" onPress={save} style={{backgroundColor:accent,borderRadius:0,minHeight:44,minWidth:76,alignItems:'center',justifyContent:'center',paddingHorizontal:12}}>
+   <Pressable accessibilityRole="button" onPress={save} style={{backgroundColor:accent,borderRadius:10,minHeight:44,minWidth:76,alignItems:'center',justifyContent:'center',paddingHorizontal:12}}>
     <Text style={{color:'#FFFFFF',fontWeight:fontWeights.semibold,fontSize:fontSizes.body}}>Save</Text>
    </Pressable>
   </View>
@@ -77,21 +77,21 @@ function CategoryBudgetSection({scope}:{scope:Scope}){
     <Text style={{color:accent,fontSize:fontSizes.caption}}>{open?'Cancel':'+ Add limit'}</Text>
    </Pressable>
   </View>
-  {open?<View style={{backgroundColor:colors.surface,borderRadius:0,borderWidth:1,borderColor:colors.border,padding:14,gap:12}}>
+  {open?<View style={{backgroundColor:colors.surface,borderRadius:12,borderWidth:1,borderColor:colors.border,padding:14,gap:12}}>
    <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
-    {names(scope).map(name=><Pressable key={name} onPress={()=>setCategory(name)} style={{padding:8,borderRadius:0,backgroundColor:colors.surface,borderWidth:1,borderColor:category===name?accent:colors.border}}>
+    {names(scope).map(name=><Pressable key={name} onPress={()=>setCategory(name)} style={{padding:8,borderRadius:8,backgroundColor:colors.surface,borderWidth:1,borderColor:category===name?accent:colors.border}}>
      <Text style={{fontSize:fontSizes.label,color:category===name?accent:colors.text}}>{name}</Text>
     </Pressable>)}
    </View>
    <View style={{flexDirection:'row',gap:8}}>
     <TextInput accessibilityLabel="Category budget amount" value={amount} onChangeText={text=>setAmount(text.replace(/[^0-9]/g,''))} keyboardType="number-pad" placeholder="Monthly limit ₹" placeholderTextColor={colors.muted}
-     style={{flex:1,height:42,borderWidth:1,borderColor:colors.border,borderRadius:0,paddingHorizontal:12,color:colors.text}}/>
-    <Pressable disabled={busy} onPress={()=>{void submit()}} style={{backgroundColor:accent,paddingHorizontal:15,justifyContent:'center',borderRadius:0}}>
+     style={{flex:1,height:42,borderWidth:1,borderColor:colors.border,borderRadius:9,paddingHorizontal:12,color:colors.text}}/>
+    <Pressable disabled={busy} onPress={()=>{void submit()}} style={{backgroundColor:accent,paddingHorizontal:15,justifyContent:'center',borderRadius:8}}>
      <Text style={{color:'#fff'}}>Save</Text>
     </Pressable>
    </View>
   </View>:null}
-  <View style={{backgroundColor:colors.surface,borderRadius:0,borderColor:colors.border,borderWidth:1,paddingHorizontal:14}}>
+  <View style={{backgroundColor:colors.surface,borderRadius:12,borderColor:colors.border,borderWidth:1,paddingHorizontal:14}}>
    {items.length===0?<Text style={{color:colors.muted,fontSize:fontSizes.caption,paddingVertical:14}}>No limits set</Text>:items.map(item=>{
     const spent=expenses.filter(e=>e.scope===scope&&e.category===item.category&&monthKey(e.date)===current).reduce((sum,e)=>sum+e.amountPaise,0);
     return <View key={item.category} style={{paddingVertical:10,gap:6}}>
@@ -102,7 +102,7 @@ function CategoryBudgetSection({scope}:{scope:Scope}){
        <Text style={{color:colors.muted,fontSize:fontSizes.section}}>×</Text>
       </Pressable>
      </View>
-     <View style={{height:5,backgroundColor:colors.secondary,borderRadius:0,overflow:'hidden'}}>
+     <View style={{height:5,backgroundColor:colors.secondary,borderRadius:3,overflow:'hidden'}}>
       <View style={{width:(Math.min(100,Math.round(spent/Math.max(item.amountPaise,1)*100))+'%') as `${number}%`,height:5,backgroundColor:spent>item.amountPaise?'#C94F4F':accent}}/>
      </View>
     </View>;
