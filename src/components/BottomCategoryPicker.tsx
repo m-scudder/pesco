@@ -22,7 +22,7 @@ export function BottomCategoryPicker({options,selected,onSelect,onClose,onEdit}:
    <View style={{flexDirection:'row',flexWrap:'wrap'}}>
     {options.map(name=><Pressable key={name} accessibilityRole="button" accessibilityState={{selected:name===selected}} onPress={()=>onSelect(name)}
      style={{width:'33.333%',minHeight:54,borderBottomWidth:1,borderRightWidth:1,borderColor:colors.border,justifyContent:'center',alignItems:'center',padding:5,backgroundColor:name===selected?colors.secondary:colors.background}}>
-     <Text numberOfLines={3} style={{color:name===selected?colors.household:colors.text,fontSize:fontSizes.label,textAlign:'center',fontFamily:name===selected?'Inter_600SemiBold':'Inter_400Regular'}}>{name}</Text>
+     <Text numberOfLines={3} style={{color:name===selected?colors.household:colors.text,fontSize:fontSizes.label,textAlign:'center',fontFamily:name===selected?fontFamilies.semibold:fontFamilies.regular}}>{name}</Text>
     </Pressable>)}
    </View>
   </ScrollView>
