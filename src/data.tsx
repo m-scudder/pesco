@@ -61,7 +61,6 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const [cloudReady,setCloudReady]=useState(false);
  const requested=useRef(0);
  const importing=useRef(false);
- const pendingBusy=useRef(false);
  const refreshRef=useRef<()=>Promise<void>>(async()=>{});
  const verifiedUser=useRef<string|null>(null);
  const recurringGeneratedOn=useRef<string|null>(null);
@@ -178,19 +177,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
   setSyncing(true);
   try{
    const membership=await getMyHousehold();
-   if(membership&&!pendingBusy.current){
-    pendingBusy.current=true;
-    try{
-     const result=await flushPending(user.id,membership.id);
-     setQueueError(result.errorMessage);
-     setPending(await loadPending(user.id));
-    }finally{pendingBusy.current=false}
-   }
    if(membership){
-    const epoch=mutationEpoch.current;
-    const result=await flushMutations(user.id,membership.id);
-    if(epoch===mutationEpoch.current){mutationEpoch.current++;setMutations(result.items)}
-    if(result.error)setQueueError(result.error);
     const checkKey=membership.id+':'+localDate();
     if(recurringGeneratedOn.current!==checkKey){
      try{await generateHouseholdRecurring(membership.id);recurringGeneratedOn.current=checkKey}
@@ -237,6 +224,30 @@ export function DataProvider({children}:{children:React.ReactNode}){
  },[user?.id,configured,localLoaded]);
  refreshRef.current=refresh;
 
+ // Upload the durable outbox separately from incoming refreshes. A partner's
+ // realtime event must never trigger another outbound upload.
+ const uploadBusy=useRef(false);
+ const uploadRef=useRef<()=>Promise<void>>(async()=>{});
+ const syncOutgoing=useCallback(async()=>{
+  if(!user||!household||uploadBusy.current)return;
+  uploadBusy.current=true;
+  try{
+   const id=user.id,houseId=household.id;
+   const pendingResult=await flushPending(id,houseId);
+   const pendingLatest=await loadPending(id);
+   setPending(pendingLatest);
+   const mutationResult=await flushMutations(id,houseId);
+   mutationEpoch.current++;
+   setMutations(mutationResult.items);
+   setQueueError(pendingResult.errorMessage??mutationResult.error);
+   if(pendingResult.sent>0||mutationResult.items.length===0)
+    void refreshRef.current();
+  }catch(error){
+   setQueueError(error instanceof Error?error.message:String(error));
+  }finally{uploadBusy.current=false}
+ },[user?.id,household?.id]);
+ uploadRef.current=syncOutgoing;
+
  useEffect(()=>{
   requested.current++;
   verifiedUser.current=null;
@@ -246,22 +257,32 @@ export function DataProvider({children}:{children:React.ReactNode}){
   void refresh();
   // Realtime refreshes normally provide prompt updates; polling is a fallback after missed events.
   const interval=setInterval(()=>{if(AppState.currentState==='active')void refresh()},60000);
-  const app=AppState.addEventListener('change',s=>{if(s==='active'||s==='background')void refreshRef.current()});
+  const app=AppState.addEventListener('change',s=>{
+   if(s==='active'){void refreshRef.current();void uploadRef.current()}
+   if(s==='background')void uploadRef.current();
+  });
   return()=>{
    clearInterval(interval);app.remove();
    requested.current++;
   };
  },[user?.id,refresh]);
 
- // Local saves finish before remote synchronization. Coalesce rapid edits
- // and additions into a single upload instead of refreshing on every save.
+ // Coalesce rapid writes but start uploading promptly while the app is active.
+ // Do not wait for a foreground/background transition to share household rows.
  useEffect(()=>{
-  if(!user||!localLoaded)return;
-  if(!pending.length&&!mutations.length&&!localExpenses.some(e=>e.scope==='personal'))return;
-  const timer=setTimeout(()=>{void refreshRef.current()},4000);
+  if(!user||!household||(!pending.length&&!mutations.length))return;
+  const timer=setTimeout(()=>{void uploadRef.current()},850);
   return()=>clearTimeout(timer);
- },[user?.id,localLoaded,pending,mutations,localExpenses]);
+ },[user?.id,household?.id,pending,mutations]);
 
+ // Legacy personal entries have their own idempotent import path.
+ useEffect(()=>{
+  if(user&&localLoaded&&localExpenses.some(e=>e.scope==='personal')){
+   const timer=setTimeout(()=>{void refreshRef.current()},1000);
+   return()=>clearTimeout(timer);
+  }
+ },[user?.id,localLoaded,localExpenses]);
+ 
  // Subscribe after membership is known. Re-subscribe if the household changes.
  // Realtime events invalidate the household feed, which is fetched under RLS.
  useEffect(()=>{
