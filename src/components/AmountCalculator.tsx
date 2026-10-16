@@ -1,3 +1,4 @@
+import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
 import React,{useState} from 'react';
 import {Pressable,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
@@ -61,7 +62,7 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
   publish(expression+key);
  }
  return <View style={{paddingVertical:4}}>
-  {state.error?<Text accessibilityRole="alert" style={{color:'#C94F4F',fontSize:12,padding:6}}>{state.error}</Text>:null}
+  {state.error?<Text accessibilityRole="alert" style={{color:'#C94F4F',fontSize:fontSizes.caption,padding:6}}>{state.error}</Text>:null}
   <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
    {keys.map((label,index)=>{
     if(!label)return <View key={'blank-'+index} style={{width:'23%',flexGrow:1,minHeight:43}}/>;
@@ -69,7 +70,7 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
     return <Pressable key={label} accessibilityRole="button" accessibilityLabel={isDone?'Use amount':label==='Back'?'Backspace':label==='C'?'Clear calculator':label}
      onPress={()=>tap(label)} style={{width:'23%',flexGrow:1,minHeight:43,borderRadius:7,alignItems:'center',justifyContent:'center',
       backgroundColor:isDone?accent:isOperation?colors.secondary:colors.background,borderWidth:1,borderColor:colors.border}}>
-     {label==='Back'?<Ionicons name="backspace-outline" size={23} color={colors.text}/>:isDone?<Ionicons name="return-down-back" size={24} color="#fff"/>:<Text style={{fontSize:19,fontWeight:'500',color:colors.text}}>{label}</Text>}
+     {label==='Back'?<Ionicons name="backspace-outline" size={23} color={colors.text}/>:isDone?<Ionicons name="return-down-back" size={24} color="#fff"/>:<Text style={{fontSize:fontSizes.title,fontWeight:fontWeights.medium,color:colors.text}}>{label}</Text>}
     </Pressable>;
    })}
   </View>
