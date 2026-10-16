@@ -4,6 +4,7 @@ import DateTimePicker,{DateTimePickerAndroid} from '@react-native-community/date
 import {Stack,useLocalSearchParams,useRouter} from 'expo-router';
 import {Screen} from '@/components/Screen';
 import {AmountCalculator} from '@/components/AmountCalculator';
+import {BottomCategoryPicker} from '@/components/BottomCategoryPicker';
 import {Ionicons} from '@expo/vector-icons';
 import {Body} from '@/components/UI';
 import {useAppTheme} from '@/theme/ThemeContext';
@@ -162,6 +163,9 @@ export default function RecurringEditor(){
   </Pressable>
  </>}
  </ScrollView>
+ {!noteFocused&&categoryOpen&&!loading&&!loadError?<View style={{paddingHorizontal:12,paddingBottom:8,backgroundColor:colors.background}}>
+  <BottomCategoryPicker options={options} selected={category} onSelect={name=>{setCategory(name);setCategoryOpen(false)}} onClose={()=>setCategoryOpen(false)} onEdit={()=>{setCategoryOpen(false);router.push('/categories')}}/>
+ </View>:null}
  {!noteFocused&&calculatorOpen&&!loading&&!loadError?<View style={{paddingHorizontal:12,paddingTop:6,paddingBottom:8,backgroundColor:colors.background}}>
   <AmountCalculator value={amount} onChange={setAmount} onDisplayChange={setCalculatorDisplay} onDone={()=>setCalculatorOpen(false)}/>
  </View>:null}
@@ -180,25 +184,5 @@ export default function RecurringEditor(){
    </View>
   </View>
  </Modal>
- <Modal visible={categoryOpen} transparent animationType="fade" presentationStyle="overFullScreen" onRequestClose={()=>setCategoryOpen(false)}>
-  <View style={{flex:1,justifyContent:'center',paddingHorizontal:24,backgroundColor:'rgba(0,0,0,0.55)'}}>
-   <Pressable onPress={()=>setCategoryOpen(false)} style={{position:'absolute',top:0,bottom:0,left:0,right:0}} accessibilityLabel="Dismiss category picker"/>
-   <View style={pickerCard}>
-    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
-     <Text style={{color:colors.text,fontFamily:'Inter_700Bold',fontSize:17}}>Category</Text>
-     <Pressable onPress={()=>setCategoryOpen(false)} style={{padding:8}}><Text style={{color:colors.muted}}>Close</Text></Pressable>
-    </View>
-    <ScrollView style={{maxHeight:390}} nestedScrollEnabled>
-     {options.map((name,index)=><Pressable key={name} accessibilityRole="button" onPress={()=>{setCategory(name);setCategoryOpen(false)}}
-      style={{minHeight:47,flexDirection:'row',alignItems:'center',borderBottomWidth:index===options.length-1?0:1,borderColor:colors.border}}>
-      <Text style={{flex:1,color:colors.text,fontSize:15}}>{name}</Text>
-      {name===category?<Text style={{color:accent,fontSize:18}}>✓</Text>:null}
-     </Pressable>)}
-    </ScrollView>
-    <Pressable onPress={()=>{setCategoryOpen(false);router.push('/categories')}} style={{paddingVertical:12}}>
-     <Text style={{color:accent,fontSize:14,fontWeight:'600'}}>Manage categories ›</Text>
-    </Pressable>
-   </View>
-  </View>
- </Modal></>;
+</>;
 }
