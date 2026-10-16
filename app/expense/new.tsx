@@ -2,6 +2,7 @@ import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
 import React,{useEffect,useRef,useState} from 'react';
 import {Alert,Keyboard,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,Text,TextInput,View} from 'react-native';
 import {Stack,useLocalSearchParams,useRouter} from 'expo-router';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Screen} from '@/components/Screen';
 import {ScopeSwitch} from '@/components/UI';
 import {Ionicons} from '@expo/vector-icons';
@@ -18,6 +19,7 @@ export default function ExpenseEditor(){
  const options=editing&&!availableCategories.includes(editing.category)?[editing.category,...availableCategories]:availableCategories;
  const [datePickerOpen,setDatePickerOpen]=useState(false);
  const scrollRef=useRef<ScrollView>(null);
+ const insets=useSafeAreaInsets();
  const [noteFocused,setNoteFocused]=useState(false);
  const [deleting,setDeleting]=useState(false);
  const [calculatorDisplay,setCalculatorDisplay]=useState('');
@@ -118,10 +120,10 @@ export default function ExpenseEditor(){
   </Pressable>:null}
   <CalendarDatePicker visible={datePickerOpen} value={date} onChange={setDate} onClose={()=>setDatePickerOpen(false)}/>
  </ScrollView>
- {!noteFocused&&categoryOpen?<View style={{paddingHorizontal:12,paddingTop:6,paddingBottom:8,backgroundColor:colors.background,borderTopWidth:1,borderTopColor:colors.border}}>
+ {!noteFocused&&categoryOpen?<View style={{paddingHorizontal:12,paddingTop:6,paddingBottom:Math.max(insets.bottom,12),backgroundColor:colors.background,borderTopWidth:1,borderTopColor:colors.border}}>
   <BottomCategoryPicker options={options} selected={category} onSelect={name=>{setCategory(name);setCategoryOpen(false)}} onClose={()=>setCategoryOpen(false)} onEdit={()=>{setCategoryOpen(false);router.push('/categories')}}/>
  </View>:null}
- {!noteFocused&&calculatorOpen?<View style={{paddingHorizontal:12,paddingTop:6,paddingBottom:8,backgroundColor:colors.background,borderTopWidth:1,borderTopColor:colors.border}}>
+ {!noteFocused&&calculatorOpen?<View style={{paddingHorizontal:12,paddingTop:6,paddingBottom:Math.max(insets.bottom,12),backgroundColor:colors.background,borderTopWidth:1,borderTopColor:colors.border}}>
   <AmountCalculator value={amount} onChange={setAmount} onDisplayChange={setCalculatorDisplay} onDone={()=>setCalculatorOpen(false)}/>
  </View>:null}
  </KeyboardAvoidingView></>
