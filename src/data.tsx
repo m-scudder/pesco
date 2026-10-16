@@ -38,12 +38,14 @@ type Store={
  setBudget:(scope:Scope,value:number|null)=>void;clearAll:()=>void;
 };
 const Context=createContext<Store|null>(null);
-const STORAGE_KEY='pesco-local-v1';
+const LEGACY_STORAGE_KEY='pesco-local-v1';
+const userStorageKey=(id:string)=>'pesco:account-data:'+id+':v1';
 const defaultBudgets:Budgets={household:null,personal:null};
 
 export function DataProvider({children}:{children:React.ReactNode}){
  const {user,configured}=useAuth();
  const [localLoaded,setLocalLoaded]=useState(false);
+ const [loadedOwner,setLoadedOwner]=useState<string|null>(null);
  const [demoEnabled,setDemoEnabled]=useState(__DEV__);
  useEffect(()=>{if(!__DEV__)return;AsyncStorage.getItem('pesco:debug-demo-enabled').then(v=>{if(v!==null)setDemoEnabled(v==='true')}).catch(()=>{})},[]);
  const changeDemoEnabled=useCallback((value:boolean)=>{if(!__DEV__)return;setDemoEnabled(value);void AsyncStorage.setItem('pesco:debug-demo-enabled',String(value))},[]);
@@ -118,27 +120,47 @@ export function DataProvider({children}:{children:React.ReactNode}){
   return()=>{live=false};
  },[user?.id]);
 
+ // Keep private settings under the authenticated account, not a shared device-wide key.
  useEffect(()=>{
   let active=true;
-  (async()=>{
+  setLocalLoaded(false);
+  setLoadedOwner(null);
+  setLocalExpenses([]);
+  setBudgets(defaultBudgets);
+  setRecurringRules([]);
+  setGenerated([]);
+  if(!user)return()=>{active=false};
+  const userId=user.id;
+  void (async()=>{
    try{
-    const raw=await AsyncStorage.getItem(STORAGE_KEY);
-    if(!active||!raw)return;
-    const data=JSON.parse(raw);
-    if(Array.isArray(data.expenses))setLocalExpenses(data.expenses);
-    if(data.budgets)setBudgets({...defaultBudgets,...data.budgets});
-    if(Array.isArray(data.recurringRules))setRecurringRules(data.recurringRules);
-    if(Array.isArray(data.generated))setGenerated(data.generated);
-   }catch(e){console.warn('Could not restore local expenses',e)}
-   finally{if(active)setLocalLoaded(true)}
+    let raw=await AsyncStorage.getItem(userStorageKey(userId));
+    if(!raw){
+     // One-time migration from the previous device-wide store. Never import it again.
+     const legacy=await AsyncStorage.getItem(LEGACY_STORAGE_KEY);
+     if(legacy){
+      await AsyncStorage.setItem(userStorageKey(userId),legacy);
+      await AsyncStorage.removeItem(LEGACY_STORAGE_KEY);
+      raw=legacy;
+     }
+    }
+    if(!active)return;
+    if(raw){
+     const data=JSON.parse(raw);
+     if(Array.isArray(data.expenses))setLocalExpenses(data.expenses);
+     if(data.budgets)setBudgets({...defaultBudgets,personal:data.budgets.personal??null});
+     if(Array.isArray(data.recurringRules))setRecurringRules(data.recurringRules);
+     if(Array.isArray(data.generated))setGenerated(data.generated);
+    }
+   }catch(e){console.warn('Could not restore account settings',e)}
+   finally{if(active){setLoadedOwner(userId);setLocalLoaded(true)}}
   })();
   return()=>{active=false};
- },[]);
+ },[user?.id]);
  useEffect(()=>{
-  if(!localLoaded)return;
-  AsyncStorage.setItem(STORAGE_KEY,JSON.stringify({expenses:localExpenses,budgets,recurringRules,generated}))
-   .catch(e=>console.warn('Could not save local expenses',e));
- },[localExpenses,budgets,recurringRules,generated,localLoaded]);
+  if(!user||!localLoaded||loadedOwner!==user.id)return;
+  AsyncStorage.setItem(userStorageKey(user.id),JSON.stringify({expenses:localExpenses,budgets:{personal:budgets.personal},recurringRules,generated}))
+   .catch(e=>console.warn('Could not save account settings',e));
+ },[localExpenses,budgets,recurringRules,generated,localLoaded,loadedOwner,user?.id]);
  const generateDue=useCallback(()=>{
   if(!localLoaded)return;
   const today=localDate();
