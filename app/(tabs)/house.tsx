@@ -1,5 +1,5 @@
 import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
-import React,{useMemo,useState} from 'react';
+import React,{useEffect,useMemo,useState} from 'react';
 import {Pressable,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useFocusEffect,useRouter} from 'expo-router';
@@ -10,11 +10,12 @@ import {MonthSwipeView} from '@/components/MonthSwipeView';
 import {formatMoney,localDate,monthKey,useData} from '@/data';
 import {buildInsights,monthlyCategoryChanges} from '@/lib/insights';
 import {useAppTheme} from '@/theme/ThemeContext';
+import {supabase} from '@/lib/supabase';
 
 export default function House(){
  const router=useRouter();
  const {colors}=useAppTheme();
- const {expenses,budgets,household,refresh,syncError,demoEnabled}=useData();
+ const {expenses,household,refresh,syncError,demoEnabled}=useData();
  const [month,setMonth]=useState(monthKey(localDate()));
  useFocusEffect(React.useCallback(()=>{void refresh()},[refresh]));
  const {spent,prior,difference,percentChange,selected,monthSeries}=useMemo(
@@ -22,7 +23,20 @@ export default function House(){
  const categoryChanges=useMemo(()=>monthlyCategoryChanges(expenses,'household',month),[expenses,month]);
  const increased=categoryChanges.filter(x=>x.difference>0);
  const decreased=categoryChanges.filter(x=>x.difference<0);
- const budget=budgets.household;
+ const [budget,setBudget]=useState<number|null>(null);
+ const householdId=household?.id;
+ useEffect(()=>{
+  if(!householdId||!supabase){setBudget(null);return}
+  const db=supabase;
+  let active=true;
+  const load=async()=>{
+   const {data,error}=await db.from('household_budgets').select('amount_paise').eq('household_id',householdId).maybeSingle();
+   if(active&&!error)setBudget(data?Number(data.amount_paise):null);
+  };
+  void load();
+  const channel=db.channel('house-budget-summary-'+householdId).on('postgres_changes',{event:'*',schema:'public',table:'household_budgets',filter:'household_id=eq.'+householdId},()=>{void load()}).subscribe();
+  return()=>{active=false;void db.removeChannel(channel)};
+ },[householdId]);
  const accent=colors.household;
  const maxMonth=Math.max(1,...monthSeries.map(m=>m.amount));
  if(!household)return <View style={{flex:1,backgroundColor:colors.background,alignItems:'center',justifyContent:'center',paddingHorizontal:24}}>
