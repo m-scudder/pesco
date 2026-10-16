@@ -1,3 +1,4 @@
+import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
 import React,{useEffect,useState} from 'react';
 import {Alert,Pressable,Text,TextInput,View} from 'react-native';
 import {Screen} from '@/components/Screen';
@@ -30,21 +31,21 @@ function BudgetForm({scope,value,onSave}:{scope:Scope;value:number|null;onSave:(
  };
  return <View style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:12,padding:14,gap:12}}>
   <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-   <Text style={{fontSize:16,fontWeight:'600',color:colors.text}}>{scope==='household'?'Household':'Personal'}</Text>
-   {value!==null?<Pressable accessibilityRole="button" accessibilityLabel={'Remove '+scope+' budget'} onPress={()=>{onSave(null);setAmount('')}}><Text style={{fontSize:12,color:colors.muted}}>Remove</Text></Pressable>:null}
+   <Text style={{fontSize:fontSizes.section,fontWeight:fontWeights.semibold,color:colors.text}}>{scope==='household'?'Household':'Personal'}</Text>
+   {value!==null?<Pressable accessibilityRole="button" accessibilityLabel={'Remove '+scope+' budget'} onPress={()=>{onSave(null);setAmount('')}}><Text style={{fontSize:fontSizes.caption,color:colors.muted}}>Remove</Text></Pressable>:null}
   </View>
   <View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
    <View style={{flex:1,flexDirection:'row',alignItems:'center',borderColor:colors.border,borderWidth:1,borderRadius:10,minHeight:44,paddingHorizontal:12}}>
-    <Text style={{color:colors.muted,fontSize:16,marginRight:7}}>₹</Text>
+    <Text style={{color:colors.muted,fontSize:fontSizes.section,marginRight:7}}>₹</Text>
     <TextInput
      accessibilityLabel={scope==='household'?'Household monthly budget':'Personal monthly budget'}
      keyboardType="number-pad" value={amount} onChangeText={text=>setAmount(text.replace(/[^0-9]/g,''))}
      placeholder="0" placeholderTextColor={colors.muted}
-     selectTextOnFocus style={{flex:1,color:colors.text,fontSize:16,paddingVertical:8}}
+     selectTextOnFocus style={{flex:1,color:colors.text,fontSize:fontSizes.section,paddingVertical:8}}
     />
    </View>
    <Pressable accessibilityRole="button" onPress={save} style={{backgroundColor:accent,borderRadius:10,minHeight:44,minWidth:76,alignItems:'center',justifyContent:'center',paddingHorizontal:12}}>
-    <Text style={{color:'#FFFFFF',fontWeight:'600',fontSize:14}}>Save</Text>
+    <Text style={{color:'#FFFFFF',fontWeight:fontWeights.semibold,fontSize:fontSizes.body}}>Save</Text>
    </Pressable>
   </View>
  </View>;
@@ -71,15 +72,15 @@ function CategoryBudgetSection({scope}:{scope:Scope}){
  };
  return <View style={{gap:9}}>
   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
-   <Text style={{fontFamily:'Inter_600SemiBold',fontSize:14,color:colors.text}}>{scope==='household'?'Household category limits':'Personal category limits'}</Text>
+   <Text style={{fontFamily:fontFamilies.semibold,fontSize:fontSizes.body,color:colors.text}}>{scope==='household'?'Household category limits':'Personal category limits'}</Text>
    <Pressable disabled={scope==='household'&&!household} onPress={()=>setOpen(v=>!v)}>
-    <Text style={{color:accent,fontSize:12}}>{open?'Cancel':'+ Add limit'}</Text>
+    <Text style={{color:accent,fontSize:fontSizes.caption}}>{open?'Cancel':'+ Add limit'}</Text>
    </Pressable>
   </View>
   {open?<View style={{backgroundColor:colors.surface,borderRadius:12,borderWidth:1,borderColor:colors.border,padding:14,gap:12}}>
    <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
     {names(scope).map(name=><Pressable key={name} onPress={()=>setCategory(name)} style={{padding:8,borderRadius:8,backgroundColor:colors.surface,borderWidth:1,borderColor:category===name?accent:colors.border}}>
-     <Text style={{fontSize:13,color:category===name?accent:colors.text}}>{name}</Text>
+     <Text style={{fontSize:fontSizes.label,color:category===name?accent:colors.text}}>{name}</Text>
     </Pressable>)}
    </View>
    <View style={{flexDirection:'row',gap:8}}>
@@ -91,14 +92,14 @@ function CategoryBudgetSection({scope}:{scope:Scope}){
    </View>
   </View>:null}
   <View style={{backgroundColor:colors.surface,borderRadius:12,borderColor:colors.border,borderWidth:1,paddingHorizontal:14}}>
-   {items.length===0?<Text style={{color:colors.muted,fontSize:12,paddingVertical:14}}>No limits set</Text>:items.map(item=>{
+   {items.length===0?<Text style={{color:colors.muted,fontSize:fontSizes.caption,paddingVertical:14}}>No limits set</Text>:items.map(item=>{
     const spent=expenses.filter(e=>e.scope===scope&&e.category===item.category&&monthKey(e.date)===current).reduce((sum,e)=>sum+e.amountPaise,0);
     return <View key={item.category} style={{paddingVertical:10,gap:6}}>
      <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-      <Text style={{flex:1,color:colors.text,fontSize:13}}>{item.category}</Text>
-      <Text style={{fontSize:11,color:colors.muted}}>{formatMoney(spent)} / {formatMoney(item.amountPaise)}</Text>
+      <Text style={{flex:1,color:colors.text,fontSize:fontSizes.label}}>{item.category}</Text>
+      <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{formatMoney(spent)} / {formatMoney(item.amountPaise)}</Text>
       <Pressable accessibilityLabel={'Remove '+item.category+' budget'} onPress={()=>{void save(item.category,null).catch(e=>Alert.alert('Error',String(e)))}}>
-       <Text style={{color:colors.muted,fontSize:17}}>×</Text>
+       <Text style={{color:colors.muted,fontSize:fontSizes.section}}>×</Text>
       </Pressable>
      </View>
      <View style={{height:5,backgroundColor:colors.secondary,borderRadius:3,overflow:'hidden'}}>
@@ -107,6 +108,6 @@ function CategoryBudgetSection({scope}:{scope:Scope}){
     </View>;
    })}
   </View>
-  {error?<Pressable onPress={()=>{void refresh()}}><Text style={{color:'#C94F4F',fontSize:12}}>Budget sync failed · Retry</Text></Pressable>:null}
+  {error?<Pressable onPress={()=>{void refresh()}}><Text style={{color:'#C94F4F',fontSize:fontSizes.caption}}>Budget sync failed · Retry</Text></Pressable>:null}
  </View>;
 }
