@@ -13,21 +13,20 @@ export default function Budget(){
  const {budgets,setBudget,household,expenses}=useData();
  const {colors}=useAppTheme();
  const current=monthKey(localDate());
- const scopes:Scope[]=household?['household','personal']:['personal'];
- return <Screen modal style={{gap:18,paddingBottom:40}}>
-  <View style={{gap:4}}>
-   <Text style={{fontFamily:fontFamilies.displayBold,fontSize:fontSizes.title,color:colors.text}}>Monthly Budgets</Text>
-   <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>
-    {new Date(current+'-01T12:00:00').toLocaleDateString('en-IN',{month:'long',year:'numeric'})} · Track spending without changing your expenses
-   </Text>
-  </View>
-  {scopes.map(scope=>{
-   const spent=expenses.filter(e=>e.scope===scope&&monthKey(e.date)===current).reduce((sum,e)=>sum+e.amountPaise,0);
-   return <View key={scope} style={{gap:12}}>
-    <BudgetForm scope={scope} value={budgets[scope]} spent={spent} onSave={amount=>setBudget(scope,amount)}/>
-    <CategoryBudgetSection scope={scope} current={current}/>
-   </View>;
-  })}
+ const [scope,setScope]=useState<Scope>(household?'household':'personal');
+ useEffect(()=>{if(!household)setScope('personal')},[household]);
+ const activeScope=household?scope:'personal';
+ const spent=expenses.filter(e=>e.scope===activeScope&&monthKey(e.date)===current).reduce((sum,e)=>sum+e.amountPaise,0);
+ return <Screen modal style={{gap:12,paddingBottom:40}}>
+  {household?<View style={{flexDirection:'row',padding:3,borderRadius:11,backgroundColor:colors.secondary}}>
+   {(['household','personal'] as const).map(item=><Pressable key={item} accessibilityRole="button" accessibilityState={{selected:activeScope===item}} onPress={()=>setScope(item)}
+    style={{flex:1,minHeight:36,alignItems:'center',justifyContent:'center',borderRadius:8,backgroundColor:activeScope===item?colors.surface:undefined,borderBottomWidth:activeScope===item?2:0,borderBottomColor:colors.household}}>
+    <Text style={{fontFamily:activeScope===item?fontFamilies.bold:fontFamilies.medium,fontSize:fontSizes.label,color:activeScope===item?colors.household:colors.muted}}>{item==='household'?'Household':'Personal'}</Text>
+   </Pressable>)}
+  </View>:null}
+  <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{new Date(current+'-01T12:00:00').toLocaleDateString('en-IN',{month:'long',year:'numeric'})}</Text>
+  <BudgetForm key={activeScope} scope={activeScope} value={budgets[activeScope]} spent={spent} onSave={amount=>setBudget(activeScope,amount)}/>
+  <CategoryBudgetSection key={activeScope} scope={activeScope} current={current}/>
  </Screen>;
 }
 
@@ -44,7 +43,7 @@ function BudgetForm({scope,value,spent,onSave}:{scope:Scope;value:number|null;sp
  const remaining=value===null?null:value-spent;
  return <View style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:12,padding:15,gap:12}}>
   <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-   <Text style={{fontFamily:fontFamilies.semibold,fontSize:fontSizes.section,color:colors.text}}>{scope==='household'?'Household Budget':'Personal Budget'}</Text>
+   <Text style={{fontFamily:fontFamilies.semibold,fontSize:fontSizes.section,color:colors.text}}>Monthly Budget</Text>
    {value!==null?<Pressable accessibilityRole="button" accessibilityLabel={'Remove '+scope+' budget'} onPress={()=>{onSave(null);setAmount('')}} style={{padding:5}}>
     <Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.caption,color:colors.muted}}>Remove</Text>
    </Pressable>:null}
@@ -52,7 +51,7 @@ function BudgetForm({scope,value,spent,onSave}:{scope:Scope;value:number|null;sp
   {value!==null?<View style={{gap:9}}>
    <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'baseline',gap:8}}>
     <View style={{flex:1,gap:3}}>
-     <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>Spent this month</Text>
+     <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>Spent</Text>
      <Text style={{fontFamily:fontFamilies.displayBold,fontSize:fontSizes.summary,color:colors.text}}>{formatMoney(spent)}</Text>
     </View>
     <View style={{alignItems:'flex-end',gap:3}}>
@@ -63,8 +62,8 @@ function BudgetForm({scope,value,spent,onSave}:{scope:Scope;value:number|null;sp
    <View style={{height:7,borderRadius:5,overflow:'hidden',backgroundColor:colors.secondary}}>
     <View style={{height:7,width:(ratio+'%') as `${number}%`,backgroundColor:spent>value?'#C94F4F':colors.household}}/>
    </View>
-   <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{Math.round(spent/value*100)}% of {formatMoney(value)} monthly budget used</Text>
-  </View>:<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>Set a monthly budget to see how much you have left.</Text>}
+   <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{Math.round(spent/value*100)}% of {formatMoney(value)} used</Text>
+  </View>:<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>No budget set</Text>}
   <View style={{flexDirection:'row',gap:9,alignItems:'center'}}>
    <View style={{flex:1,flexDirection:'row',alignItems:'center',borderColor:colors.border,borderWidth:1,borderRadius:9,minHeight:46,paddingHorizontal:12}}>
     <Text style={{color:colors.muted,fontSize:fontSizes.section,marginRight:7}}>₹</Text>
@@ -104,7 +103,6 @@ function CategoryBudgetSection({scope,current}:{scope:Scope;current:string}){
   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',gap:10}}>
    <View style={{flex:1,gap:3}}>
     <Text style={{fontFamily:fontFamilies.semibold,fontSize:fontSizes.body,color:colors.text}}>Category Limits</Text>
-    <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{scope==='household'?'Household spending by category':'Personal spending by category'}</Text>
    </View>
    <Pressable accessibilityRole="button" accessibilityLabel={open?'Cancel Adding Limit':'Add Category Limit'} onPress={()=>setOpen(v=>!v)} style={{padding:8,flexDirection:'row',alignItems:'center',gap:4}}>
     {!open?<Ionicons name="add" size={16} color={colors.household}/>:null}
@@ -127,7 +125,7 @@ function CategoryBudgetSection({scope,current}:{scope:Scope;current:string}){
    </View>
   </View>:null}
   <View style={{backgroundColor:colors.surface,borderRadius:12,borderColor:colors.border,borderWidth:1,paddingHorizontal:14}}>
-   {items.length===0?<Text style={{color:colors.muted,fontSize:fontSizes.caption,paddingVertical:17}}>No category limits yet. Add one to track spending.</Text>:items.map((item,index)=>{
+   {items.length===0?<Text style={{color:colors.muted,fontSize:fontSizes.caption,paddingVertical:17}}>No Category Limits</Text>:items.map((item,index)=>{
     const spent=expenses.filter(e=>e.scope===scope&&e.category===item.category&&monthKey(e.date)===current).reduce((sum,e)=>sum+e.amountPaise,0);
     const pct=Math.round(spent/Math.max(item.amountPaise,1)*100);
     return <View key={item.category} style={{paddingVertical:14,gap:8,borderBottomWidth:index===items.length-1?0:1,borderBottomColor:colors.border}}>
