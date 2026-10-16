@@ -34,7 +34,7 @@ export default function Recurring(){
    <View style={{flexDirection:'row',padding:2,borderRadius:9,backgroundColor:colors.secondary}}>
     {(['household','personal'] as const).map(v=><Pressable key={v} accessibilityRole="button" accessibilityState={{selected:scope===v}} onPress={()=>setScope(v)}
      style={{flex:1,minHeight:34,alignItems:'center',justifyContent:'center',borderRadius:8,backgroundColor:scope===v?colors.surface:undefined}}>
-     <Text style={{fontFamily:scope===v?'Inter_700Bold':'Inter_500Medium',color:scope===v?(v==='household'?colors.household:colors.personal):colors.muted,fontSize:fontSizes.caption}}>{v==='household'?'Household':'Personal'}</Text>
+     <Text style={{fontFamily:scope===v?fontFamilies.bold:fontFamilies.medium,color:scope===v?(v==='household'?colors.household:colors.personal):colors.muted,fontSize:fontSizes.caption}}>{v==='household'?'Household':'Personal'}</Text>
     </Pressable>)}
    </View>
    <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{scope==='household'?'Shared bills':'Private bills'}</Text>
