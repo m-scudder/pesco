@@ -58,7 +58,7 @@ export default function House(){
   return()=>{active=false;void db.removeChannel(channel)};
  },[householdId]);
  const accent=colors.household;
- // Omit empty historical months while keeping the selected month visible.
+ // Show months with spending plus the selected month; include year to distinguish December/January.
  const trendMonths=monthSeries.filter(item=>item.amount>0||item.selected);
  const maxMonth=Math.max(1,...trendMonths.map(m=>m.amount));
  const today=localDate();
@@ -114,21 +114,26 @@ export default function House(){
     <Text style={{fontSize:fontSizes.caption,color:accent}}>Set household budget ›</Text>
    </Pressable>}
   </Card>
-  <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-   <Text style={{color:colors.text,fontSize:fontSizes.body,fontFamily:fontFamilies.semibold}}>Spending trend</Text>
-   <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>Recent months</Text>
-  </View>
+  <Text style={{color:colors.text,fontSize:fontSizes.body,fontFamily:fontFamilies.semibold}}>Spending trend</Text>
   <Card>
-   <View style={{height:105,flexDirection:'row',alignItems:'flex-end',justifyContent:'center',gap:12}}>
-    {trendMonths.map(item=><View key={item.key} style={{flex:1,maxWidth:92,height:'100%',justifyContent:'flex-end',alignItems:'center',gap:5}}>
-     <Text numberOfLines={1} style={{fontSize:fontSizes.caption,color:colors.muted}}>
-      {item.amount===maxMonth&&item.amount>0?compactMoney(item.amount):''}
-     </Text>
-     <View style={{width:'72%',height:item.amount?Math.max(4,Math.round(item.amount/maxMonth*63)):3,
-      borderRadius:4,backgroundColor:item.amount?(item.selected?accent:colors.muted):colors.secondary,opacity:item.selected?1:0.65}}/>
-     <Text style={{fontSize:fontSizes.caption,color:item.selected?colors.text:colors.muted,fontWeight:item.selected?fontWeights.bold:fontWeights.regular}}>{item.label}</Text>
-    </View>)}
-   </View>
+   {trendMonths.slice().reverse().map((item,index)=><View key={item.key} style={{
+    flexDirection:'row',alignItems:'center',gap:10,minHeight:38,
+    paddingBottom:index===trendMonths.length-1?0:9,
+   }}>
+    <Text style={{width:43,fontSize:fontSizes.label,color:item.selected?colors.text:colors.muted,
+     fontFamily:item.selected?fontFamilies.semibold:fontFamilies.regular}}>{item.label}</Text>
+    <View style={{flex:1,height:9,borderRadius:6,backgroundColor:colors.secondary,overflow:'hidden'}}>
+     {item.amount>0?<View style={{
+      height:'100%',borderRadius:6,
+      width:`${Math.max(2,Math.round(item.amount/maxMonth*100))}%` as `${number}%`,
+      backgroundColor:item.selected?accent:colors.muted,opacity:item.selected?1:0.65,
+     }}/>:null}
+    </View>
+    <Text numberOfLines={1} adjustsFontSizeToFit style={{
+     minWidth:92,textAlign:'right',color:item.selected?colors.text:colors.muted,
+     fontSize:fontSizes.label,fontFamily:item.selected?fontFamilies.semibold:fontFamilies.medium,
+    }}>{compactMoney(item.amount)}</Text>
+   </View>)}
   </Card>
  </Screen></MonthSwipeView>;
 }
