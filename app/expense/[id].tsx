@@ -31,7 +31,7 @@ export default function Detail(){
  };
  return <Screen modal style={{gap:18}}>
   <View style={{alignItems:'center',paddingVertical:22,gap:10}}>
-   <Text style={{color:colors.muted,fontFamily:fontFamilies.medium,fontSize:fontSizes.caption,letterSpacing:1}}>EXPENSE AMOUNT</Text>
+   <Text style={{color:colors.muted,fontFamily:fontFamilies.medium,fontSize:fontSizes.caption,letterSpacing:0}}>Amount</Text>
    <Text adjustsFontSizeToFit numberOfLines={1} style={{color:colors.text,fontFamily:fontFamilies.displayBold,fontSize:fontSizes.display+6,fontVariant:['tabular-nums']}}>{displayAmount}</Text>
    <View style={{flexDirection:'row',alignItems:'center',gap:7,paddingHorizontal:12,paddingVertical:7,borderRadius:20,backgroundColor:colors.secondary}}>
     <Ionicons name={expense.scope==='household'?'people-outline':'person-outline'} size={15} color={colors.household}/>
@@ -44,7 +44,7 @@ export default function Detail(){
    {rows.map((row,index)=><View key={row.label} style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:74,paddingVertical:14,borderBottomWidth:index===rows.length-1?0:1,borderColor:colors.border}}>
     <Ionicons name={row.icon} size={19} color={colors.muted}/>
     <View style={{flex:1,gap:5}}>
-     <Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.caption,color:colors.muted,letterSpacing:0.5}}>{row.label.toUpperCase()}</Text>
+     <Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.caption,color:colors.muted,letterSpacing:0}}>{row.label}</Text>
      <Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.input,color:row.label==='Note'&&!expense.note.trim()?colors.muted:colors.text}}>{row.value}</Text>
     </View>
    </View>)}
