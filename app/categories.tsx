@@ -2,6 +2,7 @@ import {fontSizes,fontFamilies} from '@/theme/typography';
 import React,{useEffect,useMemo,useState} from 'react';
 import {Alert,Modal,Pressable,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
+import {Stack} from 'expo-router';
 import {Screen} from '@/components/Screen';
 import {Body} from '@/components/UI';
 import {useAppTheme} from '@/theme/ThemeContext';
@@ -57,14 +58,12 @@ export default function Categories(){
    {text:'Remove',style:'destructive',onPress:()=>{void remove(item.origin,item.id).catch(e=>Alert.alert('Could not remove',e instanceof Error?e.message:'Try again'))}}
   ]);
  const toggleSort=(field:SortField)=>{if(sortField===field)setAscending(value=>!value);else{setSortField(field);setAscending(true)}};
- return <Screen modal style={{gap:12}}>
-  <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-   <Text style={{fontFamily:fontFamilies.displayBold,fontSize:fontSizes.section,color:colors.text}}>Categories</Text>
+ return <><Stack.Screen options={{headerRight:()=>(
    <Pressable accessibilityRole="button" accessibilityLabel="Add category" disabled={scope==='household'&&!activeHousehold} onPress={()=>open()}
-    style={{width:42,height:42,alignItems:'center',justifyContent:'center',borderRadius:10,backgroundColor:colors.secondary,opacity:scope==='household'&&!activeHousehold?0.4:1}}>
-    <Ionicons name="add" size={25} color={colors.household}/>
+    style={{width:44,height:44,alignItems:'center',justifyContent:'center',opacity:scope==='household'&&!activeHousehold?0.4:1}}>
+    <Ionicons name="add" size={27} color={colors.household}/>
    </Pressable>
-  </View>
+  )}}/><Screen modal style={{gap:12}}>
   {activeHousehold?<View style={{flexDirection:'row',padding:3,borderRadius:10,backgroundColor:colors.secondary}}>
    {(['household','personal'] as const).map(value=><Pressable key={value} accessibilityRole="button" accessibilityState={{selected:scope===value}} onPress={()=>changeScope(value)}
     style={{flex:1,alignItems:'center',justifyContent:'center',minHeight:36,borderRadius:8,backgroundColor:scope===value?colors.surface:undefined}}>
@@ -116,5 +115,5 @@ export default function Categories(){
     </View>
    </View>
   </Modal>
- </Screen>;
+ </Screen></>;
 }
