@@ -24,17 +24,31 @@ export async function googleAuth(mode:'link'|'sign-in'){
  if(!response.data.url)throw new Error('Authentication URL unavailable');
  const result=await WebBrowser.openAuthSessionAsync(response.data.url,redirectTo);
  if(result.type!=='success')return false;
- const {accessToken,refreshToken,code}=callbackTokens(result.url);
- if(code){
-  const {error}=await supabase.auth.exchangeCodeForSession(code);
-  if(error)throw error;
- }else if(accessToken&&refreshToken){
-  const {error}=await supabase.auth.setSession({access_token:accessToken,refresh_token:refreshToken});
-  if(error)throw error;
- }else throw new Error('Provider did not return a valid authorization response');
- const {data,error}=await supabase.auth.getUser();
- if(error||!data.user)throw error??new Error('Unable to verify sign-in');
- if(mode==='link'&&data.user.id!==before)throw new Error('Account identity unexpectedly changed. Stop and contact support.');
- try{await ensureGoogleProfile(data.user)}catch(e){console.warn('Unable to initialize Google profile',e)}
+ await completeGoogleSignIn(result.url,mode,before);
+
  return true;
+}
+
+/** Handles both the in-app browser result and the Android deep-link route. */
+const callbackAttempts=new Map<string,Promise<void>>();
+export function completeGoogleSignIn(url:string,mode:'link'|'sign-in'='sign-in',before:string|null=null):Promise<void>{
+ const existing=callbackAttempts.get(url);
+ if(existing)return existing;
+ const attempt=(async()=>{
+  if(!supabase)throw new Error('Supabase is not configured.');
+  const {accessToken,refreshToken,code}=callbackTokens(url);
+  if(code){
+   const {error}=await supabase.auth.exchangeCodeForSession(code);
+   if(error)throw error;
+  }else if(accessToken&&refreshToken){
+   const {error}=await supabase.auth.setSession({access_token:accessToken,refresh_token:refreshToken});
+   if(error)throw error;
+  }else throw new Error('Provider did not return a valid authorization response');
+  const {data,error}=await supabase.auth.getUser();
+  if(error||!data.user)throw error??new Error('Unable to verify sign-in');
+  if(mode==='link'&&before&&data.user.id!==before)throw new Error('Account identity unexpectedly changed. Stop and contact support.');
+  try{await ensureGoogleProfile(data.user)}catch(e){console.warn('Unable to initialize Google profile',e)}
+ })();
+ callbackAttempts.set(url,attempt);
+ return attempt;
 }
