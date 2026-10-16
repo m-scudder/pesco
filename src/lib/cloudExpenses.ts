@@ -78,6 +78,28 @@ export async function addCloudExpense(input:CloudExpenseInput,requestId?:string)
  if(error)throw error;
  return toExpense(data as ExpenseRow);
 }
+
+/** Insert a batch of locally queued expenses using stable client IDs.
+ * Confirm ownership and scope before callers remove durable queued records. */
+export async function addCloudExpenseBatch(entries:{id:string;draft:CloudExpenseInput}[]):Promise<string[]>{
+ if(!entries.length)return [];
+ const db=client();
+ const {data:{user},error:authError}=await db.auth.getUser();
+ if(authError||!user)throw new Error('Sign in required');
+ for(const entry of entries)assertInput(entry.draft);
+ const rows=entries.map(({id,draft})=>({
+  id,owner_id:user.id,household_id:draft.householdId,scope:draft.scope,
+  amount_paise:draft.amountPaise,category:draft.category,note:draft.note,spent_on:draft.date
+ }));
+ const {error}=await db.from('expenses').upsert(rows,{onConflict:'id',ignoreDuplicates:true});
+ if(error)throw error;
+ const ids=entries.map(entry=>entry.id);
+ const {data,error:confirmError}=await db.from('expenses')
+  .select('id,owner_id,household_id,scope').eq('owner_id',user.id).in('id',ids);
+ if(confirmError)throw confirmError;
+ return (data??[]).filter(row=>entries.some(entry=>entry.id===row.id&&entry.draft.householdId===row.household_id&&entry.draft.scope===row.scope)).map(row=>row.id);
+}
+
 export async function editCloudExpense(id:string,input:CloudExpenseInput,expectedUpdatedAt?:string){
  assertInput(input);
  const db=client();const {data:{user},error:authError}=await db.auth.getUser();
