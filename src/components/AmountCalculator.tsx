@@ -3,7 +3,7 @@ import {Pressable,Text,View} from 'react-native';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {initialCalculator,pressCalculator,type CalculatorState} from '@/lib/calculator';
 
-const keys=['C','⌫','÷','×','7','8','9','−','4','5','6','+','1','2','3','=','0','%','.','Done'];
+const keys=['+','−','×','÷','7','8','9','=','4','5','6','.','1','2','3','Back','','0','','OK'];
 type Props={value:string;onChange:(amount:string)=>void;onDisplayChange?:(expression:string)=>void;onDone:()=>void};
 export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
  const {colors}=useAppTheme();
@@ -12,16 +12,16 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
  const accent=colors.household;
  function publish(display:string){setExpression(display);onDisplayChange?.(display)}
  function tap(label:string){
-  if(label==='Done'||label==='='){
+  if(label==='OK'||label==='='){
    const next=state.operator&&state.startNew?{...state,operator:null,accumulator:null}:pressCalculator(state,'=');
    setState(next);
    if(next.error)return;
    const result=String(Number(next.display));
    publish(result);onChange(result);
-   if(label==='Done')onDone();
+   if(label==='OK')onDone();
    return;
   }
-  const key=label==='−'?'-':label;
+  const key=label==='−'?'-':label==='Back'?'⌫':label;
   const next=pressCalculator(state,key);
   setState(next);
   if(next.error)return;
@@ -64,8 +64,8 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
   <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
    {keys.map((label,index)=>{
     if(!label)return <View key={'blank-'+index} style={{width:'23%',flexGrow:1,minHeight:43}}/>;
-    const isDone=label==='Done',isOperation=['+','−','×','÷','=','%'].includes(label);
-    return <Pressable key={label} accessibilityRole="button" accessibilityLabel={isDone?'Use amount':label==='⌫'?'Backspace':label==='C'?'Clear calculator':label}
+    const isDone=label==='OK',isOperation=['+','−','×','÷','='].includes(label);
+    return <Pressable key={label} accessibilityRole="button" accessibilityLabel={isDone?'Use amount':label==='Back'?'Backspace':label==='C'?'Clear calculator':label}
      onPress={()=>tap(label)} style={{width:'23%',flexGrow:1,minHeight:43,borderRadius:7,alignItems:'center',justifyContent:'center',
       backgroundColor:isDone?accent:isOperation?colors.secondary:colors.background}}>
      <Text style={{fontSize:isDone?14:19,fontWeight:isDone?'700':'500',color:isDone?'#fff':colors.text}}>{label}</Text>
