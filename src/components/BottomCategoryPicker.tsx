@@ -1,3 +1,4 @@
+import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
 import React from 'react';
 import {Pressable,ScrollView,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
@@ -9,7 +10,7 @@ export function BottomCategoryPicker({options,selected,onSelect,onClose,onEdit}:
  // Match the five-row calculator: 5 × 43px keys + 4 × 6px gaps + 8px vertical padding.
  return <View style={{height:247,backgroundColor:colors.background,paddingTop:8,paddingBottom:8}}>
   <View style={{flexDirection:'row',alignItems:'center',paddingHorizontal:8,paddingBottom:9,borderBottomWidth:1,borderBottomColor:colors.border}}>
-   <Text style={{flex:1,color:colors.text,fontSize:16,fontFamily:'Inter_600SemiBold'}}>Category</Text>
+   <Text style={{flex:1,color:colors.text,fontSize:fontSizes.section,fontFamily:fontFamilies.semibold}}>Category</Text>
    <Pressable accessibilityRole="button" accessibilityLabel="Edit categories" onPress={onEdit} style={{width:42,height:38,alignItems:'center',justifyContent:'center'}}>
     <Ionicons name="pencil-outline" size={21} color={colors.text}/>
    </Pressable>
@@ -21,7 +22,7 @@ export function BottomCategoryPicker({options,selected,onSelect,onClose,onEdit}:
    <View style={{flexDirection:'row',flexWrap:'wrap'}}>
     {options.map(name=><Pressable key={name} accessibilityRole="button" accessibilityState={{selected:name===selected}} onPress={()=>onSelect(name)}
      style={{width:'33.333%',minHeight:54,borderBottomWidth:1,borderRightWidth:1,borderColor:colors.border,justifyContent:'center',alignItems:'center',padding:5,backgroundColor:name===selected?colors.secondary:colors.background}}>
-     <Text numberOfLines={3} style={{color:name===selected?colors.household:colors.text,fontSize:13,textAlign:'center',fontFamily:name===selected?'Inter_600SemiBold':'Inter_400Regular'}}>{name}</Text>
+     <Text numberOfLines={3} style={{color:name===selected?colors.household:colors.text,fontSize:fontSizes.label,textAlign:'center',fontFamily:name===selected?'Inter_600SemiBold':'Inter_400Regular'}}>{name}</Text>
     </Pressable>)}
    </View>
   </ScrollView>
