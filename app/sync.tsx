@@ -20,13 +20,13 @@ export default function PendingUploads(){
   </View>
   <Pressable accessibilityRole="button" disabled={syncing} onPress={()=>{void refresh()}}
    style={{borderRadius:11,backgroundColor:colors.household,padding:13,alignItems:'center',opacity:syncing?0.6:1}}>
-   <Text style={{color:'#fff',fontFamily:fontFamilies.semibold}}>{syncing?'Syncing…':'Retry pending uploads'}</Text>
+   <Text style={{color:'#fff',fontFamily:fontFamilies.semibold}}>{syncing?'Syncing…':'Retry Pending Uploads'}</Text>
   </Pressable>
   {syncError?<Text style={{color:'#C94F4F',fontSize:fontSizes.caption}}>{syncError}</Text>:null}
   {pendingMutations.map(change=><View key={'mutation:'+change.id}
     style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:13,padding:13,gap:7}}>
    <Text style={{color:colors.text,fontSize:fontSizes.body,fontFamily:fontFamilies.semibold}}>
-    {change.kind==='delete'?'Delete expense':'Update expense'} · Waiting to sync
+    {change.kind==='delete'?'Delete Expense':'Update expense'} · Waiting to sync
    </Text>
    {change.draft?<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{change.draft.category} · {change.draft.date} · {formatMoney(change.draft.amountPaise)}</Text>:null}
    {change.householdId!==household?.id?<Text style={{color:'#C94F4F',fontSize:fontSizes.caption}}>Belongs to a previous household. This change will not be sent to the current household.</Text>:null}
