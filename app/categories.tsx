@@ -25,8 +25,9 @@ export default function Categories(){
  const list=useMemo(()=>(scope==='household'?household:personal)
   .map(item=>({...item,origin:scope} as ListedCategory))
   .sort((a,b)=>{
-   const av=sortField==='name'?a.name:a.createdBy===currentUserId?'You':a.createdBy??'Unknown';
-   const bv=sortField==='name'?b.name:b.createdBy===currentUserId?'You':b.createdBy??'Unknown';
+   const creator=(item:ListedCategory)=>scope==='personal'||item.createdBy==='You'||item.createdBy===currentUserId?'You':item.createdBy?'Partner':'Default';
+   const av=sortField==='name'?a.name:creator(a);
+   const bv=sortField==='name'?b.name:creator(b);
    const result=av.localeCompare(bv,undefined,{sensitivity:'base'});
    return (ascending?1:-1)*(result||a.name.localeCompare(b.name));
   }),[scope,household,personal,sortField,ascending,currentUserId]);
