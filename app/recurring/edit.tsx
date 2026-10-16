@@ -1,3 +1,4 @@
+import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
 import React,{useEffect,useRef,useState} from 'react';
 import {Alert,Keyboard,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,Text,TextInput,View} from 'react-native';
 import DateTimePicker,{DateTimePickerAndroid} from '@react-native-community/datetimepicker';
@@ -109,28 +110,28 @@ export default function RecurringEditor(){
  <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" contentContainerStyle={{paddingHorizontal:16,paddingTop:6,paddingBottom:20,gap:8}}>
  {loading?<Body muted>Loading bill…</Body>:loadError?<Body muted>{loadError}</Body>:<>
   <View style={{alignItems:'center',paddingTop:8,paddingBottom:10,gap:3}}>
-   <Text style={{color:colors.muted,fontFamily:'Inter_500Medium',fontSize:12,letterSpacing:0.8}}>AMOUNT</Text>
+   <Text style={{color:colors.muted,fontFamily:fontFamilies.medium,fontSize:fontSizes.caption,letterSpacing:0.8}}>AMOUNT</Text>
    <Pressable accessibilityRole="button" accessibilityLabel="Amount, open calculator" onPress={()=>{Keyboard.dismiss();setCategoryOpen(false);setDateOpen(false);setCalculatorDisplay(amount||'0');setCalculatorOpen(true)}}
     style={{minHeight:50,minWidth:160,justifyContent:'center',alignItems:'center',paddingHorizontal:16}}>
-    <Text adjustsFontSizeToFit numberOfLines={1} style={{color:amount?colors.text:colors.muted,fontSize:30,fontFamily:'PlusJakartaSans_600SemiBold',fontVariant:['tabular-nums']}}>{'₹ '+(calculatorOpen?calculatorDisplay||amount||'0':amount||'0')}</Text>
+    <Text adjustsFontSizeToFit numberOfLines={1} style={{color:amount?colors.text:colors.muted,fontSize:fontSizes.display,fontFamily:fontFamilies.displaySemibold,fontVariant:['tabular-nums']}}>{'₹ '+(calculatorOpen?calculatorDisplay||amount||'0':amount||'0')}</Text>
    </Pressable>
-   <Text style={{color:colors.muted,fontSize:12}}>INR · Tap to edit</Text>
+   <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>INR · Tap to edit</Text>
   </View>
   <View style={{marginBottom:5,gap:6}}>
    <View style={{flexDirection:'row',padding:3,borderRadius:11,backgroundColor:colors.secondary}}>
     <View style={{flex:1,alignItems:'center',paddingVertical:12,borderRadius:9,backgroundColor:accent}}>
-     <Text style={{fontFamily:'Inter_600SemiBold',color:'#fff',fontSize:14}}>{scope==='household'?'Household':'Personal'}</Text>
+     <Text style={{fontFamily:fontFamilies.semibold,color:'#fff',fontSize:fontSizes.body}}>{scope==='household'?'Household':'Personal'}</Text>
     </View>
    </View>
-   <Text style={{textAlign:'center',fontSize:12,color:colors.muted}}>{scope==='household'?'Shared recurring bill · Visible to household members':'Personal recurring bill · Visible only to you'}</Text>
+   <Text style={{textAlign:'center',fontSize:fontSizes.caption,color:colors.muted}}>{scope==='household'?'Shared recurring bill · Visible to household members':'Personal recurring bill · Visible only to you'}</Text>
   </View>
   <View style={{backgroundColor:colors.surface,borderRadius:12,borderWidth:1,borderColor:colors.border,paddingHorizontal:16}}>
    <Pressable accessibilityRole="button" accessibilityLabel="Choose category" onPress={()=>{Keyboard.dismiss();setCalculatorOpen(false);setDateOpen(false);setCategoryOpen(true)}}
     style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:58}}>
     <Ionicons name="pricetag-outline" size={19} color={colors.muted}/>
     <View style={{flex:1,gap:4}}>
-     <Text style={{fontSize:11,color:colors.muted,fontFamily:'Inter_500Medium'}}>CATEGORY</Text>
-     <Text style={{fontSize:15,color:colors.text,fontFamily:'Inter_500Medium'}}>{category||'Select category'}</Text>
+     <Text style={{fontSize:fontSizes.caption,color:colors.muted,fontFamily:fontFamilies.medium}}>CATEGORY</Text>
+     <Text style={{fontSize:fontSizes.input,color:colors.text,fontFamily:fontFamilies.medium}}>{category||'Select category'}</Text>
     </View>
     <Ionicons name="chevron-forward" size={17} color={colors.muted}/>
    </Pressable>
@@ -139,8 +140,8 @@ export default function RecurringEditor(){
     style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:58}}>
     <Ionicons name="calendar-outline" size={19} color={colors.muted}/>
     <View style={{flex:1,gap:4}}>
-     <Text style={{fontSize:11,color:colors.muted,fontFamily:'Inter_500Medium'}}>FIRST DUE DATE</Text>
-     <Text style={{fontSize:15,color:colors.text,fontFamily:'Inter_500Medium'}}>{labelDate(firstDue)}</Text>
+     <Text style={{fontSize:fontSizes.caption,color:colors.muted,fontFamily:fontFamilies.medium}}>FIRST DUE DATE</Text>
+     <Text style={{fontSize:fontSizes.input,color:colors.text,fontFamily:fontFamilies.medium}}>{labelDate(firstDue)}</Text>
     </View>
     <Ionicons name="chevron-forward" size={17} color={colors.muted}/>
    </Pressable>
@@ -148,18 +149,18 @@ export default function RecurringEditor(){
    <View style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:58}}>
     <Ionicons name="document-text-outline" size={19} color={colors.muted}/>
     <View style={{flex:1,gap:4,paddingVertical:10}}>
-     <Text style={{fontSize:11,color:colors.muted,fontFamily:'Inter_500Medium'}}>NOTE</Text>
+     <Text style={{fontSize:fontSizes.caption,color:colors.muted,fontFamily:fontFamilies.medium}}>NOTE</Text>
      <TextInput accessibilityLabel="Bill description" value={note} onChangeText={setNote} maxLength={500}
       onFocus={()=>{setNoteFocused(true);setCalculatorOpen(false);setTimeout(()=>scrollRef.current?.scrollToEnd({animated:true}),250)}} onBlur={()=>setNoteFocused(false)}
       placeholder="Add a note (optional)" placeholderTextColor={colors.muted}
-      style={{fontSize:15,color:colors.text,padding:0,fontFamily:'Inter_400Regular'}}/>
+      style={{fontSize:fontSizes.input,color:colors.text,padding:0,fontFamily:fontFamilies.regular}}/>
     </View>
    </View>
   </View>
-  <Text style={{fontSize:12,color:colors.muted,marginTop:4}}>Repeats monthly on the selected date. Short months use the last day.</Text>
+  <Text style={{fontSize:fontSizes.caption,color:colors.muted,marginTop:4}}>Repeats monthly on the selected date. Short months use the last day.</Text>
   <Pressable accessibilityRole="button" disabled={busy} onPress={()=>{Keyboard.dismiss();void save()}}
    style={{backgroundColor:accent,minHeight:50,borderRadius:10,alignItems:'center',justifyContent:'center',marginTop:8,opacity:busy?0.6:1}}>
-   <Text style={{color:'#fff',fontFamily:'Inter_600SemiBold',fontSize:15}}>{busy?'Saving…':id?'Save changes':'Save recurring bill'}</Text>
+   <Text style={{color:'#fff',fontFamily:fontFamilies.semibold,fontSize:fontSizes.input}}>{busy?'Saving…':id?'Save changes':'Save recurring bill'}</Text>
   </Pressable>
  </>}
  </ScrollView>
@@ -174,12 +175,12 @@ export default function RecurringEditor(){
   <View style={{flex:1,justifyContent:'center',paddingHorizontal:24,backgroundColor:'rgba(0,0,0,0.55)'}}>
    <Pressable onPress={()=>setDateOpen(false)} style={{position:'absolute',top:0,bottom:0,left:0,right:0}} accessibilityLabel="Dismiss date picker"/>
    <View style={pickerCard}>
-    <Text style={{color:colors.text,fontFamily:'Inter_700Bold',fontSize:17,marginBottom:8}}>First due date</Text>
+    <Text style={{color:colors.text,fontFamily:fontFamilies.bold,fontSize:fontSizes.section,marginBottom:8}}>First due date</Text>
     <DateTimePicker value={pendingDate} mode="date" display="spinner" themeVariant={resolved} textColor={colors.text} style={{height:210,width:'100%'}}
      onChange={(event,date)=>{if(event.type==='set'&&date)setPendingDate(date)}}/>
     <View style={{flexDirection:'row',justifyContent:'flex-end',gap:10,marginTop:10}}>
      <Pressable accessibilityRole="button" onPress={()=>setDateOpen(false)} style={{padding:10}}><Text style={{color:colors.muted}}>Cancel</Text></Pressable>
-     <Pressable accessibilityRole="button" onPress={()=>{setFirstDue(iso(pendingDate));setDateOpen(false)}} style={{padding:10}}><Text style={{color:accent,fontFamily:'Inter_700Bold'}}>Done</Text></Pressable>
+     <Pressable accessibilityRole="button" onPress={()=>{setFirstDue(iso(pendingDate));setDateOpen(false)}} style={{padding:10}}><Text style={{color:accent,fontFamily:fontFamilies.bold}}>Done</Text></Pressable>
     </View>
    </View>
   </View>
