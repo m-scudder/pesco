@@ -10,6 +10,7 @@ import {makeDemoExpenses} from './lib/demoExpenses';
 import {generateHouseholdRecurring} from './lib/householdRecurring';
 import {queueHouseholdExpense,flushPending,loadPending,cancelPending,editPending,type PendingExpense} from './lib/pendingExpenses';
 import {loadMutations,flushMutations,queueMutation,discardMutation,type PendingMutation} from './lib/pendingMutations';
+import {loadHouseholdLedger,seedHouseholdLedger,upsertLocalHouseholdExpense,removeHouseholdLedgerExpense,reconcileHouseholdLedger} from './lib/localLedger';
 
 export const CATEGORIES=['Groceries','Food & Drinks','Shopping','Utilities','Rent','Transport','Health','Entertainment','Education','Travel','Other'] as const;
 export type Expense={id:string;scope:Scope;amountPaise:number;category:string;note:string;date:string;createdAt:string;updatedAt:string;ownerId:string};
@@ -54,6 +55,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const [generated,setGenerated]=useState<string[]>([]);
  const [household,setHousehold]=useState<Household|null>(null);
  const [cloudExpenses,setCloudExpenses]=useState<Expense[]>([]);
+ const [ledgerExpenses,setLedgerExpenses]=useState<Expense[]>([]);
  const [cloudPersonal,setCloudPersonal]=useState<Expense[]>([]);
  const personalImportBusy=useRef(false);
  const [syncError,setSyncError]=useState<string|null>(null);
@@ -70,13 +72,17 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const [queueError,setQueueError]=useState<string|null>(null);
  useEffect(()=>{
   let active=true;
-  if(!user){setHousehold(null);setCloudExpenses([]);return}
+  if(!user){setHousehold(null);setCloudExpenses([]);setLedgerExpenses([]);return}
   AsyncStorage.getItem('pesco:household-cache:'+user.id).then(raw=>{
    if(!raw||!active||verifiedUser.current===user.id)return;
    const saved=JSON.parse(raw) as {household:Household|null;expenses:Expense[]};
    if(saved.household&&Array.isArray(saved.expenses)){
     setHousehold(old=>old??saved.household);
     setCloudExpenses(old=>old.length?old:saved.expenses);
+    void seedHouseholdLedger(user.id,saved.household.id,saved.expenses)
+     .then(()=>loadHouseholdLedger(user.id,saved.household!.id))
+     .then(rows=>{if(active)setLedgerExpenses(prev=>prev.length?prev:rows)})
+     .catch(error=>console.warn('Household ledger migration failed',error));
    }
   }).catch(e=>console.warn('Could not load household cache',e));
   return()=>{active=false};
@@ -185,6 +191,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
     }
    }
    const rows=membership?await fetchAllHouseholdExpenses(membership.id):[];
+   const localRows=membership?await reconcileHouseholdLedger(user.id,membership.id,rows):[];
    if(localLoaded&&!personalImportBusy.current){
     personalImportBusy.current=true;
     try{
@@ -214,7 +221,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
    catch(e){console.warn('Could not update offline household cache',e)}
    if(request===requested.current){
     verifiedUser.current=user.id;
-    setHousehold(membership);setCloudExpenses(rows);setCloudPersonal(personalRows);
+    setHousehold(membership);setCloudExpenses(rows);setLedgerExpenses(localRows);setCloudPersonal(personalRows);
     // Only retire optimistic rows once the fetched cloud snapshot contains them.
     // This prevents a transient disappearance between upload ACK and refresh.
     const remoteIds=new Set(rows.map(row=>row.id));
@@ -257,7 +264,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
   requested.current++;
   verifiedUser.current=null;
   recurringGeneratedOn.current=null;
-  setHousehold(null);setCloudExpenses([]);setCloudPersonal([]);setCloudReady(false);setSyncError(null);
+  setHousehold(null);setCloudExpenses([]);setLedgerExpenses([]);setCloudPersonal([]);setCloudReady(false);setSyncError(null);
   if(!user)return;
   void refreshRef.current();
   // Realtime refreshes normally provide prompt updates; polling is a fallback after missed events.
@@ -307,15 +314,15 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const realExpenses=useMemo(()=>[
   ...localExpenses.filter(e=>(e.scope==='personal'&&!cloudPersonal.some(remote=>remote.id===e.id))||(!household&&e.scope==='household')),
   ...cloudPersonal,
-  ...(household?cloudExpenses.filter(e=>!mutations.some(op=>op.id===e.id&&op.kind==='delete')).map(e=>{
+  ...(household?ledgerExpenses.filter(e=>!mutations.some(op=>op.id===e.id&&op.kind==='delete')).map(e=>{
    const op=mutations.find(item=>item.id===e.id&&item.kind==='update');
    return op?.draft?{...e,amountPaise:op.draft.amountPaise,category:op.draft.category,note:op.draft.note,date:op.draft.date}:e;
   }):[]),
-  ...pending.filter(p=>household&&p.draft.householdId===household.id&&!cloudExpenses.some(e=>e.id===p.id)).map(p=>({
+  ...pending.filter(p=>household&&p.draft.householdId===household.id&&!ledgerExpenses.some(e=>e.id===p.id)).map(p=>({
    id:p.id,scope:'household' as Scope,amountPaise:p.draft.amountPaise,category:p.draft.category,note:p.draft.note,date:p.draft.date,
    ownerId:p.userId,createdAt:p.queuedAt,updatedAt:p.queuedAt
   }))
- ],[localExpenses,cloudExpenses,cloudPersonal,household,pending,mutations]);
+ ],[localExpenses,ledgerExpenses,cloudPersonal,household,pending,mutations]);
  const demoExpenses=useMemo(()=>__DEV__?makeDemoExpenses():[],[]);
  const expenses=useMemo(()=>demoEnabled&&__DEV__?[...realExpenses,...demoExpenses]:realExpenses,[demoEnabled,realExpenses,demoExpenses]);
 
@@ -324,6 +331,12 @@ export function DataProvider({children}:{children:React.ReactNode}){
    if(!household)throw new Error('Create or join a household first');
    if(!user)throw new Error('Sign in required');
    const entry=await queueHouseholdExpense(user.id,{...draft,householdId:household.id});
+   const optimistic:Expense={id:entry.id,...draft,ownerId:user.id,createdAt:entry.queuedAt,updatedAt:entry.queuedAt};
+   // Durable queue first; local ledger second. Keep queue overlay if SQLite fails.
+   try{
+    await upsertLocalHouseholdExpense(user.id,household.id,optimistic);
+    setLedgerExpenses(previous=>previous.some(row=>row.id===optimistic.id)?previous:[...previous,optimistic]);
+   }catch(error){console.warn('Local ledger write failed; outbox is safe',error)}
    setPending(previous=>[...previous,entry]);
    return;
   }
@@ -337,7 +350,14 @@ export function DataProvider({children}:{children:React.ReactNode}){
   if(queued){
    if(!user||!household)throw new Error('Household unavailable');
    if(draft.scope!=='household')throw new Error('Changing the expense scope is unavailable');
-   setPending(await editPending(user.id,id,{...draft,householdId:household.id}));
+   const updated=await editPending(user.id,id,{...draft,householdId:household.id});
+   setPending(updated);
+   const original=ledgerExpenses.find(e=>e.id===id);
+   if(original){
+    const row={...original,...draft,updatedAt:new Date().toISOString()};
+    await upsertLocalHouseholdExpense(user.id,household.id,row);
+    setLedgerExpenses(previous=>previous.map(e=>e.id===id?row:e));
+   }
    return;
   }
   const cloud=cloudExpenses.find(e=>e.id===id);
@@ -356,13 +376,16 @@ export function DataProvider({children}:{children:React.ReactNode}){
    return;
   }
   setLocalExpenses(prev=>prev.map(e=>e.id===id?{...e,...draft,updatedAt:new Date().toISOString()}:e));
- },[cloudExpenses,cloudPersonal,household,user?.id,refresh,pending]);
+ },[cloudExpenses,cloudPersonal,household,user?.id,refresh,pending,ledgerExpenses]);
 
  const remove=useCallback(async(id:string)=>{
   if(id.startsWith('demo:'))throw new Error('Demo records cannot be deleted. Turn off sample data in Settings.');
   if(pending.some(entry=>entry.id===id)){
    if(!user)throw new Error('Sign in required');
-   setPending(await cancelPending(user.id,id));
+   const next=await cancelPending(user.id,id);
+   setPending(next);
+   await removeHouseholdLedgerExpense(user.id,id);
+   setLedgerExpenses(previous=>previous.filter(e=>e.id!==id));
    return;
   }
   const cloud=cloudExpenses.find(e=>e.id===id);
