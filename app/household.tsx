@@ -74,8 +74,8 @@ export default function HouseholdSetup(){
      <Text style={{color:colors.text,fontWeight:fontWeights.bold,fontSize:fontSizes.section}}>Members · {members.length}/2</Text>
      {members.map(member=><View key={member.user_id} style={{gap:5,paddingVertical:10,borderBottomWidth:1,borderColor:colors.border}}>
       <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',gap:8}}>
-       <Text style={{flex:1,color:colors.text,fontSize:fontSizes.input,fontWeight:fontWeights.semibold}}>{member.display_name==='Member'?(member.user_id===user.id?'You':'Partner'):member.display_name}{member.user_id===user.id?' (You)':''}</Text>
-       <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{member.is_owner?'Creator':'Partner'}</Text>
+       <Text style={{flex:1,color:colors.text,fontSize:fontSizes.input,fontWeight:fontWeights.semibold}}>{member.display_name==='Member'?(member.user_id===user.id?'You':'Member'):member.display_name}{member.user_id===user.id?' (You)':''}</Text>
+       <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{member.is_owner?'Creator':'Member'}</Text>
       </View>
       <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>Joined {new Date(member.joined_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</Text>
       {household.created_by===user.id&&!member.is_owner?(
