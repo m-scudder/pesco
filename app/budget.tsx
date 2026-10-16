@@ -11,12 +11,13 @@ import type {Scope} from '@/theme/palette';
 
 export default function Budget(){
  const {budgets,setBudget,household,expenses}=useData();
+ const {colors}=useAppTheme();
  const current=monthKey(localDate());
  const scopes:Scope[]=household?['household','personal']:['personal'];
  return <Screen modal style={{gap:18,paddingBottom:40}}>
   <View style={{gap:4}}>
-   <Text style={{fontFamily:fontFamilies.displayBold,fontSize:fontSizes.title,color:useBudgetColor()}}>Monthly Budgets</Text>
-   <Text style={{fontSize:fontSizes.caption,color:useMutedColor()}}>
+   <Text style={{fontFamily:fontFamilies.displayBold,fontSize:fontSizes.title,color:colors.text}}>Monthly Budgets</Text>
+   <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>
     {new Date(current+'-01T12:00:00').toLocaleDateString('en-IN',{month:'long',year:'numeric'})} · Track spending without changing your expenses
    </Text>
   </View>
@@ -29,8 +30,6 @@ export default function Budget(){
   })}
  </Screen>;
 }
-function useBudgetColor(){return useAppTheme().colors.text}
-function useMutedColor(){return useAppTheme().colors.muted}
 
 function BudgetForm({scope,value,spent,onSave}:{scope:Scope;value:number|null;spent:number;onSave:(amount:number|null)=>void}){
  const {colors}=useAppTheme();
