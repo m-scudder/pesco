@@ -27,6 +27,17 @@ export function calculate(a:number,b:number,op:Operator):number|null{
 }
 export function pressCalculator(s:CalculatorState,key:string):CalculatorState{
  if(key==='C')return initialCalculator();
+ if(key==='%'){
+  if(s.error||s.startNew)return s;
+  // For addition/subtraction, percentage is relative to the left operand.
+  // For multiplication/division or a standalone amount, it is value / 100.
+  const amount=toPaise(s.display);
+  const percent=(s.operator==='+'||s.operator==='-')&&s.accumulator!==null
+   ?Math.round(s.accumulator*amount/10000)
+   :Math.round(amount/100);
+  if(!valid(percent))return {...s,error:'Invalid percentage'};
+  return {...s,display:output(percent),startNew:false,error:null};
+ }
  if(key==='⌫'){
   if(s.error)return initialCalculator();
   if(s.startNew)return {...s,display:'0'};
