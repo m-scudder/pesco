@@ -1,3 +1,4 @@
+import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
 import React,{useCallback,useState} from 'react';
 import {ActivityIndicator,Alert,Pressable,Text,TextInput,View} from 'react-native';
 import {useFocusEffect} from 'expo-router';
@@ -47,23 +48,23 @@ export default function Profile(){
   {loading?<ActivityIndicator color={colors.household}/>:<>
    <View style={{alignItems:'center',paddingVertical:12,gap:6}}>
     <View style={{height:64,width:64,borderRadius:32,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'}}>
-     <Text style={{fontSize:26,color:colors.household,fontFamily:'PlusJakartaSans_700Bold'}}>{(name.trim()[0]||googleName[0]||'P').toLocaleUpperCase()}</Text>
+     <Text style={{fontSize:fontSizes.summary,color:colors.household,fontFamily:fontFamilies.displayBold}}>{(name.trim()[0]||googleName[0]||'P').toLocaleUpperCase()}</Text>
     </View>
-    <Text style={{color:colors.text,fontFamily:'Inter_600SemiBold',fontSize:17}}>{googleName}</Text>
-    <Text style={{color:colors.muted,fontSize:12}}>{user?.email??'Google account'}</Text>
+    <Text style={{color:colors.text,fontFamily:fontFamilies.semibold,fontSize:fontSizes.section}}>{googleName}</Text>
+    <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{user?.email??'Google account'}</Text>
    </View>
    <View style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:12,padding:12,gap:8}}>
-    <Text style={{color:colors.text,fontSize:13,fontFamily:'Inter_600SemiBold'}}>Nickname <Text style={{color:colors.muted,fontFamily:'Inter_400Regular'}}>(optional)</Text></Text>
+    <Text style={{color:colors.text,fontSize:fontSizes.label,fontFamily:fontFamilies.semibold}}>Nickname <Text style={{color:colors.muted,fontFamily:fontFamilies.regular}}>(optional)</Text></Text>
     <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
      <TextInput accessibilityLabel="Nickname" value={name} onChangeText={setName} maxLength={80} placeholder={googleName} placeholderTextColor={colors.muted} autoCapitalize="words"
-      style={{flex:1,height:42,borderRadius:9,borderWidth:1,borderColor:colors.border,paddingHorizontal:10,color:colors.text,fontSize:14}}/>
+      style={{flex:1,height:42,borderRadius:9,borderWidth:1,borderColor:colors.border,paddingHorizontal:10,color:colors.text,fontSize:fontSizes.body}}/>
      {name.trim()!==initial?<Pressable accessibilityRole="button" disabled={busy} onPress={()=>{void save()}}
       style={{minHeight:42,minWidth:66,alignItems:'center',justifyContent:'center',backgroundColor:colors.household,borderRadius:9,paddingHorizontal:12,opacity:busy?0.6:1}}>
-      <Text style={{color:'#fff',fontSize:13,fontFamily:'Inter_600SemiBold'}}>{busy?'Saving…':'Save'}</Text>
+      <Text style={{color:'#fff',fontSize:fontSizes.label,fontFamily:fontFamilies.semibold}}>{busy?'Saving…':'Save'}</Text>
      </Pressable>:null}
     </View>
    </View>
-   {error?<Pressable onPress={()=>{void load()}}><Text style={{color:'#C94F4F',fontSize:12}}>Could not load nickname · Retry</Text></Pressable>:null}
+   {error?<Pressable onPress={()=>{void load()}}><Text style={{color:'#C94F4F',fontSize:fontSizes.caption}}>Could not load nickname · Retry</Text></Pressable>:null}
   </>}
  </Screen>;
 }
