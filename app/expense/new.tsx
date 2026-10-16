@@ -12,16 +12,18 @@ import {localDate,parseMoney,useData} from '@/data';
 import {useCategories} from '@/lib/CategoryContext';
 import {useAppTheme} from '@/theme/ThemeContext';
 export default function ExpenseEditor(){
- const {id}=useLocalSearchParams<{id?:string}>();const router=useRouter();const {expenses,add,update,remove,loaded,household,currentUserId}=useData();const {colors,resolved,scope,setScope}=useAppTheme();const editing=id?expenses.find(e=>e.id===id):undefined;
+ const {id,scope:initialScope}=useLocalSearchParams<{id?:string;scope?:'household'|'personal'}>();const router=useRouter();const {expenses,add,update,remove,loaded,household,currentUserId}=useData();const {colors,resolved,scope,setScope}=useAppTheme();const editing=id?expenses.find(e=>e.id===id):undefined;
  const {names:categoryNames}=useCategories();
  const availableCategories=categoryNames(scope);
  const options=editing&&!availableCategories.includes(editing.category)?[editing.category,...availableCategories]:availableCategories;
  const [datePickerOpen,setDatePickerOpen]=useState(false);
  const scrollRef=useRef<ScrollView>(null);
  const [noteFocused,setNoteFocused]=useState(false);
+ const [deleting,setDeleting]=useState(false);
  const [calculatorDisplay,setCalculatorDisplay]=useState('');
 
  const [amount,setAmount]=useState('');const [category,setCategory]=useState<string>('Groceries');const [note,setNote]=useState('');const [date,setDate]=useState(localDate());const [categoryOpen,setCategoryOpen]=useState(false);const [submitting,setSubmitting]=useState(false);const [calculatorOpen,setCalculatorOpen]=useState(!id);
+ useEffect(()=>{if(!id&&(initialScope==='household'||initialScope==='personal'))setScope(initialScope)},[id,initialScope,setScope]);
  useEffect(()=>{if(!editing&&availableCategories.length&&!availableCategories.includes(category)){setCategory(availableCategories[0])}},[scope,availableCategories.join('|'),editing?.id]);
  useEffect(()=>{if(editing){setAmount(String(editing.amountPaise/100));setCategory(editing.category);setNote(editing.note);setDate(editing.date);setScope(editing.scope)}},[editing?.id]);
  async function save(){if(submitting)return;const paise=parseMoney(amount);if(paise===null){Alert.alert('Invalid amount','Enter a positive amount with up to two decimal places.');return}const parsed=new Date(date+'T12:00:00');if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(parsed.valueOf())||parsed.getFullYear()!==Number(date.slice(0,4))||parsed.getMonth()+1!==Number(date.slice(5,7))||parsed.getDate()!==Number(date.slice(8,10))){Alert.alert('Invalid date','Use YYYY-MM-DD.');return}
@@ -43,13 +45,13 @@ export default function ExpenseEditor(){
  await commit();
 }
  function confirmDelete(){
-  if(!editing||submitting)return;
+  if(!editing||submitting||deleting)return;
   Alert.alert('Delete expense?','This cannot be undone.',[
    {text:'Cancel',style:'cancel'},
    {text:'Delete',style:'destructive',onPress:()=>{
-    setSubmitting(true);
+    setDeleting(true);
     void remove(editing.id).then(()=>router.back()).catch(error=>{
-     setSubmitting(false);
+     setDeleting(false);
      Alert.alert('Could not delete',error instanceof Error?error.message:'Please try again');
     });
    }}
@@ -110,9 +112,9 @@ export default function ExpenseEditor(){
    style={{backgroundColor:scope==='household'?colors.household:colors.personal,minHeight:50,borderRadius:10,alignItems:'center',justifyContent:'center',marginTop:8,opacity:submitting||!loaded?0.6:1}}>
    <Text style={{color:'#fff',fontFamily:fontFamilies.semibold,fontSize:fontSizes.input}}>{submitting?'Saving…':editing?'Save Changes':'Save Expense'}</Text>
   </Pressable>
-  {editing?<Pressable accessibilityRole="button" accessibilityLabel="Delete expense" disabled={submitting} onPress={confirmDelete}
+  {editing?<Pressable accessibilityRole="button" accessibilityLabel="Delete expense" disabled={submitting||deleting} onPress={confirmDelete}
    style={{paddingVertical:11,alignItems:'center',opacity:submitting?0.5:1}}>
-   <Text style={{color:'#C54B4B',fontFamily:fontFamilies.semibold,fontSize:fontSizes.body}}>Delete Expense</Text>
+   <Text style={{color:'#C54B4B',fontFamily:fontFamilies.semibold,fontSize:fontSizes.body}}>{deleting?'Deleting…':'Delete Expense'}</Text>
   </Pressable>:null}
   <CalendarDatePicker visible={datePickerOpen} value={date} onChange={setDate} onClose={()=>setDatePickerOpen(false)}/>
  </ScrollView>
