@@ -62,6 +62,16 @@ export async function fetchAllHouseholdExpenses(householdId:string){
  return all;
 }
 
+
+/** Read exactly one changed expense under existing Supabase RLS policies. */
+export async function fetchHouseholdExpenseById(id:string,householdId:string):Promise<Expense|null>{
+ const {data,error}=await client().from('expenses')
+  .select('id,owner_id,household_id,scope,amount_paise,category,note,spent_on,created_at,updated_at')
+  .eq('id',id).eq('household_id',householdId).eq('scope','household').maybeSingle();
+ if(error)throw error;
+ return data?toExpense(data as ExpenseRow):null;
+}
+
 export async function addCloudExpense(input:CloudExpenseInput,requestId?:string){
  assertInput(input);
  const db=client();const {data:{user},error:authError}=await db.auth.getUser();
