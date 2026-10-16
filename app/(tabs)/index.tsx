@@ -146,7 +146,7 @@ export default function Home(){
         {pendingIds.includes(expense.id)?<Text style={{color:colors.muted,fontSize:10}}>Waiting to sync</Text>:null}
        </View>
       </Pressable>)}
-     </View>;
+     </View></MonthSwipeView>;
     })
    }
    {filtered.length>visibleCount?<Pressable accessibilityRole="button" onPress={()=>setVisibleCount(count=>count+60)}
