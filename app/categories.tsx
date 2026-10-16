@@ -1,6 +1,7 @@
-import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
+import {fontSizes,fontFamilies} from '@/theme/typography';
 import React,{useEffect,useMemo,useState} from 'react';
-import {Alert,Pressable,Text,TextInput,View} from 'react-native';
+import {Alert,Modal,Pressable,Text,TextInput,View} from 'react-native';
+import {Ionicons} from '@expo/vector-icons';
 import {Screen} from '@/components/Screen';
 import {Body} from '@/components/UI';
 import {useAppTheme} from '@/theme/ThemeContext';
@@ -9,20 +10,29 @@ import {useData} from '@/data';
 import type {Scope} from '@/theme/palette';
 
 type ListedCategory=Category&{origin:Scope};
+type SortField='name'|'createdBy';
 export default function Categories(){
  const {colors}=useAppTheme();
- const {household:activeHousehold}=useData();
+ const {household:activeHousehold,currentUserId}=useData();
  const [scope,setScope]=useState<Scope>(activeHousehold?'household':'personal');
  const {household,personal,loading,error,refresh,create,rename,remove}=useCategories();
  const [editing,setEditing]=useState<ListedCategory|null>(null);
  const [draft,setDraft]=useState('');
- const [creating,setCreating]=useState(false);
+ const [modalVisible,setModalVisible]=useState(false);
  const [busy,setBusy]=useState(false);
- const list=useMemo(()=> (scope==='household'?household:personal)
-  .map(item=>({...item,origin:scope} as ListedCategory)).sort((a,b)=>a.name.localeCompare(b.name)),[scope,household,personal]);
+ const [sortField,setSortField]=useState<SortField>('name');
+ const [ascending,setAscending]=useState(true);
+ const list=useMemo(()=>(scope==='household'?household:personal)
+  .map(item=>({...item,origin:scope} as ListedCategory))
+  .sort((a,b)=>{
+   const av=sortField==='name'?a.name:a.createdBy===currentUserId?'You':a.createdBy??'Unknown';
+   const bv=sortField==='name'?b.name:b.createdBy===currentUserId?'You':b.createdBy??'Unknown';
+   const result=av.localeCompare(bv,undefined,{sensitivity:'base'});
+   return (ascending?1:-1)*(result||a.name.localeCompare(b.name));
+  }),[scope,household,personal,sortField,ascending,currentUserId]);
  useEffect(()=>{void refresh()},[refresh]);
  useEffect(()=>{if(!activeHousehold&&scope==='household')setScope('personal')},[activeHousehold,scope]);
- const cancel=()=>{setEditing(null);setCreating(false);setDraft('')};
+ const close=()=>{if(busy)return;setModalVisible(false);setEditing(null);setDraft('')};
  const save=async()=>{
   if(busy)return;
   const clean=draft.trim().replace(/\s+/g,' ');
@@ -32,54 +42,78 @@ export default function Categories(){
   }
   setBusy(true);
   try{
-   if(creating)await create(scope,clean);
-   else if(editing)await rename(editing.origin,editing.id,clean);
-   cancel();
+   if(editing)await rename(editing.origin,editing.id,clean);
+   else await create(scope,clean);
+   setModalVisible(false);setEditing(null);setDraft('');
   }catch(e){Alert.alert('Could not save',e instanceof Error?e.message:'Try again')}
   finally{setBusy(false)}
  };
- const start=(item?:ListedCategory)=>{setEditing(item??null);setCreating(!item);setDraft(item?.name??'')};
- const changeScope=(value:Scope)=>{cancel();setScope(value)};
+ const open=(item?:ListedCategory)=>{setEditing(item??null);setDraft(item?.name??'');setModalVisible(true)};
+ const changeScope=(value:Scope)=>{close();setScope(value)};
  const confirmRemove=(item:ListedCategory)=>Alert.alert(
-  'Remove category?',item.name+' will no longer appear for new expenses. Existing transactions are unchanged.',[
+  'Remove category?',item.name+' will no longer appear for new expenses. Existing transactions keep their category name.',[
    {text:'Cancel',style:'cancel'},
    {text:'Remove',style:'destructive',onPress:()=>{void remove(item.origin,item.id).catch(e=>Alert.alert('Could not remove',e instanceof Error?e.message:'Try again'))}}
   ]);
- const button=(label:string,onPress:()=>void,muted=false)=><Pressable accessibilityRole="button" disabled={busy} onPress={onPress}
-  style={{paddingHorizontal:9,paddingVertical:8,minHeight:36,justifyContent:'center'}}>
-  <Text style={{fontSize:fontSizes.label,fontFamily:fontFamilies.semibold,color:muted?colors.muted:colors.household}}>{label}</Text>
- </Pressable>;
- const editor=<View style={{flexDirection:'row',alignItems:'center',gap:5}}>
-  <TextInput accessibilityLabel="Category name" autoFocus value={draft} maxLength={40} onChangeText={setDraft}
-   autoCapitalize="words" placeholder="Category name" placeholderTextColor={colors.muted}
-   onSubmitEditing={()=>{void save()}} style={{flex:1,minWidth:0,height:42,borderWidth:1,borderColor:colors.border,borderRadius:9,color:colors.text,paddingHorizontal:10,fontSize:fontSizes.body}}/>
-  {button('Save',()=>{void save()})}
-  {button('Cancel',cancel,true)}
- </View>;
+ const toggleSort=(field:SortField)=>{if(sortField===field)setAscending(value=>!value);else{setSortField(field);setAscending(true)}};
  return <Screen modal style={{gap:12}}>
-  {activeHousehold?<View style={{flexDirection:'row',padding:3,borderRadius:10,backgroundColor:colors.secondary}}> 
+  <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+   <Text style={{fontFamily:fontFamilies.displayBold,fontSize:fontSizes.section,color:colors.text}}>Categories</Text>
+   <Pressable accessibilityRole="button" accessibilityLabel="Add category" disabled={scope==='household'&&!activeHousehold} onPress={()=>open()}
+    style={{width:42,height:42,alignItems:'center',justifyContent:'center',borderRadius:10,backgroundColor:colors.secondary,opacity:scope==='household'&&!activeHousehold?0.4:1}}>
+    <Ionicons name="add" size={25} color={colors.household}/>
+   </Pressable>
+  </View>
+  {activeHousehold?<View style={{flexDirection:'row',padding:3,borderRadius:10,backgroundColor:colors.secondary}}>
    {(['household','personal'] as const).map(value=><Pressable key={value} accessibilityRole="button" accessibilityState={{selected:scope===value}} onPress={()=>changeScope(value)}
     style={{flex:1,alignItems:'center',justifyContent:'center',minHeight:36,borderRadius:8,backgroundColor:scope===value?colors.surface:undefined}}>
-    <Text style={{fontFamily:scope===value?'Inter_600SemiBold':'Inter_400Regular',fontSize:fontSizes.label,color:scope===value?colors.text:colors.muted}}>{value==='household'?'Household':'Personal'}</Text>
+    <Text style={{fontFamily:scope===value?fontFamilies.semibold:fontFamilies.regular,fontSize:fontSizes.label,color:scope===value?colors.text:colors.muted}}>{value==='household'?'Household':'Personal'}</Text>
    </Pressable>)}
   </View>:null}
-  <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{scope==='household'?'Categories created here sync with your partner.':'Personal categories stay on this device.'}</Text>
-  {scope==='household'&&!activeHousehold?<Body muted>Join or create a household to manage shared categories.</Body>:null}
-  <View style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:12,paddingHorizontal:12}}>
-   {list.map((item,index)=><View key={item.origin+':'+item.id} style={{minHeight:50,borderBottomWidth:index===list.length-1?0:1,borderColor:colors.border,justifyContent:'center'}}>
-    {editing?.id===item.id?editor:<View style={{flexDirection:'row',alignItems:'center',gap:6}}>
-     <Text style={{flex:1,color:colors.text,fontSize:fontSizes.body}}>{item.name}</Text>
-     {button('Edit',()=>start(item))}
-     {button('Remove',()=>confirmRemove(item),true)}
-    </View>}
+  <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{scope==='household'?'Shared categories sync with your partner.':'Personal categories stay on this device.'}</Text>
+  <View style={{flexDirection:'row',gap:8,alignItems:'center'}}>
+   {(['name','createdBy'] as const).map(field=><Pressable key={field} accessibilityRole="button" onPress={()=>toggleSort(field)}
+    style={{flexDirection:'row',alignItems:'center',gap:5,paddingHorizontal:10,paddingVertical:8,borderRadius:8,backgroundColor:sortField===field?colors.secondary:colors.surface,borderWidth:1,borderColor:colors.border}}>
+    <Text style={{fontSize:fontSizes.caption,color:sortField===field?colors.text:colors.muted}}>{field==='name'?'Name':'Created by'}</Text>
+    {sortField===field?<Ionicons name={ascending?'arrow-up':'arrow-down'} size={13} color={colors.household}/>:null}
+   </Pressable>)}
+  </View>
+  {scope==='household'&&!activeHousehold?<Body muted>Join a household to manage shared categories.</Body>:null}
+  <View style={{backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,borderRadius:12,paddingHorizontal:12}}>
+   {list.map((item,index)=><View key={item.origin+':'+item.id} style={{minHeight:54,borderBottomWidth:index===list.length-1?0:1,borderColor:colors.border,flexDirection:'row',alignItems:'center',gap:9}}>
+    <View style={{flex:1,gap:3}}>
+     <Text style={{color:colors.text,fontSize:fontSizes.body}}>{item.name}</Text>
+     {sortField==='createdBy'?<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{scope==='personal'||item.createdBy===currentUserId?'You':item.createdBy?'Partner':'Default'}</Text>:null}
+    </View>
+    <Pressable accessibilityRole="button" accessibilityLabel={'Edit '+item.name} onPress={()=>open(item)} style={{padding:9}}>
+     <Ionicons name="pencil-outline" size={19} color={colors.household}/>
+    </Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel={'Delete '+item.name} onPress={()=>confirmRemove(item)} style={{padding:9}}>
+     <Ionicons name="trash-outline" size={19} color="#C94F4F"/>
+    </Pressable>
    </View>)}
    {list.length===0?<View style={{paddingVertical:14}}><Body muted>No categories</Body></View>:null}
   </View>
-  {creating?editor:<Pressable disabled={scope==='household'&&!activeHousehold} onPress={()=>start()} accessibilityRole="button"
-   style={{minHeight:44,borderRadius:10,backgroundColor:colors.secondary,opacity:scope==='household'&&!activeHousehold?0.4:1,justifyContent:'center',alignItems:'center'}}>
-   <Text style={{fontFamily:fontFamilies.semibold,fontSize:fontSizes.body,color:colors.household}}>+ Add category</Text>
-  </Pressable>}
   {loading?<Body muted>Updating…</Body>:null}
   {error?<Pressable onPress={()=>{void refresh()}}><Text style={{color:'#C94F4F',fontSize:fontSizes.label}}>Could not sync categories · Retry</Text></Pressable>:null}
+  <Modal visible={modalVisible} transparent animationType="fade" presentationStyle="overFullScreen" onRequestClose={close}>
+   <View style={{flex:1,justifyContent:'center',padding:24,backgroundColor:'rgba(0,0,0,0.5)'}}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Dismiss category editor" onPress={close} style={{position:'absolute',top:0,bottom:0,left:0,right:0}}/>
+    <View style={{backgroundColor:colors.surface,borderRadius:16,borderWidth:1,borderColor:colors.border,padding:18,gap:16}}>
+     <Text style={{fontFamily:fontFamilies.displayBold,fontSize:fontSizes.section,color:colors.text}}>{editing?'Edit category':'Add category'}</Text>
+     <TextInput accessibilityLabel="Category name" autoFocus value={draft} maxLength={40} onChangeText={setDraft}
+      autoCapitalize="words" placeholder="Category name" placeholderTextColor={colors.muted} onSubmitEditing={()=>{void save()}}
+      style={{height:48,borderWidth:1,borderColor:colors.border,borderRadius:10,color:colors.text,paddingHorizontal:12,fontSize:fontSizes.body}}/>
+     <View style={{flexDirection:'row',gap:10}}>
+      <Pressable disabled={busy} onPress={close} style={{flex:1,padding:13,alignItems:'center',backgroundColor:colors.secondary,borderRadius:10}}>
+       <Text style={{color:colors.text,fontFamily:fontFamilies.semibold}}>Cancel</Text>
+      </Pressable>
+      <Pressable disabled={busy} onPress={()=>{void save()}} style={{flex:1,padding:13,alignItems:'center',backgroundColor:colors.household,borderRadius:10}}>
+       <Text style={{color:'#FFFFFF',fontFamily:fontFamilies.semibold}}>{busy?'Saving…':'Save'}</Text>
+      </Pressable>
+     </View>
+    </View>
+   </View>
+  </Modal>
  </Screen>;
 }
