@@ -53,7 +53,8 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
  return <View style={{backgroundColor:colors.surface,borderRadius:10,padding:7,borderWidth:1,borderColor:colors.border}}>
   {state.error?<Text accessibilityRole="alert" style={{color:'#C94F4F',fontSize:12,padding:6}}>{state.error}</Text>:null}
   <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
-   {keys.map((label,index)=>{\n    if(!label)return <View key={'blank-'+index} style={{width:'23%',flexGrow:1,minHeight:43}}/>;
+   {keys.map((label,index)=>{
+    if(!label)return <View key={'blank-'+index} style={{width:'23%',flexGrow:1,minHeight:43}}/>;
     const isDone=label==='Done',isOperation=['+','−','×','÷','='].includes(label);
     return <Pressable key={label} accessibilityRole="button" accessibilityLabel={isDone?'Use amount':label==='⌫'?'Backspace':label==='C'?'Clear calculator':label}
      onPress={()=>tap(label)} style={{width:'23%',flexGrow:1,minHeight:43,borderRadius:7,alignItems:'center',justifyContent:'center',
