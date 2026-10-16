@@ -24,9 +24,8 @@ export default function Budget(){
     <Text style={{fontFamily:activeScope===item?fontFamilies.bold:fontFamilies.medium,fontSize:fontSizes.label,color:activeScope===item?colors.household:colors.muted}}>{item==='household'?'Household':'Personal'}</Text>
    </Pressable>)}
   </View>:null}
-  <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{new Date(current+'-01T12:00:00').toLocaleDateString('en-IN',{month:'long',year:'numeric'})}</Text>
-  <BudgetForm key={activeScope} scope={activeScope} value={budgets[activeScope]} spent={spent} onSave={amount=>setBudget(activeScope,amount)}/>
-  <CategoryBudgetSection key={activeScope} scope={activeScope} current={current}/>
+  <BudgetForm key={'budget-'+activeScope} scope={activeScope} value={budgets[activeScope]} spent={spent} onSave={amount=>setBudget(activeScope,amount)}/>
+  <CategoryBudgetSection key={'category-'+activeScope} scope={activeScope} current={current}/>
  </Screen>;
 }
 
