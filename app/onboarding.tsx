@@ -1,3 +1,4 @@
+import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
 import React,{useEffect,useState} from 'react';
 import {ActivityIndicator,Image,Platform,Pressable,Text,TextInput,View} from 'react-native';
 import {useRouter} from 'expo-router';
@@ -33,7 +34,7 @@ export default function Onboarding(){
   void getMyHousehold().then(existing=>{if(active&&existing)void finish().then(()=>router.replace('/(tabs)'))}).catch(()=>{});
   return()=>{active=false};
  },[authenticated,user?.id]);
- const inputStyle={borderWidth:1 as const,borderColor:colors.border,borderRadius:9,height:44,paddingHorizontal:12,color:colors.text,fontSize:15};
+ const inputStyle={borderWidth:1 as const,borderColor:colors.border,borderRadius:9,height:44,paddingHorizontal:12,color:colors.text,fontSize:fontSizes.input};
 
  async function finishAndOpen(){
   await finish();
@@ -49,13 +50,13 @@ export default function Onboarding(){
  const button=(label:string,onPress:()=>void,primary=true,disabled=false)=>(
   <Pressable accessibilityRole="button" disabled={busy||disabled} onPress={onPress}
    style={{minHeight:44,alignItems:'center',justifyContent:'center',borderRadius:10,paddingHorizontal:12,backgroundColor:primary?colors.household:colors.secondary,opacity:busy||disabled?0.45:1}}>
-   <Text style={{color:primary?'#fff':colors.text,fontSize:14,fontWeight:'600'}}>{label}</Text>
+   <Text style={{color:primary?'#fff':colors.text,fontSize:fontSizes.body,fontWeight:fontWeights.semibold}}>{label}</Text>
   </Pressable>
  );
  return <Screen style={{flexGrow:1,justifyContent:authenticated?'center':'space-between',paddingBottom:24,gap:22}}>
   <View style={{alignItems:'center',justifyContent:'center',gap:14,...(!authenticated?{flexGrow:1}:{} )}}>
    <Image source={require('../assets/icon.png')} accessibilityLabel="PESCO app logo" resizeMode="contain" style={{width:92,height:92,borderRadius:22}}/>
-   <Text style={{color:colors.muted,fontSize:14,fontFamily:'Inter_400Regular',textAlign:'center'}}>Household expenses, together</Text>
+   <Text style={{color:colors.muted,fontSize:fontSizes.body,fontFamily:fontFamilies.regular,textAlign:'center'}}>Household expenses, together</Text>
   </View>
   {!authenticated?<View style={{paddingHorizontal:0,gap:14,paddingBottom:6}}>
    {Platform.OS==='android'?<GoogleSignInButton disabled={!configured||!ready||signingIn} loading={signingIn} onPress={()=>{void (async()=>{
@@ -80,20 +81,20 @@ export default function Onboarding(){
    </View>:null}
    {!configured?<Text style={{color:'#C94F4F',textAlign:'center'}}>Cloud authentication is not configured.</Text>:null}
   </View>:mode==='choose'?<Card>
-   <Text style={{fontSize:14,fontFamily:'Inter_600SemiBold',color:colors.text,textAlign:'center',marginBottom:4}}>Set up your household</Text>
+   <Text style={{fontSize:fontSizes.body,fontFamily:fontFamilies.semibold,color:colors.text,textAlign:'center',marginBottom:4}}>Set up your household</Text>
    {button('Create household',()=>{setError(null);setMode('create')})}
    {button('Join with code',()=>{setError(null);setMode('join')},false)}
    <Pressable accessibilityRole="button" onPress={()=>void submit(async()=>{})} style={{alignItems:'center',paddingVertical:10}}>
-    <Text style={{color:colors.muted,fontSize:13}}>Use personal expenses only</Text>
+    <Text style={{color:colors.muted,fontSize:fontSizes.label}}>Use personal expenses only</Text>
    </Pressable>
   </Card>:<Card>
    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
     <Body>{mode==='join'?'Join household':'Create household'}</Body>
-    <Pressable onPress={()=>{setError(null);setMode('choose')}}><Text style={{color:colors.muted,fontSize:13}}>Back</Text></Pressable>
+    <Pressable onPress={()=>{setError(null);setMode('choose')}}><Text style={{color:colors.muted,fontSize:fontSizes.label}}>Back</Text></Pressable>
    </View>
    {mode==='create'?
     <TextInput accessibilityLabel="Household name" value={name} onChangeText={setName} maxLength={100} style={inputStyle} placeholder="Household name" placeholderTextColor={colors.muted}/>:
-    <TextInput accessibilityLabel="Six-character joining code" value={code} onChangeText={v=>setCode(v.toUpperCase().replace(/[^A-Z2-9]/g,'').slice(0,6))} maxLength={6} autoCapitalize="characters" autoCorrect={false} placeholder="K7M2Q9" placeholderTextColor={colors.muted} style={{...inputStyle,textAlign:'center',letterSpacing:4,fontSize:22}}/>
+    <TextInput accessibilityLabel="Six-character joining code" value={code} onChangeText={v=>setCode(v.toUpperCase().replace(/[^A-Z2-9]/g,'').slice(0,6))} maxLength={6} autoCapitalize="characters" autoCorrect={false} placeholder="K7M2Q9" placeholderTextColor={colors.muted} style={{...inputStyle,textAlign:'center',letterSpacing:4,fontSize:fontSizes.title}}/>
    }
    {!configured?<Body muted>Supabase is not configured. Add your URL and publishable key to .env.</Body>:
     !ready?<ActivityIndicator/>:
@@ -102,6 +103,6 @@ export default function Onboarding(){
     button('Join',()=>void submit(async()=>{const joined=await joinWithKey(code);if(!joined)throw new Error('Invalid, expired or rate-limited code')}),true,!VALID_CODE.test(code))
    }
   </Card>}
-  {error?<Text accessibilityRole="alert" style={{fontSize:13,color:'#C94F4F'}}>{error}</Text>:null}
+  {error?<Text accessibilityRole="alert" style={{fontSize:fontSizes.label,color:'#C94F4F'}}>{error}</Text>:null}
  </Screen>
 }
