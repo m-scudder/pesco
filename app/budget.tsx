@@ -2,6 +2,8 @@ import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
 import React,{useEffect,useState} from 'react';
 import {Alert,Pressable,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
+import {AppState} from 'react-native';
+import {supabase} from '@/lib/supabase';
 import {Screen} from '@/components/Screen';
 import {useData,parseMoney,formatMoney,monthKey,localDate} from '@/data';
 import {useCategories} from '@/lib/CategoryContext';
@@ -14,6 +16,32 @@ export default function Budget(){
  const {colors}=useAppTheme();
  const current=monthKey(localDate());
  const [scope,setScope]=useState<Scope>(household?'household':'personal');
+ const [sharedBudget,setSharedBudget]=useState<number|null>(null);
+ const [sharedError,setSharedError]=useState<string|null>(null);
+ const householdId=household?.id;
+ useEffect(()=>{
+  if(!householdId||!supabase){setSharedBudget(null);return}
+  const db=supabase;
+  let active=true;
+  const load=async()=>{
+   const {data,error}=await db.from('household_budgets').select('amount_paise').eq('household_id',householdId).maybeSingle();
+   if(!active)return;
+   if(error){setSharedError(error.message);return}
+   setSharedBudget(data?Number(data.amount_paise):null);setSharedError(null);
+  };
+  void load();
+  const app=AppState.addEventListener('change',state=>{if(state==='active')void load()});
+  const channel=db.channel('household-budget-'+householdId).on('postgres_changes',{event:'*',schema:'public',table:'household_budgets',filter:'household_id=eq.'+householdId},()=>{void load()}).subscribe();
+  return()=>{active=false;app.remove();void db.removeChannel(channel)};
+ },[householdId]);
+ const saveBudget=async(amount:number|null)=>{
+  if(activeScope==='personal'){setBudget('personal',amount);return}
+  if(!householdId||!supabase){Alert.alert('Household Required');return}
+  const operation=amount===null?supabase.from('household_budgets').delete().eq('household_id',householdId):supabase.from('household_budgets').upsert({household_id:householdId,amount_paise:amount,updated_at:new Date().toISOString()},{onConflict:'household_id'});
+  const {error}=await operation;
+  if(error){Alert.alert('Could Not Save Budget',error.message);return}
+  setSharedBudget(amount);
+ };
  useEffect(()=>{if(!household)setScope('personal')},[household]);
  const activeScope=household?scope:'personal';
  const spent=expenses.filter(e=>e.scope===activeScope&&monthKey(e.date)===current).reduce((sum,e)=>sum+e.amountPaise,0);
@@ -24,7 +52,8 @@ export default function Budget(){
     <Text style={{fontFamily:activeScope===item?fontFamilies.bold:fontFamilies.medium,fontSize:fontSizes.label,color:activeScope===item?colors.household:colors.muted}}>{item==='household'?'Household':'Personal'}</Text>
    </Pressable>)}
   </View>:null}
-  <BudgetForm key={'budget-'+activeScope} scope={activeScope} value={budgets[activeScope]} spent={spent} onSave={amount=>setBudget(activeScope,amount)}/>
+  <BudgetForm key={'budget-'+activeScope} scope={activeScope} value={activeScope==='household'?sharedBudget:budgets.personal} spent={spent} onSave={amount=>{void saveBudget(amount)}}/>
+  {activeScope==='household'&&sharedError?<Text style={{color:'#C94F4F',fontSize:fontSizes.caption}}>{sharedError}</Text>:null}
   <CategoryBudgetSection key={'category-'+activeScope} scope={activeScope} current={current}/>
  </Screen>;
 }
