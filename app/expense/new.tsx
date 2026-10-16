@@ -1,3 +1,4 @@
+import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
 import React,{useEffect,useRef,useState} from 'react';
 import {Alert,Keyboard,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,Text,TextInput,View} from 'react-native';
 import {Stack,useLocalSearchParams,useRouter} from 'expo-router';
@@ -63,21 +64,21 @@ export default function ExpenseEditor(){
  <KeyboardAvoidingView style={{flex:1,backgroundColor:colors.background}} behavior={Platform.OS==='ios'?'padding':undefined} keyboardVerticalOffset={Platform.OS==='ios'?90:0}>
  <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" contentContainerStyle={{paddingHorizontal:16,paddingTop:6,paddingBottom:12,gap:8}}>
   <View style={{alignItems:'center',paddingTop:8,paddingBottom:10,gap:3}}>
-   <Text style={{color:colors.muted,fontFamily:'Inter_500Medium',fontSize:12,letterSpacing:0.8}}>AMOUNT</Text>
+   <Text style={{color:colors.muted,fontFamily:fontFamilies.medium,fontSize:fontSizes.caption,letterSpacing:0.8}}>AMOUNT</Text>
    <Pressable accessibilityRole="button" accessibilityLabel="Amount, open calculator" onPress={()=>{Keyboard.dismiss();setDatePickerOpen(false);setCategoryOpen(false);setCalculatorDisplay(amount||'0');setCalculatorOpen(v=>!v)}}
     style={{minHeight:50,minWidth:160,justifyContent:'center',alignItems:'center',paddingHorizontal:16}}>
-    <Text adjustsFontSizeToFit numberOfLines={1} style={{color:amount?colors.text:colors.muted,fontSize:30,fontFamily:'PlusJakartaSans_600SemiBold',fontVariant:['tabular-nums']}}>{'₹ '+(calculatorOpen?calculatorDisplay||'0':amount||'0')}</Text>
+    <Text adjustsFontSizeToFit numberOfLines={1} style={{color:amount?colors.text:colors.muted,fontSize:fontSizes.display,fontFamily:fontFamilies.displaySemibold,fontVariant:['tabular-nums']}}>{'₹ '+(calculatorOpen?calculatorDisplay||'0':amount||'0')}</Text>
    </Pressable>
-   <Text style={{color:colors.muted,fontSize:12}}>INR · Tap to edit</Text>
+   <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>INR · Tap to edit</Text>
   </View>
-  <View style={{marginBottom:5,gap:6}}><ScopeSwitch/><Text accessibilityRole="text" style={{textAlign:'center',fontSize:12,color:colors.muted}}>{scope==='household'?'Shared expense · Visible to household members':'Personal expense · Visible only to you'}</Text></View>
+  <View style={{marginBottom:5,gap:6}}><ScopeSwitch/><Text accessibilityRole="text" style={{textAlign:'center',fontSize:fontSizes.caption,color:colors.muted}}>{scope==='household'?'Shared expense · Visible to household members':'Personal expense · Visible only to you'}</Text></View>
   <View style={{backgroundColor:colors.surface,borderRadius:12,borderWidth:1,borderColor:colors.border,paddingHorizontal:16}}>
    <Pressable accessibilityRole="button" accessibilityLabel="Choose category" onPress={()=>{Keyboard.dismiss();setCalculatorOpen(false);setDatePickerOpen(false);setCategoryOpen(true)}}
     style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:58}}>
     <Ionicons name="pricetag-outline" size={19} color={colors.muted}/>
     <View style={{flex:1,gap:4}}>
-     <Text style={{fontSize:11,color:colors.muted,fontFamily:'Inter_500Medium'}}>CATEGORY</Text>
-     <Text style={{fontSize:15,color:colors.text,fontFamily:'Inter_500Medium'}}>{category||'Select category'}</Text>
+     <Text style={{fontSize:fontSizes.caption,color:colors.muted,fontFamily:fontFamilies.medium}}>CATEGORY</Text>
+     <Text style={{fontSize:fontSizes.input,color:colors.text,fontFamily:fontFamilies.medium}}>{category||'Select category'}</Text>
     </View>
     <Ionicons name="chevron-forward" size={17} color={colors.muted}/>
    </Pressable>
@@ -86,8 +87,8 @@ export default function ExpenseEditor(){
     style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:58}}>
     <Ionicons name="calendar-outline" size={19} color={colors.muted}/>
     <View style={{flex:1,gap:4}}>
-     <Text style={{fontSize:11,color:colors.muted,fontFamily:'Inter_500Medium'}}>DATE</Text>
-     <Text style={{fontSize:15,color:colors.text,fontFamily:'Inter_500Medium'}}>{new Date(date+'T12:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</Text>
+     <Text style={{fontSize:fontSizes.caption,color:colors.muted,fontFamily:fontFamilies.medium}}>DATE</Text>
+     <Text style={{fontSize:fontSizes.input,color:colors.text,fontFamily:fontFamilies.medium}}>{new Date(date+'T12:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</Text>
     </View>
     <Ionicons name="chevron-forward" size={17} color={colors.muted}/>
    </Pressable>
@@ -95,22 +96,22 @@ export default function ExpenseEditor(){
    <View style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:58}}>
     <Ionicons name="document-text-outline" size={19} color={colors.muted}/>
     <View style={{flex:1,gap:4,paddingVertical:10}}>
-     <Text style={{fontSize:11,color:colors.muted,fontFamily:'Inter_500Medium'}}>NOTE</Text>
+     <Text style={{fontSize:fontSizes.caption,color:colors.muted,fontFamily:fontFamilies.medium}}>NOTE</Text>
      <TextInput accessibilityLabel="Optional note" value={note} onChangeText={setNote} maxLength={500}
       onFocus={()=>{setNoteFocused(true);setCalculatorOpen(false);setTimeout(()=>scrollRef.current?.scrollToEnd({animated:true}),250)}} onBlur={()=>setNoteFocused(false)}
       placeholder="Add a note (optional)" placeholderTextColor={colors.muted}
-      style={{fontSize:15,color:colors.text,padding:0,fontFamily:'Inter_400Regular'}}/>
+      style={{fontSize:fontSizes.input,color:colors.text,padding:0,fontFamily:fontFamilies.regular}}/>
     </View>
    </View>
   </View>
   <View style={{height:4}}/>
   <Pressable accessibilityRole="button" disabled={submitting||!loaded} onPress={()=>{Keyboard.dismiss();void save()}}
    style={{backgroundColor:scope==='household'?colors.household:colors.personal,minHeight:50,borderRadius:10,alignItems:'center',justifyContent:'center',marginTop:8,opacity:submitting||!loaded?0.6:1}}>
-   <Text style={{color:'#fff',fontFamily:'Inter_600SemiBold',fontSize:15}}>{submitting?'Saving…':editing?'Save changes':'Save expense'}</Text>
+   <Text style={{color:'#fff',fontFamily:fontFamilies.semibold,fontSize:fontSizes.input}}>{submitting?'Saving…':editing?'Save changes':'Save expense'}</Text>
   </Pressable>
   {editing?<Pressable accessibilityRole="button" accessibilityLabel="Delete expense" disabled={submitting} onPress={confirmDelete}
    style={{paddingVertical:11,alignItems:'center',opacity:submitting?0.5:1}}>
-   <Text style={{color:'#C54B4B',fontFamily:'Inter_600SemiBold',fontSize:14}}>Delete expense</Text>
+   <Text style={{color:'#C54B4B',fontFamily:fontFamilies.semibold,fontSize:fontSizes.body}}>Delete expense</Text>
   </Pressable>:null}
   <CalendarDatePicker visible={datePickerOpen} value={date} onChange={setDate} onClose={()=>setDatePickerOpen(false)}/>
  </ScrollView>
