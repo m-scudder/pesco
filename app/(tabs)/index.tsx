@@ -6,12 +6,13 @@ import {Screen} from '@/components/Screen';
 import {AddExpenseButton} from '@/components/AddExpenseButton';
 import {ScopeSwitch} from '@/components/UI';
 import {MonthPicker} from '@/components/MonthPicker';
+import {MonthSwipeView} from '@/components/MonthSwipeView';
 import {formatMoney,localDate,monthKey,useData} from '@/data';
 import {useAppTheme} from '@/theme/ThemeContext';
 
 export default function Home(){
  const {colors,scope}=useAppTheme();
- const {expenses,refresh,syncing,syncError,currentUserId,pendingCount,pendingEditCount,pendingIds,remove,demoEnabled}=useData();
+ const {expenses,syncError,currentUserId,demoEnabled}=useData();
  const router=useRouter();
  const [month,setMonth]=useState(monthKey(localDate()));
  const [search,setSearch]=useState('');
@@ -52,14 +53,10 @@ export default function Home(){
   return result;
  },[visibleExpenses]);
 
- return <View style={{flex:1,backgroundColor:colors.background}}>
+ return <MonthSwipeView month={month} onChange={setMonth}><View style={{flex:1,backgroundColor:colors.background}}>
   <Screen style={{paddingHorizontal:0,gap:0}}>
    <View style={{paddingHorizontal:16,paddingBottom:8,gap:8}}>
     <ScopeSwitch/>
-    {syncing?<View accessibilityLabel="Syncing expenses" style={{flexDirection:'row',alignItems:'center',justifyContent:'flex-end',gap:5}}>
-     <Ionicons name="sync-outline" size={13} color={colors.muted}/>
-     <Text style={{fontSize:11,color:colors.muted}}>Syncing expenses…</Text>
-    </View>:null}
     {demoEnabled?<Text style={{fontSize:11,color:colors.muted,fontFamily:'Inter_500Medium'}}>DEMO DATA · Sample expenses are read-only</Text>:null}
     <MonthPicker month={month} onChange={setMonth}/>
     <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
@@ -99,16 +96,7 @@ export default function Home(){
      </Pressable>
     </View>:null}
    </View>
-   {scope==='household'&&pendingCount>0?<Pressable onPress={()=>{void refresh()}} style={{paddingHorizontal:16,paddingVertical:9,backgroundColor:colors.secondary}}>
-    <Text style={{color:colors.text,fontSize:12}}>{pendingCount} expense{pendingCount===1?'':'s'} waiting to sync · Tap to retry</Text>
-   </Pressable>:null}
-   {scope==='household'&&pendingEditCount>0?<Pressable onPress={()=>{void refresh()}} style={{paddingHorizontal:16,paddingVertical:9,backgroundColor:colors.secondary}}>
-    <Text style={{color:colors.text,fontSize:12}}>{pendingEditCount} edit/delete change{pendingEditCount===1?'':'s'} waiting to sync · Tap to retry</Text>
-   </Pressable>:null}
-   {scope==='household'&&syncError?
-    <Pressable onPress={()=>{void refresh()}} style={{paddingHorizontal:16,paddingVertical:10}}>
-     <Text style={{color:'#C94F4F',fontSize:13}}>Sync failed · Tap to retry</Text>
-    </Pressable>:null}
+   {scope==='household'&&syncError?<Text accessibilityRole="alert" style={{color:'#C94F4F',fontSize:12,paddingHorizontal:16,paddingVertical:6}}>Unable to sync. Open Pending uploads in Settings for details.</Text>:null}
    {groups.length===0?
     <View style={{paddingVertical:28,alignItems:'center'}}>
      <Text style={{color:colors.muted,fontSize:14}}>No expenses for this month</Text>
@@ -142,7 +130,6 @@ export default function Home(){
        </View>
        <View style={{alignItems:'flex-end',gap:3}}>
         <Text style={{color:'#F25B59',fontSize:15,fontWeight:'500',textAlign:'right'}}>{formatMoney(expense.amountPaise)}</Text>
-        {pendingIds.includes(expense.id)?<Text style={{color:colors.muted,fontSize:10}}>Waiting to sync</Text>:null}
        </View>
       </Pressable>)}
      </View>;
@@ -154,5 +141,5 @@ export default function Home(){
    </Pressable>:null}
   </Screen>
   <AddExpenseButton/>
- </View>;
+ </View></MonthSwipeView>;
 }

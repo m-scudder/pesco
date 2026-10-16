@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {addCloudExpense,type CloudExpenseInput} from './cloudExpenses';
+import {addCloudExpenseBatch,type CloudExpenseInput} from './cloudExpenses';
 
 export type PendingExpense={id:string;userId:string;draft:CloudExpenseInput;queuedAt:string};
 const key=(userId:string)=>'pesco:pending-household:'+userId;
@@ -37,21 +37,28 @@ export async function flushPending(userId:string,householdId:string){
  const run=(async()=>{
   const pending=await locked(()=>loadPending(userId));
   let sent=0,errorMessage:string|null=null;
-  for(const entry of pending){
-   if(entry.draft.householdId!==householdId)continue;
-   // A new expense can be saved to disk while a network upload is running.
-   uploading.add(entry.id);
+  const matching=pending.filter(entry=>entry.draft.householdId===householdId);
+  for(let start=0;start<matching.length;start+=25){
+   const chunk=matching.slice(start,start+25);
+   chunk.forEach(entry=>uploading.add(entry.id));
    try{
-    await addCloudExpense(entry.draft,entry.id);
-    await locked(async()=>{
-     const latest=await loadPending(userId);
-     await savePending(userId,latest.filter(item=>item.id!==entry.id));
-    });
-    sent++;
+    const confirmed=await addCloudExpenseBatch(chunk.map(entry=>({id:entry.id,draft:entry.draft})));
+    const acknowledged=new Set(confirmed);
+    if(acknowledged.size){
+     await locked(async()=>{
+      const latest=await loadPending(userId);
+      await savePending(userId,latest.filter(item=>!acknowledged.has(item.id)));
+     });
+     sent+=acknowledged.size;
+    }
+    if(acknowledged.size!==chunk.length){
+     errorMessage='Some expenses could not be confirmed on the server. Remaining items will be retried.';
+     break;
+    }
    }catch(e){
     errorMessage=e instanceof Error?e.message:String(e);
     break;
-   }finally{uploading.delete(entry.id)}
+   }finally{chunk.forEach(entry=>uploading.delete(entry.id))}
   }
   const remaining=(await locked(()=>loadPending(userId))).length;
   return {remaining,sent,errorMessage};

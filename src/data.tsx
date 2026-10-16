@@ -4,12 +4,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {Scope} from './theme/palette';
 import {useAuth} from './lib/AuthContext';
 import {getMyHousehold,type Household} from './lib/households';
-import {addCloudExpense,deleteCloudExpense,editCloudExpense,fetchAllHouseholdExpenses,fetchAllPersonalExpenses,importPersonalExpense} from './lib/cloudExpenses';
+import {addCloudExpense,deleteCloudExpense,editCloudExpense,fetchAllHouseholdExpenses,fetchHouseholdExpenseById,fetchAllPersonalExpenses,importPersonalExpense} from './lib/cloudExpenses';
 import {supabase} from './lib/supabase';
 import {makeDemoExpenses} from './lib/demoExpenses';
 import {generateHouseholdRecurring} from './lib/householdRecurring';
 import {queueHouseholdExpense,flushPending,loadPending,cancelPending,editPending,type PendingExpense} from './lib/pendingExpenses';
 import {loadMutations,flushMutations,queueMutation,discardMutation,type PendingMutation} from './lib/pendingMutations';
+import {loadHouseholdLedger,seedHouseholdLedger,upsertLocalHouseholdExpense,removeHouseholdLedgerExpense,reconcileHouseholdLedger,upsertSyncedHouseholdExpense,removeSyncedHouseholdExpense} from './lib/localLedger';
 
 export const CATEGORIES=['Groceries','Food & Drinks','Shopping','Utilities','Rent','Transport','Health','Entertainment','Education','Travel','Other'] as const;
 export type Expense={id:string;scope:Scope;amountPaise:number;category:string;note:string;date:string;createdAt:string;updatedAt:string;ownerId:string};
@@ -54,6 +55,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const [generated,setGenerated]=useState<string[]>([]);
  const [household,setHousehold]=useState<Household|null>(null);
  const [cloudExpenses,setCloudExpenses]=useState<Expense[]>([]);
+ const [ledgerExpenses,setLedgerExpenses]=useState<Expense[]>([]);
  const [cloudPersonal,setCloudPersonal]=useState<Expense[]>([]);
  const personalImportBusy=useRef(false);
  const [syncError,setSyncError]=useState<string|null>(null);
@@ -61,7 +63,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const [cloudReady,setCloudReady]=useState(false);
  const requested=useRef(0);
  const importing=useRef(false);
- const pendingBusy=useRef(false);
+ const refreshRef=useRef<()=>Promise<void>>(async()=>{});
  const verifiedUser=useRef<string|null>(null);
  const recurringGeneratedOn=useRef<string|null>(null);
  const [pending,setPending]=useState<PendingExpense[]>([]);
@@ -70,15 +72,26 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const [queueError,setQueueError]=useState<string|null>(null);
  useEffect(()=>{
   let active=true;
-  if(!user){setHousehold(null);setCloudExpenses([]);return}
-  AsyncStorage.getItem('pesco:household-cache:'+user.id).then(raw=>{
-   if(!raw||!active||verifiedUser.current===user.id)return;
-   const saved=JSON.parse(raw) as {household:Household|null;expenses:Expense[]};
-   if(saved.household&&Array.isArray(saved.expenses)){
-    setHousehold(old=>old??saved.household);
-    setCloudExpenses(old=>old.length?old:saved.expenses);
-   }
-  }).catch(e=>console.warn('Could not load household cache',e));
+  if(!user){setHousehold(null);setCloudExpenses([]);setLedgerExpenses([]);return}
+  const userId=user.id;
+  void (async()=>{
+   try{
+    const raw=await AsyncStorage.getItem('pesco:household-cache:'+userId);
+    if(!raw||!active||verifiedUser.current===userId)return;
+    const saved=JSON.parse(raw) as {household:Household|null;expenses:Expense[]};
+    if(!saved.household)return;
+    const householdId=saved.household.id;
+    if(active)setHousehold(previous=>previous??saved.household);
+    const cached=Array.isArray(saved.expenses)?saved.expenses:[];
+    // Existing installations already have an AsyncStorage snapshot.
+    // Import it without replacing newer SQLite records.
+    await seedHouseholdLedger(userId,householdId,cached);
+    const durable=await loadHouseholdLedger(userId,householdId);
+    if(!active)return;
+    setLedgerExpenses(previous=>previous.length?previous:durable);
+    setCloudExpenses(previous=>previous.length?previous:cached);
+   }catch(error){console.warn('Could not restore household ledger',error)}
+  })();
   return()=>{active=false};
  },[user?.id]);
  useEffect(()=>{
@@ -177,26 +190,20 @@ export function DataProvider({children}:{children:React.ReactNode}){
   setSyncing(true);
   try{
    const membership=await getMyHousehold();
-   if(membership&&!pendingBusy.current){
-    pendingBusy.current=true;
-    try{
-     const result=await flushPending(user.id,membership.id);
-     setQueueError(result.errorMessage);
-     setPending(await loadPending(user.id));
-    }finally{pendingBusy.current=false}
-   }
    if(membership){
-    const epoch=mutationEpoch.current;
-    const result=await flushMutations(user.id,membership.id);
-    if(epoch===mutationEpoch.current){mutationEpoch.current++;setMutations(result.items)}
-    if(result.error)setQueueError(result.error);
     const checkKey=membership.id+':'+localDate();
     if(recurringGeneratedOn.current!==checkKey){
      try{await generateHouseholdRecurring(membership.id);recurringGeneratedOn.current=checkKey}
      catch(e){console.warn('Recurring generation postponed',e)}
     }
    }
+   const snapshotStartedAt=Date.now();
    const rows=membership?await fetchAllHouseholdExpenses(membership.id):[];
+   let localRows=rows;
+   if(membership){
+    try{localRows=await reconcileHouseholdLedger(user.id,membership.id,rows,snapshotStartedAt)}
+    catch(error){console.warn('SQLite reconciliation failed; using cloud snapshot',error)}
+   }
    if(localLoaded&&!personalImportBusy.current){
     personalImportBusy.current=true;
     try{
@@ -226,7 +233,12 @@ export function DataProvider({children}:{children:React.ReactNode}){
    catch(e){console.warn('Could not update offline household cache',e)}
    if(request===requested.current){
     verifiedUser.current=user.id;
-    setHousehold(membership);setCloudExpenses(rows);setCloudPersonal(personalRows);setSyncError(null);setCloudReady(true);
+    setHousehold(membership);setCloudExpenses(rows);setLedgerExpenses(localRows);setCloudPersonal(personalRows);
+    // Only retire optimistic rows once the fetched cloud snapshot contains them.
+    // This prevents a transient disappearance between upload ACK and refresh.
+    const remoteIds=new Set(rows.map(row=>row.id));
+    setPending(previous=>previous.filter(entry=>!remoteIds.has(entry.id)));
+    setSyncError(null);setCloudReady(true);
    }
   }catch(e){
    if(request===requested.current){
@@ -234,58 +246,128 @@ export function DataProvider({children}:{children:React.ReactNode}){
    }
   }finally{if(request===requested.current)setSyncing(false)}
  },[user?.id,configured,localLoaded]);
+ refreshRef.current=refresh;
+
+ // Upload the durable outbox separately from incoming refreshes. A partner's
+ // realtime event must never trigger another outbound upload.
+ const uploadBusy=useRef(false);
+ const uploadRef=useRef<()=>Promise<void>>(async()=>{});
+ const syncOutgoing=useCallback(async()=>{
+  if(!user||!household||uploadBusy.current)return;
+  uploadBusy.current=true;
+  try{
+   const id=user.id,houseId=household.id;
+   const [queuedExpenses,queuedMutations]=await Promise.all([loadPending(id),loadMutations(id)]);
+   const creates=queuedExpenses.filter(item=>item.draft.householdId===houseId).length;
+   const edits=queuedMutations.filter(item=>item.householdId===houseId).length;
+   // Interval ticks are cheap no-ops when the outbox is already empty.
+   if(creates===0&&edits===0)return;
+   const pendingResult=await flushPending(id,houseId);
+   // Do not drop optimistic entries here: cloud refresh may still be in flight.
+   // The refresh path removes an entry after its server record is visible.
+   const currentMutationEpoch=mutationEpoch.current;
+   const mutationResult=await flushMutations(id,houseId);
+   setQueueError(pendingResult.errorMessage??mutationResult.error);
+   // Read committed rows before clearing the optimistic edit/delete overlay.
+   // Otherwise old values flash back while the cloud refresh is in flight.
+   if(pendingResult.sent>0||(edits>0&&!mutationResult.error))
+    await refreshRef.current();
+   if(currentMutationEpoch===mutationEpoch.current){
+    mutationEpoch.current++;
+    setMutations(mutationResult.items);
+   }
+  }catch(error){
+   setQueueError(error instanceof Error?error.message:String(error));
+  }finally{uploadBusy.current=false}
+ },[user?.id,household?.id]);
+ uploadRef.current=syncOutgoing;
 
  useEffect(()=>{
   requested.current++;
   verifiedUser.current=null;
   recurringGeneratedOn.current=null;
-  setHousehold(null);setCloudExpenses([]);setCloudPersonal([]);setCloudReady(false);setSyncError(null);
+  setHousehold(null);setCloudExpenses([]);setLedgerExpenses([]);setCloudPersonal([]);setCloudReady(false);setSyncError(null);
   if(!user)return;
-  void refresh();
+  void refreshRef.current();
   // Realtime refreshes normally provide prompt updates; polling is a fallback after missed events.
-  const interval=setInterval(()=>{if(AppState.currentState==='active')void refresh()},60000);
-  const app=AppState.addEventListener('change',s=>{if(s==='active')void refresh()});
+  const interval=setInterval(()=>{if(AppState.currentState==='active')void refreshRef.current()},60000);
+  // Fixed cadence: batch outbound changes once every 15 seconds while active.
+  const uploadInterval=setInterval(()=>{if(AppState.currentState==='active')void uploadRef.current()},15000);
+  const app=AppState.addEventListener('change',s=>{
+   if(s==='active'){void refreshRef.current();void uploadRef.current()}
+   if(s==='background')void uploadRef.current();
+  });
   return()=>{
-   clearInterval(interval);app.remove();
+   clearInterval(interval);clearInterval(uploadInterval);app.remove();
    requested.current++;
   };
- },[user?.id,refresh]);
+ },[user?.id]);
 
+ // Outbound writes are sent by the fixed interval above, not every new expense.
+ // Foreground resume also triggers a flush; pending rows remain visible locally.
+
+ // Legacy personal entries have their own idempotent import path.
  useEffect(()=>{
-  if(user&&localLoaded&&localExpenses.some(item=>item.scope==='personal'))void refresh();
- },[user?.id,localLoaded,localExpenses,refresh]);
-
- // Subscribe after membership is known. Re-subscribe if the household changes.
- // Realtime events invalidate the household feed, which is fetched under RLS.
+  if(user&&localLoaded&&localExpenses.some(e=>e.scope==='personal')){
+   const timer=setTimeout(()=>{void refreshRef.current()},1000);
+   return()=>clearTimeout(timer);
+  }
+ },[user?.id,localLoaded,localExpenses]);
+ 
+ // The channel notifies us of changed IDs; read only those rows under RLS.
+ // Periodic and foreground full fetches recover missed events.
  useEffect(()=>{
   const client=supabase;
   if(!client||!user||!household?.id)return;
-  const channel=client.channel('household-expenses-'+household.id)
+  const userId=user.id,householdId=household.id;
+  let alive=true;
+  const channel=client.channel('household-expenses-'+householdId)
    .on('postgres_changes',{
-    event:'*',schema:'public',table:'expenses',
-    filter:'household_id=eq.'+household.id
-   },()=>{void refresh()})
+    event:'*',schema:'public',table:'expenses',filter:'household_id=eq.'+householdId
+   },payload=>{
+    const data=payload.eventType==='DELETE'?payload.old:payload.new;
+    const id=typeof data?.id==='string'?data.id:null;
+    if(!id){void refreshRef.current();return}
+    void (async()=>{
+     try{
+      if(payload.eventType==='DELETE'){
+       await removeSyncedHouseholdExpense(userId,id);
+       if(!alive)return;
+       setLedgerExpenses(previous=>previous.filter(row=>row.id!==id));
+       setCloudExpenses(previous=>previous.filter(row=>row.id!==id));
+      }else{
+       const row=await fetchHouseholdExpenseById(id,householdId);
+       if(!row||!alive)return;
+       await upsertSyncedHouseholdExpense(userId,householdId,row);
+       if(!alive)return;
+       setLedgerExpenses(previous=>[...previous.filter(item=>item.id!==id),row]);
+       setCloudExpenses(previous=>[...previous.filter(item=>item.id!==id),row]);
+      }
+     }catch(error){
+      console.warn('Realtime expense merge failed',error);
+      if(alive)void refreshRef.current();
+     }
+    })();
+   })
    .subscribe(status=>{
-    if(status==='SUBSCRIBED')void refresh();
-    if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
+    if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')
      console.warn('Household Realtime disconnected:',status);
-    }
    });
-  return()=>{void client.removeChannel(channel)};
- },[user?.id,household?.id,refresh]);
+  return()=>{alive=false;void client.removeChannel(channel)};
+ },[user?.id,household?.id]);
 
  const realExpenses=useMemo(()=>[
   ...localExpenses.filter(e=>(e.scope==='personal'&&!cloudPersonal.some(remote=>remote.id===e.id))||(!household&&e.scope==='household')),
   ...cloudPersonal,
-  ...(household?cloudExpenses.filter(e=>!mutations.some(op=>op.id===e.id&&op.kind==='delete')).map(e=>{
+  ...(household?ledgerExpenses.filter(e=>!mutations.some(op=>op.id===e.id&&op.kind==='delete')).map(e=>{
    const op=mutations.find(item=>item.id===e.id&&item.kind==='update');
    return op?.draft?{...e,amountPaise:op.draft.amountPaise,category:op.draft.category,note:op.draft.note,date:op.draft.date}:e;
   }):[]),
-  ...pending.filter(p=>household&&p.draft.householdId===household.id&&!cloudExpenses.some(e=>e.id===p.id)).map(p=>({
+  ...pending.filter(p=>household&&p.draft.householdId===household.id&&!ledgerExpenses.some(e=>e.id===p.id)).map(p=>({
    id:p.id,scope:'household' as Scope,amountPaise:p.draft.amountPaise,category:p.draft.category,note:p.draft.note,date:p.draft.date,
    ownerId:p.userId,createdAt:p.queuedAt,updatedAt:p.queuedAt
   }))
- ],[localExpenses,cloudExpenses,cloudPersonal,household,pending,mutations]);
+ ],[localExpenses,ledgerExpenses,cloudPersonal,household,pending,mutations]);
  const demoExpenses=useMemo(()=>__DEV__?makeDemoExpenses():[],[]);
  const expenses=useMemo(()=>demoEnabled&&__DEV__?[...realExpenses,...demoExpenses]:realExpenses,[demoEnabled,realExpenses,demoExpenses]);
 
@@ -294,14 +376,18 @@ export function DataProvider({children}:{children:React.ReactNode}){
    if(!household)throw new Error('Create or join a household first');
    if(!user)throw new Error('Sign in required');
    const entry=await queueHouseholdExpense(user.id,{...draft,householdId:household.id});
+   const optimistic:Expense={id:entry.id,...draft,ownerId:user.id,createdAt:entry.queuedAt,updatedAt:entry.queuedAt};
+   // Durable queue first; local ledger second. Keep queue overlay if SQLite fails.
+   try{
+    await upsertLocalHouseholdExpense(user.id,household.id,optimistic);
+    setLedgerExpenses(previous=>previous.some(row=>row.id===optimistic.id)?previous:[...previous,optimistic]);
+   }catch(error){console.warn('Local ledger write failed; outbox is safe',error)}
    setPending(previous=>[...previous,entry]);
-   void refresh();
    return;
   }
   const now=new Date().toISOString();
   setLocalExpenses(prev=>[{...draft,id:now+'-'+Math.random().toString(36).slice(2),ownerId:'local-user',createdAt:now,updatedAt:now},...prev]);
-  void refresh();
- },[household,refresh,user?.id]);
+ },[household,user?.id]);
 
  const update=useCallback(async(id:string,draft:ExpenseDraft)=>{
   if(id.startsWith('demo:'))throw new Error('Demo records are read-only. Turn off sample data in Settings to view actual records.');
@@ -309,7 +395,14 @@ export function DataProvider({children}:{children:React.ReactNode}){
   if(queued){
    if(!user||!household)throw new Error('Household unavailable');
    if(draft.scope!=='household')throw new Error('Changing the expense scope is unavailable');
-   setPending(await editPending(user.id,id,{...draft,householdId:household.id}));
+   const updated=await editPending(user.id,id,{...draft,householdId:household.id});
+   setPending(updated);
+   const original=ledgerExpenses.find(e=>e.id===id);
+   if(original){
+    const row={...original,...draft,updatedAt:new Date().toISOString()};
+    await upsertLocalHouseholdExpense(user.id,household.id,row);
+    setLedgerExpenses(previous=>previous.map(e=>e.id===id?row:e));
+   }
    return;
   }
   const cloud=cloudExpenses.find(e=>e.id===id);
@@ -320,7 +413,6 @@ export function DataProvider({children}:{children:React.ReactNode}){
    const latest=await queueMutation(user!.id,household.id,id,'update',{...draft,householdId:household.id},cloud.updatedAt);
    mutationEpoch.current++;
    setMutations(latest);
-   void refresh();
    return;
   }
   if(cloudPersonal.some(e=>e.id===id)){
@@ -329,13 +421,16 @@ export function DataProvider({children}:{children:React.ReactNode}){
    return;
   }
   setLocalExpenses(prev=>prev.map(e=>e.id===id?{...e,...draft,updatedAt:new Date().toISOString()}:e));
- },[cloudExpenses,cloudPersonal,household,user?.id,refresh,pending]);
+ },[cloudExpenses,cloudPersonal,household,user?.id,refresh,pending,ledgerExpenses]);
 
  const remove=useCallback(async(id:string)=>{
   if(id.startsWith('demo:'))throw new Error('Demo records cannot be deleted. Turn off sample data in Settings.');
   if(pending.some(entry=>entry.id===id)){
    if(!user)throw new Error('Sign in required');
-   setPending(await cancelPending(user.id,id));
+   const next=await cancelPending(user.id,id);
+   setPending(next);
+   await removeHouseholdLedgerExpense(user.id,id);
+   setLedgerExpenses(previous=>previous.filter(e=>e.id!==id));
    return;
   }
   const cloud=cloudExpenses.find(e=>e.id===id);
@@ -345,7 +440,6 @@ export function DataProvider({children}:{children:React.ReactNode}){
    const latest=await queueMutation(user.id,household.id,id,'delete',undefined,cloud.updatedAt);
    mutationEpoch.current++;
    setMutations(latest);
-   void refresh();
   }else if(cloudPersonal.some(e=>e.id===id)){
    await deleteCloudExpense(id);
    await refresh();

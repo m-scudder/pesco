@@ -5,6 +5,7 @@ import {useFocusEffect,useRouter} from 'expo-router';
 import {Screen} from '@/components/Screen';
 import {Body,Card} from '@/components/UI';
 import {MonthPicker} from '@/components/MonthPicker';
+import {MonthSwipeView} from '@/components/MonthSwipeView';
 import {formatMoney,localDate,monthKey,useData} from '@/data';
 import {buildInsights,monthlyCategoryChanges} from '@/lib/insights';
 import {useCategoryBudgets} from '@/lib/useCategoryBudgets';
@@ -37,7 +38,7 @@ export default function House(){
    </Pressable>
   </View>
  </View>;
- return <Screen style={{gap:12}}>
+ return <MonthSwipeView month={month} onChange={setMonth}><Screen style={{gap:12}}>
   <MonthPicker month={month} onChange={setMonth}/>
   {demoEnabled?<Text style={{color:colors.muted,fontSize:11,fontFamily:'Inter_500Medium'}}>DEMO DATA · Includes read-only sample expenses</Text>:null}
   {syncError?<Pressable onPress={()=>{void refresh()}}>
@@ -122,5 +123,5 @@ export default function House(){
     </View>)}
    </View>
   </Card>
- </Screen>;
+ </Screen></MonthSwipeView>;
 }
