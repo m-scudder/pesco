@@ -1,16 +1,16 @@
-import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
+import {fontSizes,fontFamilies,fontWeights,textStyles} from '@/theme/typography';
 import React,{useEffect} from 'react';
 import {Pressable,StyleSheet,Text,View} from 'react-native';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {useData} from '@/data';
 export function Heading({children,subtitle}:{children:React.ReactNode;subtitle?:string}){
- const {colors}=useAppTheme();return <View style={{gap:3}}><Text style={[styles.title,{color:colors.text,fontFamily:fontFamilies.displayBold}]}>{children}</Text>{subtitle?<Text style={{color:colors.muted,fontSize:fontSizes.caption,fontFamily:fontFamilies.regular}}>{subtitle}</Text>:null}</View>
+ const {colors}=useAppTheme();return <View style={{gap:3}}><Text style={[styles.title,textStyles.title,{color:colors.text}]}>{children}</Text>{subtitle?<Text style={{color:colors.muted,fontSize:fontSizes.caption,fontFamily:fontFamilies.regular}}>{subtitle}</Text>:null}</View>
 }
 export function Card({children}:{children:React.ReactNode}){
  const {colors}=useAppTheme();return <View style={[styles.card,{backgroundColor:colors.surface,borderColor:colors.border}]}>{children}</View>
 }
 export function Body({children,muted=false}:{children:React.ReactNode;muted?:boolean}){
- const {colors}=useAppTheme();return <Text style={{color:muted?colors.muted:colors.text,fontSize:fontSizes.body,fontFamily:fontFamilies.regular}}>{children}</Text>
+ const {colors}=useAppTheme();return <Text style={[textStyles.body,{color:muted?colors.muted:colors.text}]}>{children}</Text>
 }
 export function ScopeSwitch(){
  const {colors,scope,setScope}=useAppTheme();
