@@ -1,3 +1,4 @@
+import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
 import React,{useMemo,useState} from 'react';
 import {useFocusEffect,useRouter} from 'expo-router';
 import {Pressable,Text,View,useWindowDimensions} from 'react-native';
@@ -57,13 +58,13 @@ export default function Insights(){
   {chosen!==null?
    <View style={{flexDirection:'row',alignItems:'center',paddingHorizontal:14,paddingBottom:12,gap:14}}>
     <Pressable accessibilityRole="button" accessibilityLabel="Back to categories" onPress={()=>setChosen(null)}>
-     <Text style={{color:colors.text,fontSize:28}}>‹</Text>
+     <Text style={{color:colors.text,fontSize:fontSizes.summary}}>‹</Text>
     </Pressable>
-    <Text numberOfLines={1} style={{color:colors.text,fontSize:19,fontWeight:'600',flex:1}}>{chosen}</Text>
+    <Text numberOfLines={1} style={{color:colors.text,fontSize:fontSizes.title,fontWeight:fontWeights.semibold,flex:1}}>{chosen}</Text>
    </View>:
    <View style={{paddingHorizontal:12,paddingBottom:8,paddingTop:4}}><ScopeSwitch/></View>}
   <View style={{paddingHorizontal:12,paddingBottom:12}}><MonthPicker month={month} onChange={setMonth}/>
-   {demoEnabled?<Text style={{color:colors.muted,fontSize:11,fontFamily:'Inter_500Medium'}}>DEMO DATA · Includes read-only sample expenses</Text>:null}</View>
+   {demoEnabled?<Text style={{color:colors.muted,fontSize:fontSizes.caption,fontFamily:fontFamilies.medium}}>DEMO DATA · Includes read-only sample expenses</Text>:null}</View>
   {chosen===null?<>
    {spent>0?<View style={{alignItems:'center',justifyContent:'center',paddingVertical:8,borderTopWidth:1,borderColor:colors.border}}>
     <Svg width={chartSize} height={chartSize} viewBox={`0 0 ${chartSize} ${chartSize}`}>
@@ -71,9 +72,9 @@ export default function Insights(){
     </Svg>
     {activeSlice?<Pressable accessibilityRole="button" accessibilityLabel={'Open '+activeSlice.name+' transactions'} onPress={()=>setChosen(activeSlice.name)} style={{flexDirection:'row',alignItems:'center',gap:8,paddingVertical:8,paddingHorizontal:12}}>
      <View style={{width:12,height:12,borderRadius:3,backgroundColor:activeSlice.color}}/>
-     <Text style={{fontSize:14,fontWeight:'600',color:colors.text}}>{activeSlice.name}</Text>
-     <Text style={{fontSize:13,color:colors.muted}}>{(activeSlice.amount/spent*100).toFixed(1)}%</Text>
-     <Text style={{fontSize:14,color:colors.text}}>{fmt(activeSlice.amount)} ›</Text>
+     <Text style={{fontSize:fontSizes.body,fontWeight:fontWeights.semibold,color:colors.text}}>{activeSlice.name}</Text>
+     <Text style={{fontSize:fontSizes.label,color:colors.muted}}>{(activeSlice.amount/spent*100).toFixed(1)}%</Text>
+     <Text style={{fontSize:fontSizes.body,color:colors.text}}>{fmt(activeSlice.amount)} ›</Text>
     </Pressable>:null}
    </View>:<Text style={{color:colors.muted,textAlign:'center',paddingVertical:36}}>{loaded?'No expenses this month':'Loading…'}</Text>}
    {slices.map(s=><Pressable key={s.name} accessibilityRole="button"
@@ -81,10 +82,10 @@ export default function Insights(){
     onPress={()=>setChosen(s.name)}
     style={{flexDirection:'row',alignItems:'center',gap:10,paddingHorizontal:14,paddingVertical:13,minHeight:58,borderTopWidth:1,borderColor:colors.border}}>
     <View style={{backgroundColor:s.color,borderRadius:5,paddingHorizontal:7,paddingVertical:5,minWidth:48,alignItems:'center'}}>
-     <Text style={{color:'#22252B',fontSize:13,fontWeight:'700'}}>{s.percent>0&&s.percent<0.1?'<0.1':s.percent}%</Text>
+     <Text style={{color:'#22252B',fontSize:fontSizes.label,fontWeight:fontWeights.bold}}>{s.percent>0&&s.percent<0.1?'<0.1':s.percent}%</Text>
     </View>
-    <Text style={{color:colors.text,flex:1,fontSize:15}} numberOfLines={1}>{s.name}</Text>
-    <Text style={{color:colors.text,fontSize:15,fontWeight:'500'}}>{fmt(s.amount)}</Text>
+    <Text style={{color:colors.text,flex:1,fontSize:fontSizes.input}} numberOfLines={1}>{s.name}</Text>
+    <Text style={{color:colors.text,fontSize:fontSizes.input,fontWeight:fontWeights.medium}}>{fmt(s.amount)}</Text>
    </Pressable>)}
   </>:<>
    <View style={{height:trendHeight+30,justifyContent:'center',alignItems:'center',borderTopWidth:1,borderBottomWidth:1,borderColor:colors.border}}>
@@ -95,7 +96,7 @@ export default function Insights(){
      </React.Fragment>)}
     </Svg>
     <View style={{width:trendWidth,flexDirection:'row',justifyContent:'space-between',paddingHorizontal:3}}>
-     {monthlyCategory.map(m=><Text key={m.key} style={{fontSize:11,color:m.key===month?'#FF655B':colors.muted}}>{m.label}</Text>)}
+     {monthlyCategory.map(m=><Text key={m.key} style={{fontSize:fontSizes.caption,color:m.key===month?'#FF655B':colors.muted}}>{m.label}</Text>)}
     </View>
    </View>
    {groups.map(group=>{
@@ -103,16 +104,16 @@ export default function Insights(){
     const d=new Date(date+'T12:00:00');
     return <View key={date}>
      <View style={{flexDirection:'row',alignItems:'center',gap:8,paddingHorizontal:12,paddingVertical:8,backgroundColor:colors.secondary,borderBottomWidth:1,borderColor:colors.border}}>
-      <Text style={{color:colors.text,fontWeight:'700',fontSize:20}}>{String(d.getDate()).padStart(2,'0')}</Text>
-      <Text style={{color:colors.muted,fontSize:12}}>{d.toLocaleDateString('en-IN',{weekday:'short'})}</Text>
+      <Text style={{color:colors.text,fontWeight:fontWeights.bold,fontSize:fontSizes.title}}>{String(d.getDate()).padStart(2,'0')}</Text>
+      <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{d.toLocaleDateString('en-IN',{weekday:'short'})}</Text>
       <View style={{flex:1}}/>
-      <Text style={{color:'#FF655B',fontSize:15}}>{fmt(group.reduce((s,e)=>s+e.amountPaise,0))}</Text>
+      <Text style={{color:'#FF655B',fontSize:fontSizes.input}}>{fmt(group.reduce((s,e)=>s+e.amountPaise,0))}</Text>
      </View>
      {group.map(e=><Pressable key={e.id} onPress={()=>router.push({pathname:'/expense/[id]',params:{id:e.id}})}
       style={{flexDirection:'row',alignItems:'center',paddingHorizontal:12,paddingVertical:12,minHeight:55,gap:12,borderBottomWidth:1,borderColor:colors.border}}>
-      <Text style={{color:colors.muted,fontSize:12,width:90}} numberOfLines={2}>{e.category}</Text>
-      <Text style={{color:colors.text,fontSize:15,flex:1}} numberOfLines={2}>{e.note?.trim()||e.category}</Text>
-      <Text style={{color:'#FF655B',fontSize:15}}>{fmt(e.amountPaise)}</Text>
+      <Text style={{color:colors.muted,fontSize:fontSizes.caption,width:90}} numberOfLines={2}>{e.category}</Text>
+      <Text style={{color:colors.text,fontSize:fontSizes.input,flex:1}} numberOfLines={2}>{e.note?.trim()||e.category}</Text>
+      <Text style={{color:'#FF655B',fontSize:fontSizes.input}}>{fmt(e.amountPaise)}</Text>
      </Pressable>)}
     </View>;
    })}
