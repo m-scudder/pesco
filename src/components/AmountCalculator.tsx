@@ -60,7 +60,7 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
   if(expression==='0'&&key!=='.'){publish(key);return}
   publish(expression+key);
  }
- return <View style={{backgroundColor:colors.surface,borderRadius:10,padding:7,borderWidth:1,borderColor:colors.border}}>
+ return <View style={{paddingVertical:4}}>
   {state.error?<Text accessibilityRole="alert" style={{color:'#C94F4F',fontSize:12,padding:6}}>{state.error}</Text>:null}
   <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
    {keys.map((label,index)=>{
