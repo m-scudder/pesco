@@ -3,7 +3,7 @@ import {Pressable,Text,View} from 'react-native';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {initialCalculator,pressCalculator,type CalculatorState} from '@/lib/calculator';
 
-const keys=['C','⌫','÷','×','7','8','9','−','4','5','6','+','1','2','3','=','0','.','Done',''];
+const keys=['C','⌫','÷','×','7','8','9','−','4','5','6','+','1','2','3','=','0','%','.','Done'];
 type Props={value:string;onChange:(amount:string)=>void;onDisplayChange?:(expression:string)=>void;onDone:()=>void};
 export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
  const {colors}=useAppTheme();
@@ -26,6 +26,11 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
   setState(next);
   if(next.error)return;
   if(key==='C'){publish('0');return}
+  if(key==='%'){
+   if(next===state)return;
+   publish(expression.trimEnd()+'%');
+   return;
+  }
   if(key==='⌫'){
    if(state.startNew&&state.operator){
     const previous=expression.replace(/\s[+−×÷]\s*$/,'');
@@ -46,6 +51,10 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
   }
   if(key==='.'&&state.startNew){publish(expression+'0.');return}
   if(state.startNew&&state.operator){publish(expression+key);return}
+  if(expression.endsWith('%')){
+   publish(next.display);
+   return;
+  }
   if(state.startNew){publish(key==='.'?'0.':key);return}
   if(expression==='0'&&key!=='.'){publish(key);return}
   publish(expression+key);
@@ -55,7 +64,7 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
   <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
    {keys.map((label,index)=>{
     if(!label)return <View key={'blank-'+index} style={{width:'23%',flexGrow:1,minHeight:43}}/>;
-    const isDone=label==='Done',isOperation=['+','−','×','÷','='].includes(label);
+    const isDone=label==='Done',isOperation=['+','−','×','÷','=','%'].includes(label);
     return <Pressable key={label} accessibilityRole="button" accessibilityLabel={isDone?'Use amount':label==='⌫'?'Backspace':label==='C'?'Clear calculator':label}
      onPress={()=>tap(label)} style={{width:'23%',flexGrow:1,minHeight:43,borderRadius:7,alignItems:'center',justifyContent:'center',
       backgroundColor:isDone?accent:isOperation?colors.secondary:colors.background}}>
