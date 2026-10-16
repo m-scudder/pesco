@@ -1,10 +1,12 @@
 import React,{useMemo,useState} from 'react';
 import {useFocusEffect,useRouter} from 'expo-router';
 import {Pressable,Text,View,useWindowDimensions} from 'react-native';
+import {Ionicons} from '@expo/vector-icons';
 import Svg,{Circle,Path,Polyline} from 'react-native-svg';
 import {Screen} from '@/components/Screen';
 import {ScopeSwitch} from '@/components/UI';
 import {MonthPicker} from '@/components/MonthPicker';
+import {MonthSwipeView} from '@/components/MonthSwipeView';
 import {formatMoney,localDate,monthKey,useData} from '@/data';
 import {buildInsights,shiftMonth} from '@/lib/insights';
 import {useAppTheme} from '@/theme/ThemeContext';
@@ -51,7 +53,7 @@ export default function Insights(){
  const trendWidth=Math.min(width-24,440);
  const trendHeight=170;
  const trendPoints=monthlyCategory.map((m,i)=>({x:18+i*(trendWidth-36)/6,y:18+(1-m.amount/trendMax)*112,...m}));
- return <Screen style={{paddingHorizontal:0,gap:0}}>
+ return <MonthSwipeView month={month} onChange={setMonth}><Screen style={{paddingHorizontal:0,gap:0}}>
   {chosen!==null?
    <View style={{flexDirection:'row',alignItems:'center',paddingHorizontal:14,paddingBottom:12,gap:14}}>
     <Pressable accessibilityRole="button" accessibilityLabel="Back to categories" onPress={()=>setChosen(null)}>
@@ -79,7 +81,7 @@ export default function Insights(){
     onPress={()=>setChosen(s.name)}
     style={{flexDirection:'row',alignItems:'center',gap:10,paddingHorizontal:14,paddingVertical:13,minHeight:58,borderTopWidth:1,borderColor:colors.border}}>
     <View style={{backgroundColor:s.color,borderRadius:5,paddingHorizontal:7,paddingVertical:5,minWidth:48,alignItems:'center'}}>
-     <Text style={{color:'#22252B',fontSize:13,fontWeight:'700'}}>{s.percent}%</Text>
+     <Text style={{color:'#22252B',fontSize:13,fontWeight:'700'}}>{s.percent>0&&s.percent<0.1?'<0.1':s.percent}%</Text>
     </View>
     <Text style={{color:colors.text,flex:1,fontSize:15}} numberOfLines={1}>{s.name}</Text>
     <Text style={{color:colors.text,fontSize:15,fontWeight:'500'}}>{fmt(s.amount)}</Text>
