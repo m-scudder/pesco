@@ -1,3 +1,4 @@
+import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
 import React,{useCallback,useEffect,useState} from 'react';
 import {ActivityIndicator,Alert,Pressable,Share,Text,TextInput,View} from 'react-native';
 import {Screen} from '@/components/Screen';
@@ -43,23 +44,23 @@ export default function HouseholdSetup(){
  const action=(label:string,press:()=>void,primary=true,disabled=false)=>(
   <Pressable accessibilityRole="button" disabled={busy||disabled} onPress={press}
    style={{borderRadius:10,minHeight:42,paddingHorizontal:14,alignItems:'center',justifyContent:'center',backgroundColor:primary?colors.household:colors.secondary,opacity:busy||disabled?0.5:1}}>
-   <Text style={{color:primary?'#fff':colors.text,fontWeight:'600',fontSize:14}}>{label}</Text>
+   <Text style={{color:primary?'#fff':colors.text,fontWeight:fontWeights.semibold,fontSize:fontSizes.body}}>{label}</Text>
   </Pressable>
  );
- const input={borderColor:colors.border,borderWidth:1 as const,borderRadius:9,paddingHorizontal:12,height:44,color:colors.text,fontSize:15};
+ const input={borderColor:colors.border,borderWidth:1 as const,borderRadius:9,paddingHorizontal:12,height:44,color:colors.text,fontSize:fontSizes.input};
  if(!configured)return <Screen modal style={{gap:12}}><Card><Body muted>Add the Supabase URL and publishable key to .env.</Body></Card></Screen>;
  if(!ready||loading)return <Screen modal style={{gap:12}}><ActivityIndicator/></Screen>;
  if(!user)return <Screen modal style={{gap:12}}><Card><Body muted>{authError||'Connection unavailable'}</Body>{action('Retry',()=>{void retry()})}</Card></Screen>;
 
  return <Screen modal style={{gap:12}}>
-  <Text style={{color:colors.muted,fontSize:13,marginBottom:2}}>Share expenses with one partner</Text>
+  <Text style={{color:colors.muted,fontSize:fontSizes.label,marginBottom:2}}>Share expenses with one partner</Text>
   {household?
    <>
     <Card>
      <View style={{gap:4}}>
-      <Text style={{color:colors.muted,fontSize:12}}>Your household</Text>
-      <Text style={{color:colors.text,fontSize:20,fontWeight:'700'}}>{household.name}</Text>
-      <Text style={{color:colors.muted,fontSize:12}}>{household.created_by===user.id?'You are the creator':'You are a member'}</Text>
+      <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>Your household</Text>
+      <Text style={{color:colors.text,fontSize:fontSizes.title,fontWeight:fontWeights.bold}}>{household.name}</Text>
+      <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{household.created_by===user.id?'You are the creator':'You are a member'}</Text>
      </View>
      {household.created_by===user.id?<>
       {editingName?<View style={{gap:10}}>
@@ -70,19 +71,19 @@ export default function HouseholdSetup(){
      </>:null}
     </Card>
     <Card>
-     <Text style={{color:colors.text,fontWeight:'700',fontSize:16}}>Members · {members.length}/2</Text>
+     <Text style={{color:colors.text,fontWeight:fontWeights.bold,fontSize:fontSizes.section}}>Members · {members.length}/2</Text>
      {members.map(member=><View key={member.user_id} style={{gap:5,paddingVertical:10,borderBottomWidth:1,borderColor:colors.border}}>
       <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',gap:8}}>
-       <Text style={{flex:1,color:colors.text,fontSize:15,fontWeight:'600'}}>{member.display_name==='Member'?(member.user_id===user.id?'You':'Partner'):member.display_name}{member.user_id===user.id?' (You)':''}</Text>
-       <Text style={{fontSize:12,color:colors.muted}}>{member.is_owner?'Creator':'Partner'}</Text>
+       <Text style={{flex:1,color:colors.text,fontSize:fontSizes.input,fontWeight:fontWeights.semibold}}>{member.display_name==='Member'?(member.user_id===user.id?'You':'Partner'):member.display_name}{member.user_id===user.id?' (You)':''}</Text>
+       <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{member.is_owner?'Creator':'Partner'}</Text>
       </View>
-      <Text style={{fontSize:12,color:colors.muted}}>Joined {new Date(member.joined_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</Text>
+      <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>Joined {new Date(member.joined_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</Text>
       {household.created_by===user.id&&!member.is_owner?(
        <Pressable accessibilityRole="button" onPress={()=>Alert.alert('Remove partner?', 'This will immediately revoke their access to this household and its shared expenses. Existing expenses will remain.',[
         {text:'Cancel',style:'cancel'},
         {text:'Remove',style:'destructive',onPress:()=>{void submit(()=>removeHouseholdPartner(household.id,member.user_id))}}
        ])} style={{paddingVertical:7,alignSelf:'flex-start'}}>
-        <Text style={{color:'#C94F4F',fontSize:13,fontWeight:'600'}}>Remove partner</Text>
+        <Text style={{color:'#C94F4F',fontSize:fontSizes.label,fontWeight:fontWeights.semibold}}>Remove partner</Text>
        </Pressable>
       ):null}
      </View>)}
@@ -91,7 +92,7 @@ export default function HouseholdSetup(){
     {household.created_by===user.id&&members.length<2?<Card>
      {action('Invite partner',()=>{void submit(async()=>{const issued=await createJoiningKey(household.id);if(!SIX.test(issued))throw new Error('Server is not using 6-character keys');setInvite(issued)})})}
      {invite?<View style={{gap:9,alignItems:'center',paddingVertical:6}}>
-      <Text selectable style={{fontSize:30,fontWeight:'800',letterSpacing:5,color:colors.text}}>{invite}</Text>
+      <Text selectable style={{fontSize:fontSizes.display,fontWeight:'800',letterSpacing:5,color:colors.text}}>{invite}</Text>
       <Body muted>Valid 24 hours · One use</Body>
       {action('Share code',()=>{void Share.share({message:'Join my PESCO household. Code: '+invite})},false)}
      </View>:null}
@@ -110,10 +111,10 @@ export default function HouseholdSetup(){
    </Card>
    :<Card>
     <Body>6-character code</Body>
-    <TextInput accessibilityLabel="Household joining code" value={key} onChangeText={v=>setKey(v.toUpperCase().replace(/[^A-Z2-9]/g,'').slice(0,6))} autoCapitalize="characters" autoCorrect={false} maxLength={6} placeholder="K7M2Q9" placeholderTextColor={colors.muted} style={{...input,fontSize:22,letterSpacing:4,textAlign:'center'}}/>
+    <TextInput accessibilityLabel="Household joining code" value={key} onChangeText={v=>setKey(v.toUpperCase().replace(/[^A-Z2-9]/g,'').slice(0,6))} autoCapitalize="characters" autoCorrect={false} maxLength={6} placeholder="K7M2Q9" placeholderTextColor={colors.muted} style={{...input,fontSize:fontSizes.title,letterSpacing:4,textAlign:'center'}}/>
     {action('Join household',()=>void submit(async()=>{const result=await joinWithKey(key);if(!result)throw new Error('Invalid, expired, or rate-limited code')}),true,!SIX.test(key))}
     {action('Back',()=>setMode('choose'),false)}
    </Card>}
-  {error?<Text accessibilityRole="alert" style={{color:'#C94F4F',fontSize:13}}>{error}</Text>:null}
+  {error?<Text accessibilityRole="alert" style={{color:'#C94F4F',fontSize:fontSizes.label}}>{error}</Text>:null}
  </Screen>
 }
