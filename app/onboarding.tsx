@@ -31,19 +31,28 @@ export default function Onboarding(){
  const [signingIn,setSigningIn]=useState(false);
  const [checkingHousehold,setCheckingHousehold]=useState(false);
  const [householdCheckedFor,setHouseholdCheckedFor]=useState<string|null>(null);
+ const [householdCheckError,setHouseholdCheckError]=useState<string|null>(null);
+ const [householdRetry,setHouseholdRetry]=useState(0);
  const authenticated=!!user&&!user.is_anonymous&&!!user.identities?.some(i=>i.provider==='google'||i.provider==='apple');
  useEffect(()=>{
-  if(!authenticated||!user){setHouseholdCheckedFor(null);setCheckingHousehold(false);return}
+  if(!authenticated||!user){setHouseholdCheckedFor(null);setCheckingHousehold(false);setHouseholdCheckError(null);return}
   let active=true;
   setCheckingHousehold(true);
-  void getMyHousehold().then(async existing=>{
+  setHouseholdCheckError(null);
+  const lookup=getMyHousehold();
+  let timer:ReturnType<typeof setTimeout>|undefined;
+  const bounded=Promise.race([
+   lookup,
+   new Promise<never>((_resolve,reject)=>{timer=setTimeout(()=>reject(new Error('Household check timed out. Check your connection and try again.')),10000)})
+  ]);
+  void bounded.then(async existing=>{
    if(!active)return;
    if(existing){await finish();if(active)router.replace('/(tabs)')}
    else if(active)setHouseholdCheckedFor(user.id);
-  }).catch(e=>{if(active){setError(e instanceof Error?e.message:'Could not load household');setHouseholdCheckedFor(user.id)}})
-   .finally(()=>{if(active)setCheckingHousehold(false)});
-  return()=>{active=false};
- },[authenticated,user?.id]);
+  }).catch(e=>{if(active)setHouseholdCheckError(e instanceof Error?e.message:'Could not load household')})
+   .finally(()=>{if(timer)clearTimeout(timer);if(active)setCheckingHousehold(false)});
+  return()=>{active=false;if(timer)clearTimeout(timer)};
+ },[authenticated,user?.id,householdRetry]);
  const inputStyle={borderWidth:1 as const,borderColor:colors.border,borderRadius:9,height:44,paddingHorizontal:12,color:colors.text,fontSize:fontSizes.input};
 
  async function finishAndOpen(){
@@ -63,7 +72,12 @@ export default function Onboarding(){
    <Text style={{color:primary?'#fff':colors.text,fontSize:fontSizes.body,fontWeight:fontWeights.semibold}}>{label}</Text>
   </Pressable>
  );
- if(authenticated&&(checkingHousehold||householdCheckedFor!==user?.id))return <View style={{flex:1,backgroundColor:colors.background,alignItems:'center',justifyContent:'center'}}><ActivityIndicator color={colors.household}/></View>;
+ if(authenticated&&(checkingHousehold||householdCheckError||householdCheckedFor!==user?.id))return <View style={{flex:1,backgroundColor:colors.background,alignItems:'center',justifyContent:'center',padding:24,gap:16}}>
+  {householdCheckError?<><Text accessibilityRole="alert" style={{color:colors.text,textAlign:'center',fontSize:fontSizes.body}}>{householdCheckError}</Text>
+   <Pressable accessibilityRole="button" onPress={()=>setHouseholdRetry(v=>v+1)} style={{backgroundColor:colors.household,borderRadius:10,paddingHorizontal:25,paddingVertical:13}}>
+    <Text style={{color:'#fff',fontFamily:fontFamilies.semibold}}>Retry</Text>
+   </Pressable></>:<ActivityIndicator color={colors.household}/>}
+ </View>;
  return <Screen style={{flexGrow:1,justifyContent:authenticated?'center':'space-between',paddingBottom:24,gap:22}}>
   <View style={{alignItems:'center',justifyContent:'center',gap:14,...(!authenticated?{flexGrow:1}:{} )}}>
    <Image source={require('../assets/icon.png')} accessibilityLabel="PESCO app logo" resizeMode="contain" style={{width:92,height:92,borderRadius:22}}/>
