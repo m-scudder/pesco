@@ -29,12 +29,12 @@ export default function House(){
  const maxMonth=Math.max(1,...monthSeries.map(m=>m.amount));
  if(!household)return <View style={{flex:1,backgroundColor:colors.background,alignItems:'center',justifyContent:'center',paddingHorizontal:24}}>
   <View style={{alignItems:'center',gap:14,width:'100%',maxWidth:360}}>
-   <View style={{width:64,height:64,borderRadius:18,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'}}>
+   <View style={{width:64,height:64,borderRadius:0,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'}}>
     <Ionicons name="home-outline" size={30} color={colors.household}/>
    </View>
    <Text style={{fontFamily:fontFamilies.displayBold,fontSize:fontSizes.title,color:colors.text,textAlign:'center'}}>Your household starts here</Text>
    <Text style={{fontFamily:fontFamilies.regular,fontSize:fontSizes.body,lineHeight:21,color:colors.muted,textAlign:'center'}}>Join a household or create your own.</Text>
-   <Pressable accessibilityRole="button" onPress={()=>router.push('/household')} style={{marginTop:8,minHeight:46,width:'100%',backgroundColor:colors.household,borderRadius:10,alignItems:'center',justifyContent:'center'}}>
+   <Pressable accessibilityRole="button" onPress={()=>router.push('/household')} style={{marginTop:8,minHeight:46,width:'100%',backgroundColor:colors.household,borderRadius:0,alignItems:'center',justifyContent:'center'}}>
     <Text style={{fontFamily:fontFamilies.semibold,fontSize:fontSizes.body,color:'#FFFFFF'}}>Create or join household</Text>
    </Pressable>
   </View>
@@ -55,7 +55,7 @@ export default function House(){
     </Text>
    </View>
    {budget!==null&&budget>0?<>
-    <View style={{height:6,backgroundColor:colors.secondary,borderRadius:6,overflow:'hidden'}}>
+    <View style={{height:6,backgroundColor:colors.secondary,borderRadius:0,overflow:'hidden'}}>
      <View style={{height:6,width:`${Math.min(100,Math.round(spent/budget*100))}%` as const,backgroundColor:accent}}/>
     </View>
     <View style={{flexDirection:'row',justifyContent:'space-between',gap:8}}>
@@ -76,8 +76,8 @@ export default function House(){
      <Text style={{color:colors.text,fontSize:fontSizes.label,fontFamily:fontFamilies.medium}}>{formatMoney(item.amount)}</Text>
     </View>
     {categoryLimits.find(limit=>limit.category===item.name)?<Text style={{fontSize:fontSizes.caption,color:item.amount>(categoryLimits.find(limit=>limit.category===item.name)?.amountPaise??Infinity)?'#C94F4F':colors.muted}}>Limit {formatMoney(categoryLimits.find(limit=>limit.category===item.name)!.amountPaise)}{item.amount>categoryLimits.find(limit=>limit.category===item.name)!.amountPaise?' · Over limit':''}</Text>:null}
-    <View style={{height:5,borderRadius:4,backgroundColor:colors.secondary,overflow:'hidden'}}>
-     <View style={{height:'100%',width:`${item.percent}%` as const,backgroundColor:accent,borderRadius:4}}/>
+    <View style={{height:5,borderRadius:0,backgroundColor:colors.secondary,overflow:'hidden'}}>
+     <View style={{height:'100%',width:`${item.percent}%` as const,backgroundColor:accent,borderRadius:0}}/>
     </View>
    </View>)}
    {categories.length>6?<Text style={{fontSize:fontSizes.caption,color:colors.muted}}>Plus {categories.length-6} more categories</Text>:null}
@@ -119,7 +119,7 @@ export default function House(){
       {item.amount===maxMonth&&item.amount>0?formatMoney(item.amount).replace(/\.00$/,''):''}
      </Text>
      <View style={{width:'72%',height:item.amount?Math.max(4,Math.round(item.amount/maxMonth*78)):3,
-      borderRadius:4,backgroundColor:item.amount?(item.selected?accent:colors.muted):colors.secondary,opacity:item.selected?1:0.65}}/>
+      borderRadius:0,backgroundColor:item.amount?(item.selected?accent:colors.muted):colors.secondary,opacity:item.selected?1:0.65}}/>
      <Text style={{fontSize:fontSizes.caption,color:item.selected?colors.text:colors.muted,fontWeight:item.selected?fontWeights.bold:fontWeights.regular}}>{item.label}</Text>
     </View>)}
    </View>
