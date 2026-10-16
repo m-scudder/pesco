@@ -74,3 +74,11 @@ export function pressCalculator(s:CalculatorState,key:string):CalculatorState{
  }
  return s;
 }
+
+/** The expression shown on the amount screen; never replace it with the right operand. */
+export function calculatorExpression(s:CalculatorState):string{
+ if(s.operator===null||s.accumulator===null)return s.display;
+ const left=output(s.accumulator);
+ const op=s.operator==='-'?'−':s.operator;
+ return left+' '+op+(s.startNew?' ':' '+s.display);
+}
