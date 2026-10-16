@@ -31,15 +31,15 @@ export default function Recurring(){
  const accent=scope==='household'?colors.household:colors.personal;
  return <View style={{flex:1,backgroundColor:colors.background}}>
   <Screen modal style={{gap:8,paddingBottom:100}}>
-   <View style={{flexDirection:'row',padding:2,borderRadius:9,backgroundColor:colors.secondary}}>
+   <View style={{flexDirection:'row',padding:2,borderRadius:0,backgroundColor:colors.secondary}}>
     {(['household','personal'] as const).map(v=><Pressable key={v} accessibilityRole="button" accessibilityState={{selected:scope===v}} onPress={()=>setScope(v)}
-     style={{flex:1,minHeight:34,alignItems:'center',justifyContent:'center',borderRadius:8,backgroundColor:scope===v?colors.surface:undefined}}>
+     style={{flex:1,minHeight:34,alignItems:'center',justifyContent:'center',borderRadius:0,backgroundColor:scope===v?colors.surface:undefined}}>
      <Text style={{fontFamily:scope===v?fontFamilies.bold:fontFamilies.medium,color:scope===v?(v==='household'?colors.household:colors.personal):colors.muted,fontSize:fontSizes.caption}}>{v==='household'?'Household':'Personal'}</Text>
     </Pressable>)}
    </View>
    <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{scope==='household'?'Shared bills':'Private bills'}</Text>
    {scope==='household'&&!household?<View style={{paddingVertical:12}}><Body muted>Create or join a household to manage shared bills.</Body></View>:null}
-   {items.length>0?<View style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:10,overflow:'hidden'}}>
+   {items.length>0?<View style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:0,overflow:'hidden'}}>
     {items.map((rule,index)=>{
      const sharedRule=scope==='household'?rule as HouseholdRecurringRule:null;
      const amount=sharedRule?sharedRule.amount_paise:(rule as typeof recurringRules[number]).amountPaise;
@@ -80,7 +80,7 @@ export default function Recurring(){
    {error?<Pressable accessibilityRole="button" onPress={()=>{void reload()}}><Text style={{color:'#C94F4F',fontSize:fontSizes.label}}>Could not sync bills · Retry</Text></Pressable>:null}
   </Screen>
   {!(scope==='household'&&!household)?<Pressable accessibilityRole="button" accessibilityLabel="Add recurring bill" onPress={()=>edit()}
-   style={{position:'absolute',right:20,bottom:28,width:50,height:50,borderRadius:25,backgroundColor:accent,alignItems:'center',justifyContent:'center',shadowColor:'#000',shadowOpacity:0.18,shadowRadius:8,shadowOffset:{width:0,height:3},elevation:5}}>
+   style={{position:'absolute',right:20,bottom:28,width:50,height:50,borderRadius:0,backgroundColor:accent,alignItems:'center',justifyContent:'center',shadowColor:'#000',shadowOpacity:0.18,shadowRadius:8,shadowOffset:{width:0,height:3},elevation:5}}>
    <Ionicons name="add" size={25} color="#fff"/>
   </Pressable>:null}
  </View>;
