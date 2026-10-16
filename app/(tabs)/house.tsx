@@ -8,7 +8,7 @@ import {Body,Card} from '@/components/UI';
 import {MonthPicker} from '@/components/MonthPicker';
 import {MonthSwipeView} from '@/components/MonthSwipeView';
 import {formatMoney,localDate,monthKey,useData} from '@/data';
-import {buildInsights,monthlyCategoryChanges} from '@/lib/insights';
+import {buildInsights} from '@/lib/insights';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {supabase} from '@/lib/supabase';
 
@@ -20,13 +20,6 @@ export default function House(){
  useFocusEffect(React.useCallback(()=>{void refresh()},[refresh]));
  const {spent,prior,difference,percentChange,selected,monthSeries}=useMemo(
   ()=>buildInsights(expenses,'household',month,null),[expenses,month]);
- const categoryChanges=useMemo(()=>monthlyCategoryChanges(expenses,'household',month),[expenses,month]);
- const increased=categoryChanges.filter(x=>x.difference>0);
- const decreased=categoryChanges.filter(x=>x.difference<0);
- // If one category fully explains the overall change, repeating its amount adds no insight.
- const categoryDetails=[...increased,...decreased].filter(item=>
-  !(categoryChanges.filter(change=>change.difference!==0).length===1&&item.difference===difference)
- );
  const [budget,setBudget]=useState<number|null>(null);
  const householdId=household?.id;
  useEffect(()=>{
@@ -64,48 +57,24 @@ export default function House(){
   <Card>
    <Body muted>Household spending</Body>
    <Text style={{color:colors.text,fontSize:fontSizes.summary,fontFamily:fontFamilies.displayBold}}>{formatMoney(spent)}</Text>
-   <View style={{flexDirection:'row',justifyContent:'space-between',gap:8,flexWrap:'wrap'}}>
+   <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:8,flexWrap:'wrap'}}>
     <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{selected.length} {selected.length===1?'expense':'expenses'}</Text>
-
-   </View>
-   {budget!==null&&budget>0?<>
-    <View style={{height:6,backgroundColor:colors.secondary,borderRadius:6,overflow:'hidden'}}>
-     <View style={{height:6,width:`${Math.min(100,Math.round(spent/budget*100))}%` as const,backgroundColor:accent}}/>
-    </View>
-    <View style={{flexDirection:'row',justifyContent:'space-between',gap:8}}>
-     <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>Budget · {formatMoney(budget)}</Text>
-     <Text style={{fontSize:fontSizes.caption,color:spent>budget?'#C94F4F':colors.muted}}>
-      {spent>budget?formatMoney(spent-budget)+' over':formatMoney(budget-spent)+' left'}
+    {prior>0?<View style={{flexDirection:'row',alignItems:'center',gap:4}}>
+     {difference!==0?<Ionicons name={difference>0?'arrow-up':'arrow-down'} size={14} color={difference>0?'#D94B4B':'#259A63'}/>:null}
+     <Text style={{fontSize:fontSizes.caption,color:difference===0?colors.muted:difference>0?'#D94B4B':'#259A63',fontFamily:fontFamilies.medium}}>
+      {difference===0?'Unchanged':`${percentChange}% ${difference>0?'more':'less'} vs last month`}
      </Text>
-    </View>
-   </>:<Pressable onPress={()=>router.push('/budget')}>
+    </View>:null}
+   </View>
+   {budget!==null&&budget>0?<Pressable accessibilityRole="button" accessibilityLabel="Manage household budget" onPress={()=>router.push('/budget')}
+    style={{paddingTop:10,borderTopWidth:1,borderColor:colors.border,flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:8}}>
+    <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>Monthly budget · {formatMoney(budget)}</Text>
+    <Text style={{fontSize:fontSizes.caption,fontFamily:fontFamilies.medium,color:spent>budget?'#D94B4B':colors.muted}}>
+     {spent>budget?formatMoney(spent-budget)+' over':formatMoney(budget-spent)+' left'}
+    </Text>
+   </Pressable>:<Pressable onPress={()=>router.push('/budget')}>
     <Text style={{fontSize:fontSizes.caption,color:accent}}>Set household budget ›</Text>
    </Pressable>}
-  </Card>
-  <Text style={{color:colors.text,fontSize:fontSizes.body,fontFamily:fontFamilies.semibold}}>Monthly review</Text>
-  <Card>
-   {prior>0?<View style={{gap:5}}>
-    <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',gap:12}}>
-     <Text style={{color:colors.muted,fontSize:fontSizes.caption,flex:1}}>Change from last month</Text>
-     <View style={{flexDirection:'row',alignItems:'center',gap:5}}>
-      {difference!==0?<Ionicons name={difference>0?'arrow-up':'arrow-down'} size={18} color={difference>0?'#D94B4B':'#259A63'}/>:null}
-      <Text style={{fontFamily:fontFamilies.displayBold,fontSize:fontSizes.section,color:difference===0?colors.text:difference>0?'#D94B4B':'#259A63'}}>{formatMoney(Math.abs(difference))}</Text>
-     </View>
-    </View>
-    <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{difference===0?'Unchanged from last month':`${percentChange}% ${difference>0?'more':'less'} than last month`}</Text>
-   </View>:<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{spent>0?'First month with household spending':'No spending to review yet'}</Text>}
-   {prior>0&&categoryDetails.length>0?<View style={{gap:10}}>
-    <View style={{height:1,backgroundColor:colors.border}}/>
-    {categoryDetails.slice(0,3).map(item=><View key={item.name} style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',gap:10}}>
-     <View style={{flex:1,gap:2}}>
-      <Text numberOfLines={1} style={{color:colors.text,fontSize:fontSizes.label}}>{item.name}</Text>
-     </View>
-     <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
-      <Ionicons name={item.difference>0?'arrow-up':'arrow-down'} size={14} color={item.difference>0?'#D94B4B':'#259A63'}/>
-      <Text style={{fontSize:fontSizes.caption,fontFamily:fontFamilies.medium,color:item.difference>0?'#D94B4B':'#259A63'}}>{formatMoney(Math.abs(item.difference))}</Text>
-     </View>
-    </View>)}
-   </View>:null}
   </Card>
   <Text style={{color:colors.text,fontSize:fontSizes.body,fontFamily:fontFamilies.semibold}}>Monthly trend</Text>
   <Card>
