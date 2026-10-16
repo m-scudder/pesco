@@ -49,6 +49,7 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
    return;
   }
   if(['+','-','×','÷'].includes(key)){
+   if(next===state)return;
    const symbol=key==='-'?'−':key;
    if(state.startNew&&state.operator){
     publish(expression.replace(/[+−×÷]\s*$/,symbol+' '));
