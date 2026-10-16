@@ -7,4 +7,4 @@ export function Screen({children,style,modal=false}:{children:React.ReactNode;st
  const {colors}=useAppTheme();const insets=useSafeAreaInsets();
  return <ScrollView style={{flex:1,backgroundColor:colors.background}} keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content,{paddingTop:modal?12:Math.max(insets.top,12)+4},style]}>{children}</ScrollView>
 }
-const styles=StyleSheet.create({content:{paddingHorizontal:16,paddingBottom:88,gap:12}});
+const styles=StyleSheet.create({content:{paddingHorizontal:0,paddingBottom:88,gap:12}});
