@@ -23,6 +23,10 @@ export default function House(){
  const categoryChanges=useMemo(()=>monthlyCategoryChanges(expenses,'household',month),[expenses,month]);
  const increased=categoryChanges.filter(x=>x.difference>0);
  const decreased=categoryChanges.filter(x=>x.difference<0);
+ // If one category fully explains the overall change, repeating its amount adds no insight.
+ const categoryDetails=[...increased,...decreased].filter(item=>
+  !(categoryChanges.filter(change=>change.difference!==0).length===1&&item.difference===difference)
+ );
  const [budget,setBudget]=useState<number|null>(null);
  const householdId=household?.id;
  useEffect(()=>{
@@ -78,37 +82,30 @@ export default function House(){
     <Text style={{fontSize:fontSizes.caption,color:accent}}>Set household budget ›</Text>
    </Pressable>}
   </Card>
-  <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-   <Text style={{color:colors.text,fontSize:fontSizes.body,fontFamily:fontFamilies.semibold}}>Monthly review</Text>
-
-  </View>
+  <Text style={{color:colors.text,fontSize:fontSizes.body,fontFamily:fontFamilies.semibold}}>Monthly review</Text>
   <Card>
-   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
-    <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>Change in household spending</Text>
-    <View style={{flexDirection:'row',alignItems:'center',gap:5}}>
-     {prior>0&&difference!==0?<Ionicons name={difference>0?'arrow-up':'arrow-down'} size={16} color={difference>0?'#D94B4B':'#259A63'}/>:null}
-     <Text style={{color:prior>0&&difference!==0?(difference>0?'#D94B4B':'#259A63'):colors.text,fontFamily:fontFamilies.semibold,fontSize:fontSizes.body}}>{prior===0?'No prior data':formatMoney(Math.abs(difference))}</Text>
+   {prior>0?<View style={{gap:5}}>
+    <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',gap:12}}>
+     <Text style={{color:colors.muted,fontSize:fontSizes.caption,flex:1}}>Change from last month</Text>
+     <View style={{flexDirection:'row',alignItems:'center',gap:5}}>
+      {difference!==0?<Ionicons name={difference>0?'arrow-up':'arrow-down'} size={18} color={difference>0?'#D94B4B':'#259A63'}/>:null}
+      <Text style={{fontFamily:fontFamilies.displayBold,fontSize:fontSizes.section,color:difference===0?colors.text:difference>0?'#D94B4B':'#259A63'}}>{formatMoney(Math.abs(difference))}</Text>
+     </View>
     </View>
-   </View>
-   {prior>0?<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{difference===0?'Unchanged from last month':`${percentChange}% vs last month`}</Text>:null}
-   <View style={{height:1,backgroundColor:colors.border}}/>
-   {selected.length===0&&prior===0?<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>No spending to review yet</Text>:<>
-    {increased.length?<View style={{gap:6}}>
-     <Text style={{color:colors.muted,fontSize:fontSizes.caption,fontFamily:fontFamilies.semibold}}>SPENDING INCREASED</Text>
-     {increased.slice(0,3).map(item=><View key={item.name} style={{flexDirection:'row',justifyContent:'space-between',gap:12}}>
-      <Text numberOfLines={1} style={{flex:1,color:colors.text,fontSize:fontSizes.label}}>{item.name}</Text>
-      <View style={{flexDirection:'row',alignItems:'center',gap:3}}><Ionicons name="arrow-up" size={14} color="#D94B4B"/><Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.caption,color:'#D94B4B'}}>{formatMoney(item.difference)}</Text></View>
-     </View>)}
-    </View>:null}
-    {decreased.length?<View style={{gap:6}}>
-     <Text style={{color:colors.muted,fontSize:fontSizes.caption,fontFamily:fontFamilies.semibold}}>SPENDING DECREASED</Text>
-     {decreased.slice(0,3).map(item=><View key={item.name} style={{flexDirection:'row',justifyContent:'space-between',gap:12}}>
-      <Text numberOfLines={1} style={{flex:1,color:colors.text,fontSize:fontSizes.label}}>{item.name}</Text>
-      <View style={{flexDirection:'row',alignItems:'center',gap:3}}><Ionicons name="arrow-down" size={14} color="#259A63"/><Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.caption,color:'#259A63'}}>{formatMoney(Math.abs(item.difference))}</Text></View>
-     </View>)}
-    </View>:null}
-    {!increased.length&&!decreased.length?<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>Category spending was unchanged.</Text>:null}
-   </>}
+    <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{difference===0?'Unchanged from last month':`${percentChange}% ${difference>0?'more':'less'} than last month`}</Text>
+   </View>:<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{spent>0?'First month with household spending':'No spending to review yet'}</Text>}
+   {prior>0&&categoryDetails.length>0?<View style={{gap:10}}>
+    <View style={{height:1,backgroundColor:colors.border}}/>
+    {categoryDetails.slice(0,3).map(item=><View key={item.name} style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',gap:10}}>
+     <View style={{flex:1,gap:2}}>
+      <Text numberOfLines={1} style={{color:colors.text,fontSize:fontSizes.label}}>{item.name}</Text>
+     </View>
+     <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
+      <Ionicons name={item.difference>0?'arrow-up':'arrow-down'} size={14} color={item.difference>0?'#D94B4B':'#259A63'}/>
+      <Text style={{fontSize:fontSizes.caption,fontFamily:fontFamilies.medium,color:item.difference>0?'#D94B4B':'#259A63'}}>{formatMoney(Math.abs(item.difference))}</Text>
+     </View>
+    </View>)}
+   </View>:null}
   </Card>
   <Text style={{color:colors.text,fontSize:fontSizes.body,fontFamily:fontFamilies.semibold}}>Monthly trend</Text>
   <Card>
