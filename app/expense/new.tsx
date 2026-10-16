@@ -76,7 +76,16 @@ export default function ExpenseEditor(){
    </Pressable>
 
   </View>
-  <View style={{marginBottom:5,gap:6}}><ScopeSwitch/><Text accessibilityRole="text" style={{textAlign:'center',fontSize:fontSizes.caption,color:colors.muted}}>{scope==='household'?'Shared expense · Visible to household members':'Personal expense · Visible only to you'}</Text></View>
+  {editing?
+   <View style={{alignItems:'center',marginBottom:5}}>
+    <View accessibilityRole="text" style={{flexDirection:'row',alignItems:'center',gap:7,paddingHorizontal:12,paddingVertical:7,borderRadius:20,backgroundColor:colors.secondary}}>
+     <Ionicons name={editing.scope==='household'?'people-outline':'lock-closed-outline'} size={15} color={colors.muted}/>
+     <Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.label,color:colors.text}}>
+      {editing.scope==='household'?'Household expense':'Personal expense'}
+     </Text>
+    </View>
+   </View>:
+   <View style={{marginBottom:5,gap:6}}><ScopeSwitch/><Text accessibilityRole="text" style={{textAlign:'center',fontSize:fontSizes.caption,color:colors.muted}}>{scope==='household'?'Shared expense · Visible to household members':'Personal expense · Visible only to you'}</Text></View>}
   <View style={{backgroundColor:colors.surface,borderRadius:12,borderWidth:1,borderColor:colors.border,paddingHorizontal:16}}>
    <Pressable accessibilityRole="button" accessibilityLabel="Choose category" onPress={()=>{Keyboard.dismiss();setCalculatorOpen(false);setDatePickerOpen(false);setCategoryOpen(true)}}
     style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:58}}>
