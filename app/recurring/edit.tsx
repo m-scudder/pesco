@@ -1,10 +1,9 @@
 import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
 import React,{useEffect,useRef,useState} from 'react';
-import {Alert,Keyboard,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,Text,TextInput,View} from 'react-native';
-import DateTimePicker,{DateTimePickerAndroid} from '@react-native-community/datetimepicker';
+import {Alert,Keyboard,KeyboardAvoidingView,Pressable,ScrollView,Text,TextInput,View} from 'react-native';
 import {Stack,useLocalSearchParams,useRouter} from 'expo-router';
-import {Screen} from '@/components/Screen';
 import {AmountCalculator} from '@/components/AmountCalculator';
+import {CalendarDatePicker} from '@/components/CalendarDatePicker';
 import {BottomCategoryPicker} from '@/components/BottomCategoryPicker';
 import {Ionicons} from '@expo/vector-icons';
 import {Body} from '@/components/UI';
@@ -22,7 +21,7 @@ export default function RecurringEditor(){
  const router=useRouter();
  const {scope:scopeParam,id}=useLocalSearchParams<{scope?:string;id?:string}>();
  const scope:Scope=scopeParam==='household'?'household':'personal';
- const {colors,resolved}=useAppTheme();
+ const {colors}=useAppTheme();
  const {household,recurringRules,addRecurring,updateRecurring,refresh}=useData();
  const {names}=useCategories();
  const categories=names(scope);
@@ -36,7 +35,6 @@ export default function RecurringEditor(){
  const [firstDue,setFirstDue]=useState(localDate());
  const [original,setOriginal]=useState<{display:string;startsOn:string;day:number}|null>(null);
  const [dateOpen,setDateOpen]=useState(false);
- const [pendingDate,setPendingDate]=useState(new Date(localDate()+'T12:00:00'));
  const [categoryOpen,setCategoryOpen]=useState(false);
  const [busy,setBusy]=useState(false);
  const [loading,setLoading]=useState(!!id&&scope==='household');
@@ -74,9 +72,7 @@ export default function RecurringEditor(){
  useEffect(()=>{if(!id&&!categories.includes(category)&&categories.length)setCategory(categories[0])},[scope,categories.join('|'),id]);
  const selectDate=()=>{
   Keyboard.dismiss();setCategoryOpen(false);setCalculatorOpen(false);
-  const value=new Date(firstDue+'T12:00:00');
-  if(Platform.OS==='android')DateTimePickerAndroid.open({value,mode:'date',onChange:(event,date)=>{if(event.type==='set'&&date)setFirstDue(iso(date))}});
-  else{setPendingDate(value);setDateOpen(true)}
+  setDateOpen(true)
  };
  const save=async()=>{
   if(busy)return;
@@ -103,7 +99,6 @@ export default function RecurringEditor(){
  };
  const line=()=> <View style={{height:1,backgroundColor:colors.border}}/>;
  const fieldLabel=()=>({width:83});
- const pickerCard={backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1 as const,borderRadius:16,padding:16,width:'100%' as const,maxWidth:420};
 
  return <><Stack.Screen options={{title:id?'Edit recurring bill':'Add recurring bill',presentation:'card'}}/>
  <KeyboardAvoidingView style={{flex:1,backgroundColor:colors.background}} behavior={Platform.OS==='ios'?'padding':undefined} keyboardVerticalOffset={Platform.OS==='ios'?90:0}>
@@ -171,19 +166,6 @@ export default function RecurringEditor(){
   <AmountCalculator value={amount} onChange={setAmount} onDisplayChange={setCalculatorDisplay} onDone={()=>setCalculatorOpen(false)}/>
  </View>:null}
  </KeyboardAvoidingView>
- <Modal visible={dateOpen} transparent animationType="fade" presentationStyle="overFullScreen" onRequestClose={()=>setDateOpen(false)}>
-  <View style={{flex:1,justifyContent:'center',paddingHorizontal:24,backgroundColor:'rgba(0,0,0,0.55)'}}>
-   <Pressable onPress={()=>setDateOpen(false)} style={{position:'absolute',top:0,bottom:0,left:0,right:0}} accessibilityLabel="Dismiss date picker"/>
-   <View style={pickerCard}>
-    <Text style={{color:colors.text,fontFamily:fontFamilies.bold,fontSize:fontSizes.section,marginBottom:8}}>First due date</Text>
-    <DateTimePicker value={pendingDate} mode="date" display="spinner" themeVariant={resolved} textColor={colors.text} style={{height:210,width:'100%'}}
-     onChange={(event,date)=>{if(event.type==='set'&&date)setPendingDate(date)}}/>
-    <View style={{flexDirection:'row',justifyContent:'flex-end',gap:10,marginTop:10}}>
-     <Pressable accessibilityRole="button" onPress={()=>setDateOpen(false)} style={{padding:10}}><Text style={{color:colors.muted}}>Cancel</Text></Pressable>
-     <Pressable accessibilityRole="button" onPress={()=>{setFirstDue(iso(pendingDate));setDateOpen(false)}} style={{padding:10}}><Text style={{color:accent,fontFamily:fontFamilies.bold}}>Done</Text></Pressable>
-    </View>
-   </View>
-  </View>
- </Modal>
+ <CalendarDatePicker visible={dateOpen} value={firstDue} onChange={setFirstDue} onClose={()=>setDateOpen(false)}/>
 </>;
 }
