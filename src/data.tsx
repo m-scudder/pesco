@@ -197,8 +197,9 @@ export function DataProvider({children}:{children:React.ReactNode}){
      catch(e){console.warn('Recurring generation postponed',e)}
     }
    }
+   const snapshotStartedAt=Date.now();
    const rows=membership?await fetchAllHouseholdExpenses(membership.id):[];
-   const localRows=membership?await reconcileHouseholdLedger(user.id,membership.id,rows):[];
+   const localRows=membership?await reconcileHouseholdLedger(user.id,membership.id,rows,snapshotStartedAt):[];
    if(localLoaded&&!personalImportBusy.current){
     personalImportBusy.current=true;
     try{
