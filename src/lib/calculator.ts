@@ -10,7 +10,7 @@ export type CalculatorState={
 };
 export const initialCalculator=(amount=''):CalculatorState=>({
  display:amount&&/^\d+(\.\d{0,2})?$/.test(amount)?amount:'0',
- accumulator:null,operator:null,startNew:true,error:null
+ accumulator:null,operator:null,startNew:!(amount&&/^\d+(\.\d{0,2})?$/.test(amount)),error:null
 });
 const toPaise=(text:string)=>Math.round(Number(text)*100);
 const output=(paise:number)=>Number((paise/100).toFixed(2)).toString();
