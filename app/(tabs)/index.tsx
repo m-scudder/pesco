@@ -93,7 +93,7 @@ export default function Home(){
        style={{flex:1,height:40,borderRadius:9,borderWidth:1,borderColor:colors.border,paddingHorizontal:10,color:colors.text,backgroundColor:colors.surface}}/>)}
      </View>
      <Pressable accessibilityRole="button" onPress={()=>{setSearch('');setCategoryFilter('All');setContributor('all');setMinAmount('');setMaxAmount('')}}>
-      <Text style={{fontSize:fontSizes.label,color:colors.household,fontWeight:fontWeights.semibold}}>Clear filters</Text>
+      <Text style={{fontSize:fontSizes.label,color:colors.household,fontWeight:fontWeights.semibold}}>Clear Filters</Text>
      </Pressable>
     </View>:null}
    </View>
