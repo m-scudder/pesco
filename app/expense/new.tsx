@@ -121,11 +121,11 @@ export default function ExpenseEditor(){
   <View style={{height:4}}/>
   <Pressable accessibilityRole="button" disabled={submitting||!loaded} onPress={()=>{Keyboard.dismiss();void save()}}
    style={{backgroundColor:scope==='household'?colors.household:colors.personal,minHeight:50,borderRadius:10,alignItems:'center',justifyContent:'center',marginTop:8,opacity:submitting||!loaded?0.6:1}}>
-   <Text style={{color:'#fff',fontFamily:fontFamilies.semibold,fontSize:fontSizes.input}}>{submitting?'Saving…':editing?'Save changes':'Save expense'}</Text>
+   <Text style={{color:'#fff',fontFamily:fontFamilies.semibold,fontSize:fontSizes.input}}>{submitting?'Saving…':editing?'Save Changes':'Save Expense'}</Text>
   </Pressable>
   {editing?<Pressable accessibilityRole="button" accessibilityLabel="Delete expense" disabled={submitting||deleting} onPress={confirmDelete}
    style={{paddingVertical:11,alignItems:'center',opacity:submitting?0.5:1}}>
-   <Text style={{color:'#C54B4B',fontFamily:fontFamilies.semibold,fontSize:fontSizes.body}}>{deleting?'Deleting…':'Delete expense'}</Text>
+   <Text style={{color:'#C54B4B',fontFamily:fontFamilies.semibold,fontSize:fontSizes.body}}>{deleting?'Deleting…':'Delete Expense'}</Text>
   </Pressable>:null}
   <CalendarDatePicker visible={datePickerOpen} value={date} onChange={setDate} onClose={()=>setDatePickerOpen(false)}/>
  </ScrollView>
