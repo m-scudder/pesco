@@ -103,11 +103,11 @@ export default function RecurringEditor(){
  };
  const line=()=> <View style={{height:1,backgroundColor:colors.border}}/>;
  const fieldLabel=()=>({width:83});
- const pickerCard={backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1 as const,borderRadius:16,padding:16,width:'100%' as const,maxWidth:420};
+ const pickerCard={backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1 as const,borderRadius:0,padding:16,width:'100%' as const,maxWidth:420};
 
  return <><Stack.Screen options={{title:id?'Edit recurring bill':'Add recurring bill',presentation:'card'}}/>
  <KeyboardAvoidingView style={{flex:1,backgroundColor:colors.background}} behavior={Platform.OS==='ios'?'padding':undefined} keyboardVerticalOffset={Platform.OS==='ios'?90:0}>
- <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" contentContainerStyle={{paddingHorizontal:16,paddingTop:6,paddingBottom:20,gap:8}}>
+ <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" contentContainerStyle={{paddingHorizontal:0,paddingTop:6,paddingBottom:20,gap:8}}>
  {loading?<Body muted>Loading bill…</Body>:loadError?<Body muted>{loadError}</Body>:<>
   <View style={{alignItems:'center',paddingTop:8,paddingBottom:10,gap:3}}>
    <Text style={{color:colors.muted,fontFamily:fontFamilies.medium,fontSize:fontSizes.caption,letterSpacing:0.8}}>AMOUNT</Text>
@@ -118,14 +118,14 @@ export default function RecurringEditor(){
    <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>INR · Tap to edit</Text>
   </View>
   <View style={{marginBottom:5,gap:6}}>
-   <View style={{flexDirection:'row',padding:3,borderRadius:11,backgroundColor:colors.secondary}}>
-    <View style={{flex:1,alignItems:'center',paddingVertical:12,borderRadius:9,backgroundColor:accent}}>
+   <View style={{flexDirection:'row',padding:3,borderRadius:0,backgroundColor:colors.secondary}}>
+    <View style={{flex:1,alignItems:'center',paddingVertical:12,borderRadius:0,backgroundColor:accent}}>
      <Text style={{fontFamily:fontFamilies.semibold,color:'#fff',fontSize:fontSizes.body}}>{scope==='household'?'Household':'Personal'}</Text>
     </View>
    </View>
    <Text style={{textAlign:'center',fontSize:fontSizes.caption,color:colors.muted}}>{scope==='household'?'Shared recurring bill · Visible to household members':'Personal recurring bill · Visible only to you'}</Text>
   </View>
-  <View style={{backgroundColor:colors.surface,borderRadius:12,borderWidth:1,borderColor:colors.border,paddingHorizontal:16}}>
+  <View style={{backgroundColor:colors.surface,borderRadius:0,borderWidth:1,borderColor:colors.border,paddingHorizontal:16}}>
    <Pressable accessibilityRole="button" accessibilityLabel="Choose category" onPress={()=>{Keyboard.dismiss();setCalculatorOpen(false);setDateOpen(false);setCategoryOpen(true)}}
     style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:58}}>
     <Ionicons name="pricetag-outline" size={19} color={colors.muted}/>
@@ -159,7 +159,7 @@ export default function RecurringEditor(){
   </View>
   <Text style={{fontSize:fontSizes.caption,color:colors.muted,marginTop:4}}>Repeats monthly on the selected date. Short months use the last day.</Text>
   <Pressable accessibilityRole="button" disabled={busy} onPress={()=>{Keyboard.dismiss();void save()}}
-   style={{backgroundColor:accent,minHeight:50,borderRadius:10,alignItems:'center',justifyContent:'center',marginTop:8,opacity:busy?0.6:1}}>
+   style={{backgroundColor:accent,minHeight:50,borderRadius:0,alignItems:'center',justifyContent:'center',marginTop:8,opacity:busy?0.6:1}}>
    <Text style={{color:'#fff',fontFamily:fontFamilies.semibold,fontSize:fontSizes.input}}>{busy?'Saving…':id?'Save changes':'Save recurring bill'}</Text>
   </Pressable>
  </>}
