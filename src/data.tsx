@@ -315,10 +315,10 @@ export function DataProvider({children}:{children:React.ReactNode}){
   void refreshRef.current();
   // Realtime refreshes normally provide prompt updates; polling is a fallback after missed events.
   const interval=setInterval(()=>{if(AppState.currentState==='active')void refreshRef.current()},60000);
-  // Fixed cadence: batch outbound changes once every 15 seconds while active.
-  const uploadInterval=setInterval(()=>{if(AppState.currentState==='active')void uploadRef.current()},15000);
+  // Batch outbound changes periodically instead of uploading every 15 seconds.
+  const uploadInterval=setInterval(()=>{if(AppState.currentState==='active')void uploadRef.current()},30*60*1000);
   const app=AppState.addEventListener('change',s=>{
-   if(s==='active'){void refreshRef.current();void uploadRef.current()}
+   if(s==='active'){void refreshRef.current()}
    if(s==='background')void uploadRef.current();
   });
   return()=>{
