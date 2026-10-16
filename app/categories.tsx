@@ -12,12 +12,12 @@ import {useData} from '@/data';
 import type {Scope} from '@/theme/palette';
 
 type ListedCategory=Category&{origin:Scope};
-type SortField='name'|'createdBy'|'createdAt';
+type SortField='name'|'createdAt';
 export default function Categories(){
  const {colors}=useAppTheme();
  const router=useRouter();
  const insets=useSafeAreaInsets();
- const {household:activeHousehold,currentUserId}=useData();
+ const {household:activeHousehold}=useData();
  const [scope,setScope]=useState<Scope>(activeHousehold?'household':'personal');
  const {household,personal,loading,error,refresh,create,rename,remove}=useCategories();
  const [editing,setEditing]=useState<ListedCategory|null>(null);
@@ -36,12 +36,8 @@ export default function Categories(){
     const result=(Number.isFinite(at)?at:0)-(Number.isFinite(bt)?bt:0);
     return (ascending?1:-1)*result||a.name.localeCompare(b.name);
    }
-   const creator=(item:ListedCategory)=>scope==='personal'||item.createdBy==='You'||item.createdBy===currentUserId?'You':item.createdBy?'Partner':'Default';
-   const av=sortField==='name'?a.name:creator(a);
-   const bv=sortField==='name'?b.name:creator(b);
-   const result=av.localeCompare(bv,undefined,{sensitivity:'base'});
-   return (ascending?1:-1)*result||a.name.localeCompare(b.name);
-  }),[scope,household,personal,sortField,ascending,currentUserId]);
+   return (ascending?1:-1)*a.name.localeCompare(b.name,undefined,{sensitivity:'base'});
+  }),[scope,household,personal,sortField,ascending]);
  useEffect(()=>{void refresh()},[refresh]);
  useEffect(()=>{if(!activeHousehold&&scope==='household')setScope('personal')},[activeHousehold,scope]);
  const close=()=>{if(busy)return;setModalVisible(false);setEditing(null);setDraft('')};
@@ -92,9 +88,9 @@ export default function Categories(){
   <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{scope==='household'?'Shared categories sync with your partner.':'Personal categories stay on this device.'}</Text>
   <View style={{flexDirection:'row',gap:8,alignItems:'center',flexWrap:'wrap'}}>
    <Text style={{fontSize:fontSizes.caption,color:colors.muted,fontFamily:fontFamilies.semibold}}>Sort by</Text>
-   {(['name','createdAt','createdBy'] as const).map(field=><Pressable key={field} accessibilityRole="button" onPress={()=>toggleSort(field)}
+   {(['name','createdAt'] as const).map(field=><Pressable key={field} accessibilityRole="button" onPress={()=>toggleSort(field)}
     style={{flexDirection:'row',alignItems:'center',gap:5,paddingHorizontal:10,paddingVertical:8,borderRadius:8,backgroundColor:sortField===field?colors.secondary:colors.surface,borderWidth:1,borderColor:colors.border}}>
-    <Text style={{fontSize:fontSizes.caption,color:sortField===field?colors.text:colors.muted}}>{field==='name'?'Name':field==='createdAt'?'Created at':'Created by'}</Text>
+    <Text style={{fontSize:fontSizes.caption,color:sortField===field?colors.text:colors.muted}}>{field==='name'?'Name':'Created at'}</Text>
     {sortField===field?<Ionicons name={ascending?'arrow-up':'arrow-down'} size={13} color={colors.household}/>:null}
    </Pressable>)}
   </View>
@@ -103,8 +99,7 @@ export default function Categories(){
    {list.map((item,index)=><View key={item.origin+':'+item.id} style={{minHeight:54,borderBottomWidth:index===list.length-1?0:1,borderColor:colors.border,flexDirection:'row',alignItems:'center',gap:9}}>
     <View style={{flex:1,gap:3}}>
      <Text style={{color:colors.text,fontSize:fontSizes.body}}>{item.name}</Text>
-     {sortField==='createdBy'?<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{scope==='personal'||item.createdBy===currentUserId?'You':item.createdBy?'Partner':'Default'}</Text>:null}
-    </View>
+      </View>
     <Pressable accessibilityRole="button" accessibilityLabel={'Edit '+item.name} onPress={()=>open(item)} style={{padding:9}}>
      <Ionicons name="pencil-outline" size={19} color={colors.household}/>
     </Pressable>
