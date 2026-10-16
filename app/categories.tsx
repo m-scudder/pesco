@@ -2,7 +2,8 @@ import {fontSizes,fontFamilies} from '@/theme/typography';
 import React,{useEffect,useMemo,useState} from 'react';
 import {Alert,Modal,Pressable,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
-import {Stack} from 'expo-router';
+import {Stack,useRouter} from 'expo-router';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Screen} from '@/components/Screen';
 import {Body} from '@/components/UI';
 import {useAppTheme} from '@/theme/ThemeContext';
@@ -14,6 +15,8 @@ type ListedCategory=Category&{origin:Scope};
 type SortField='name'|'createdBy';
 export default function Categories(){
  const {colors}=useAppTheme();
+ const router=useRouter();
+ const insets=useSafeAreaInsets();
  const {household:activeHousehold,currentUserId}=useData();
  const [scope,setScope]=useState<Scope>(activeHousehold?'household':'personal');
  const {household,personal,loading,error,refresh,create,rename,remove}=useCategories();
@@ -58,12 +61,21 @@ export default function Categories(){
    {text:'Remove',style:'destructive',onPress:()=>{void remove(item.origin,item.id).catch(e=>Alert.alert('Could not remove',e instanceof Error?e.message:'Try again'))}}
   ]);
  const toggleSort=(field:SortField)=>{if(sortField===field)setAscending(value=>!value);else{setSortField(field);setAscending(true)}};
- return <><Stack.Screen options={{headerRight:()=>(
-   <Pressable accessibilityRole="button" accessibilityLabel="Add category" disabled={scope==='household'&&!activeHousehold} onPress={()=>open()}
-    style={{width:44,height:44,alignItems:'center',justifyContent:'center',opacity:scope==='household'&&!activeHousehold?0.4:1}}>
-    <Ionicons name="add" size={27} color={colors.household}/>
+ return <><Stack.Screen options={{headerShown:false}}/>
+ <View style={{flex:1,backgroundColor:colors.background}}>
+  <View style={{paddingTop:insets.top+8,paddingHorizontal:16,paddingBottom:12,minHeight:insets.top+60,
+   flexDirection:'row',alignItems:'center',justifyContent:'space-between',borderBottomWidth:1,borderColor:colors.border}}>
+   <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={()=>router.back()}
+    style={{width:40,height:40,alignItems:'flex-start',justifyContent:'center'}}>
+    <Ionicons name="chevron-back" size={25} color={colors.text}/>
    </Pressable>
-  )}}/><Screen modal style={{gap:12}}>
+   <Text style={{fontFamily:fontFamilies.displayBold,fontSize:fontSizes.section,color:colors.text}}>Categories</Text>
+   <Pressable accessibilityRole="button" accessibilityLabel="Add category" disabled={scope==='household'&&!activeHousehold}
+    onPress={()=>open()} style={{width:40,height:40,alignItems:'flex-end',justifyContent:'center',opacity:scope==='household'&&!activeHousehold?0.4:1}}>
+    <Ionicons name="add" size={26} color={colors.household}/>
+   </Pressable>
+  </View>
+ <Screen modal style={{gap:12}}>
   {activeHousehold?<View style={{flexDirection:'row',padding:3,borderRadius:10,backgroundColor:colors.secondary}}>
    {(['household','personal'] as const).map(value=><Pressable key={value} accessibilityRole="button" accessibilityState={{selected:scope===value}} onPress={()=>changeScope(value)}
     style={{flex:1,alignItems:'center',justifyContent:'center',minHeight:36,borderRadius:8,backgroundColor:scope===value?colors.surface:undefined}}>
@@ -115,5 +127,5 @@ export default function Categories(){
     </View>
    </View>
   </Modal>
- </Screen></>;
+ </Screen></View></>;
 }
