@@ -65,11 +65,11 @@ export default function ExpenseEditor(){
  }
  const pickerCard={backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1 as const,borderRadius:16,padding:16,width:'100%' as const,maxWidth:420};
  const line=()=> <View style={{height:1,backgroundColor:colors.border}}/>;
- return <><Stack.Screen options={{title:editing?'Edit Expense':'Add Expense'}}/>
+ return <><Stack.Screen options={{title:editing?'Edit expense':'Add expense'}}/>
  <KeyboardAvoidingView style={{flex:1,backgroundColor:colors.background}} behavior={Platform.OS==='ios'?'padding':undefined} keyboardVerticalOffset={Platform.OS==='ios'?90:0}>
  <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" contentContainerStyle={{paddingHorizontal:16,paddingTop:6,paddingBottom:12,gap:8}}>
   <View style={{alignItems:'center',paddingTop:8,paddingBottom:10,gap:3}}>
-   <Text style={{color:colors.muted,fontFamily:fontFamilies.medium,fontSize:fontSizes.caption,letterSpacing:0.8}}>AMOUNT</Text>
+   <Text style={{color:colors.muted,fontFamily:fontFamilies.medium,fontSize:fontSizes.caption,letterSpacing:0}}>Amount</Text>
    <Pressable accessibilityRole="button" accessibilityLabel="Amount, open calculator" onPress={()=>{Keyboard.dismiss();setDatePickerOpen(false);setCategoryOpen(false);setCalculatorDisplay(amount||'0');setCalculatorOpen(v=>!v)}}
     style={{minHeight:50,minWidth:160,justifyContent:'center',alignItems:'center',paddingHorizontal:16}}>
     <Text adjustsFontSizeToFit numberOfLines={1} style={{color:amount?colors.text:colors.muted,fontSize:fontSizes.display,fontFamily:fontFamilies.displaySemibold,fontVariant:['tabular-nums']}}>{'₹ '+(calculatorOpen?calculatorDisplay||'0':amount||'0')}</Text>
@@ -91,7 +91,7 @@ export default function ExpenseEditor(){
     style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:58}}>
     <Ionicons name="pricetag-outline" size={19} color={colors.muted}/>
     <View style={{flex:1,gap:4}}>
-     <Text style={{fontSize:fontSizes.caption,color:colors.muted,fontFamily:fontFamilies.medium}}>CATEGORY</Text>
+     <Text style={{fontSize:fontSizes.caption,color:colors.muted,fontFamily:fontFamilies.medium}}>Category</Text>
      <Text style={{fontSize:fontSizes.input,color:colors.text,fontFamily:fontFamilies.medium}}>{category||'Select category'}</Text>
     </View>
     <Ionicons name="chevron-forward" size={17} color={colors.muted}/>
@@ -101,7 +101,7 @@ export default function ExpenseEditor(){
     style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:58}}>
     <Ionicons name="calendar-outline" size={19} color={colors.muted}/>
     <View style={{flex:1,gap:4}}>
-     <Text style={{fontSize:fontSizes.caption,color:colors.muted,fontFamily:fontFamilies.medium}}>DATE</Text>
+     <Text style={{fontSize:fontSizes.caption,color:colors.muted,fontFamily:fontFamilies.medium}}>Date</Text>
      <Text style={{fontSize:fontSizes.input,color:colors.text,fontFamily:fontFamilies.medium}}>{new Date(date+'T12:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</Text>
     </View>
     <Ionicons name="chevron-forward" size={17} color={colors.muted}/>
@@ -110,7 +110,7 @@ export default function ExpenseEditor(){
    <View style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:58}}>
     <Ionicons name="document-text-outline" size={19} color={colors.muted}/>
     <View style={{flex:1,gap:4,paddingVertical:10}}>
-     <Text style={{fontSize:fontSizes.caption,color:colors.muted,fontFamily:fontFamilies.medium}}>NOTE</Text>
+     <Text style={{fontSize:fontSizes.caption,color:colors.muted,fontFamily:fontFamilies.medium}}>Note</Text>
      <TextInput accessibilityLabel="Optional note" value={note} onChangeText={setNote} maxLength={500}
       onFocus={()=>{setNoteFocused(true);setCalculatorOpen(false);setTimeout(()=>scrollRef.current?.scrollToEnd({animated:true}),250)}} onBlur={()=>setNoteFocused(false)}
       placeholder="Add a note (optional)" placeholderTextColor={colors.muted}
@@ -121,11 +121,11 @@ export default function ExpenseEditor(){
   <View style={{height:4}}/>
   <Pressable accessibilityRole="button" disabled={submitting||!loaded} onPress={()=>{Keyboard.dismiss();void save()}}
    style={{backgroundColor:scope==='household'?colors.household:colors.personal,minHeight:50,borderRadius:10,alignItems:'center',justifyContent:'center',marginTop:8,opacity:submitting||!loaded?0.6:1}}>
-   <Text style={{color:'#fff',fontFamily:fontFamilies.semibold,fontSize:fontSizes.input}}>{submitting?'Saving…':editing?'Save Changes':'Save Expense'}</Text>
+   <Text style={{color:'#fff',fontFamily:fontFamilies.semibold,fontSize:fontSizes.input}}>{submitting?'Saving…':editing?'Save changes':'Save expense'}</Text>
   </Pressable>
   {editing?<Pressable accessibilityRole="button" accessibilityLabel="Delete expense" disabled={submitting||deleting} onPress={confirmDelete}
    style={{paddingVertical:11,alignItems:'center',opacity:submitting?0.5:1}}>
-   <Text style={{color:'#C54B4B',fontFamily:fontFamilies.semibold,fontSize:fontSizes.body}}>{deleting?'Deleting…':'Delete Expense'}</Text>
+   <Text style={{color:'#C54B4B',fontFamily:fontFamilies.semibold,fontSize:fontSizes.body}}>{deleting?'Deleting…':'Delete expense'}</Text>
   </Pressable>:null}
   <CalendarDatePicker visible={datePickerOpen} value={date} onChange={setDate} onClose={()=>setDatePickerOpen(false)}/>
  </ScrollView>
