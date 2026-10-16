@@ -1,8 +1,10 @@
-import React,{useEffect,useState} from 'react';
-import {Alert,Keyboard,Modal,Platform,Pressable,ScrollView,Text,TextInput,View} from 'react-native';
+import React,{useEffect,useRef,useState} from 'react';
+import {Alert,Keyboard,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,Text,TextInput,View} from 'react-native';
 import DateTimePicker,{DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 import {Stack,useLocalSearchParams,useRouter} from 'expo-router';
 import {Screen} from '@/components/Screen';
+import {AmountCalculator} from '@/components/AmountCalculator';
+import {Ionicons} from '@expo/vector-icons';
 import {Body} from '@/components/UI';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {useCategories} from '@/lib/CategoryContext';
@@ -24,6 +26,10 @@ export default function RecurringEditor(){
  const categories=names(scope);
  const [category,setCategory]=useState(categories[0]??'Groceries');
  const [amount,setAmount]=useState('');
+ const [calculatorDisplay,setCalculatorDisplay]=useState('');
+ const [calculatorOpen,setCalculatorOpen]=useState(!id);
+ const [noteFocused,setNoteFocused]=useState(false);
+ const scrollRef=useRef<ScrollView>(null);
  const [note,setNote]=useState('');
  const [firstDue,setFirstDue]=useState(localDate());
  const [original,setOriginal]=useState<{display:string;startsOn:string;day:number}|null>(null);
@@ -65,7 +71,7 @@ export default function RecurringEditor(){
 
  useEffect(()=>{if(!id&&!categories.includes(category)&&categories.length)setCategory(categories[0])},[scope,categories.join('|'),id]);
  const selectDate=()=>{
-  Keyboard.dismiss();setCategoryOpen(false);
+  Keyboard.dismiss();setCategoryOpen(false);setCalculatorOpen(false);
   const value=new Date(firstDue+'T12:00:00');
   if(Platform.OS==='android')DateTimePickerAndroid.open({value,mode:'date',onChange:(event,date)=>{if(event.type==='set'&&date)setFirstDue(iso(date))}});
   else{setPendingDate(value);setDateOpen(true)}
@@ -73,7 +79,7 @@ export default function RecurringEditor(){
  const save=async()=>{
   if(busy)return;
   const value=parseMoney(amount.replace(/,/g,''));
-  if(value===null){Alert.alert('Invalid amount','Enter a positive whole-rupee amount.');return}
+  if(value===null){Alert.alert('Invalid amount','Enter a positive amount with up to two decimal places.');return}
   if(!options.includes(category)){Alert.alert('Invalid category','Choose a category.');return}
   const unchanged=!!original&&firstDue===original.display;
   const day=unchanged?original.day:Number(firstDue.slice(8,10));
@@ -97,41 +103,69 @@ export default function RecurringEditor(){
  const fieldLabel=()=>({width:83});
  const pickerCard={backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1 as const,borderRadius:16,padding:16,width:'100%' as const,maxWidth:420};
 
- return <><Stack.Screen options={{title:id?'Edit bill':'Add bill',presentation:'card'}}/><Screen modal style={{gap:10}}>
-  {loading?<Body muted>Loading bill…</Body>:loadError?<Body muted>{loadError}</Body>:<>
-   <Text style={{fontFamily:'Inter_500Medium',fontSize:11,color:colors.muted,marginHorizontal:2}}>{scope==='household'?'HOUSEHOLD · MONTHLY':'PERSONAL · MONTHLY'}</Text>
-   <View style={{backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,borderRadius:10,paddingHorizontal:12}}>
-    <View style={{flexDirection:'row',alignItems:'center',minHeight:42}}>
-     <View style={fieldLabel()}><Text style={{fontFamily:'Inter_400Regular',fontSize:13,color:colors.muted}}>First due</Text></View>
-     <Pressable accessibilityRole="button" accessibilityLabel="Choose first due date" onPress={selectDate} style={{flex:1,minHeight:42,justifyContent:'center'}}>
-      <Text style={{color:colors.text,fontSize:14,fontFamily:'Inter_500Medium'}}>{labelDate(firstDue)}  ▾</Text>
-     </Pressable>
-    </View>
-    {line()}
-    <View style={{flexDirection:'row',alignItems:'center',minHeight:42}}>
-     <View style={fieldLabel()}><Text style={{fontFamily:'Inter_400Regular',fontSize:13,color:colors.muted}}>Amount</Text></View>
-     <Text style={{color:colors.muted,fontSize:14,marginRight:4}}>₹</Text>
-     <TextInput accessibilityLabel="Monthly amount" keyboardType="number-pad" value={amount} onChangeText={v=>setAmount(v.replace(/[^0-9]/g,''))} placeholder="0" placeholderTextColor={colors.muted}
-      style={{flex:1,color:colors.text,fontSize:16,fontFamily:'Inter_500Medium',paddingVertical:7}}/>
-    </View>
-    {line()}
-    <Pressable accessibilityRole="button" accessibilityLabel="Choose category" onPress={()=>{Keyboard.dismiss();setCategoryOpen(true)}} style={{flexDirection:'row',alignItems:'center',minHeight:42}}>
-     <View style={fieldLabel()}><Text style={{fontFamily:'Inter_400Regular',fontSize:13,color:colors.muted}}>Category</Text></View>
-     <Text style={{flex:1,color:colors.text,fontSize:14,fontFamily:'Inter_500Medium'}}>{category||'Choose category'}  ▾</Text>
-    </Pressable>
-    {line()}
-    <View style={{flexDirection:'row',alignItems:'center',minHeight:42}}>
-     <View style={fieldLabel()}><Text style={{fontFamily:'Inter_400Regular',fontSize:13,color:colors.muted}}>Note</Text></View>
-     <TextInput accessibilityLabel="Bill description" value={note} onChangeText={setNote} maxLength={500} placeholder="Optional" placeholderTextColor={colors.muted}
-      style={{flex:1,color:colors.text,fontSize:14,paddingVertical:7}}/>
+ return <><Stack.Screen options={{title:id?'Edit recurring bill':'Add recurring bill',presentation:'card'}}/>
+ <KeyboardAvoidingView style={{flex:1,backgroundColor:colors.background}} behavior={Platform.OS==='ios'?'padding':undefined} keyboardVerticalOffset={Platform.OS==='ios'?90:0}>
+ <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" contentContainerStyle={{paddingHorizontal:16,paddingTop:6,paddingBottom:20,gap:8}}>
+ {loading?<Body muted>Loading bill…</Body>:loadError?<Body muted>{loadError}</Body>:<>
+  <View style={{alignItems:'center',paddingTop:8,paddingBottom:10,gap:3}}>
+   <Text style={{color:colors.muted,fontFamily:'Inter_500Medium',fontSize:12,letterSpacing:0.8}}>AMOUNT</Text>
+   <Pressable accessibilityRole="button" accessibilityLabel="Amount, open calculator" onPress={()=>{Keyboard.dismiss();setCategoryOpen(false);setDateOpen(false);setCalculatorDisplay(amount||'0');setCalculatorOpen(true)}}
+    style={{minHeight:50,minWidth:160,justifyContent:'center',alignItems:'center',paddingHorizontal:16}}>
+    <Text adjustsFontSizeToFit numberOfLines={1} style={{color:amount?colors.text:colors.muted,fontSize:30,fontFamily:'PlusJakartaSans_600SemiBold',fontVariant:['tabular-nums']}}>{'₹ '+(calculatorOpen?calculatorDisplay||amount||'0':amount||'0')}</Text>
+   </Pressable>
+   <Text style={{color:colors.muted,fontSize:12}}>INR · Tap to edit</Text>
+  </View>
+  <View style={{marginBottom:5,gap:6}}>
+   <View style={{flexDirection:'row',padding:3,borderRadius:11,backgroundColor:colors.secondary}}>
+    <View style={{flex:1,alignItems:'center',paddingVertical:12,borderRadius:9,backgroundColor:accent}}>
+     <Text style={{fontFamily:'Inter_600SemiBold',color:'#fff',fontSize:14}}>{scope==='household'?'Household':'Personal'}</Text>
     </View>
    </View>
-   <Text style={{color:colors.muted,fontSize:11,lineHeight:16}}>Repeats monthly on the selected date. Short months use the last day.</Text>
-   <Pressable accessibilityRole="button" disabled={busy} onPress={()=>{void save()}} style={{backgroundColor:accent,padding:11,borderRadius:9,alignItems:'center',opacity:busy?0.6:1}}>
-    <Text style={{color:'#fff',fontFamily:'Inter_600SemiBold',fontSize:13}}>{busy?'Saving…':id?'Save changes':'Save recurring bill'}</Text>
+   <Text style={{textAlign:'center',fontSize:12,color:colors.muted}}>{scope==='household'?'Shared recurring bill · Visible to household members':'Personal recurring bill · Visible only to you'}</Text>
+  </View>
+  <View style={{backgroundColor:colors.surface,borderRadius:12,borderWidth:1,borderColor:colors.border,paddingHorizontal:16}}>
+   <Pressable accessibilityRole="button" accessibilityLabel="Choose category" onPress={()=>{Keyboard.dismiss();setCalculatorOpen(false);setDateOpen(false);setCategoryOpen(true)}}
+    style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:58}}>
+    <Ionicons name="pricetag-outline" size={19} color={colors.muted}/>
+    <View style={{flex:1,gap:4}}>
+     <Text style={{fontSize:11,color:colors.muted,fontFamily:'Inter_500Medium'}}>CATEGORY</Text>
+     <Text style={{fontSize:15,color:colors.text,fontFamily:'Inter_500Medium'}}>{category||'Select category'}</Text>
+    </View>
+    <Ionicons name="chevron-forward" size={17} color={colors.muted}/>
    </Pressable>
-  </>}
- </Screen>
+   {line()}
+   <Pressable accessibilityRole="button" accessibilityLabel="Choose first due date" onPress={selectDate}
+    style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:58}}>
+    <Ionicons name="calendar-outline" size={19} color={colors.muted}/>
+    <View style={{flex:1,gap:4}}>
+     <Text style={{fontSize:11,color:colors.muted,fontFamily:'Inter_500Medium'}}>FIRST DUE DATE</Text>
+     <Text style={{fontSize:15,color:colors.text,fontFamily:'Inter_500Medium'}}>{labelDate(firstDue)}</Text>
+    </View>
+    <Ionicons name="chevron-forward" size={17} color={colors.muted}/>
+   </Pressable>
+   {line()}
+   <View style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:58}}>
+    <Ionicons name="document-text-outline" size={19} color={colors.muted}/>
+    <View style={{flex:1,gap:4,paddingVertical:10}}>
+     <Text style={{fontSize:11,color:colors.muted,fontFamily:'Inter_500Medium'}}>NOTE</Text>
+     <TextInput accessibilityLabel="Bill description" value={note} onChangeText={setNote} maxLength={500}
+      onFocus={()=>{setNoteFocused(true);setCalculatorOpen(false);setTimeout(()=>scrollRef.current?.scrollToEnd({animated:true}),250)}} onBlur={()=>setNoteFocused(false)}
+      placeholder="Add a note (optional)" placeholderTextColor={colors.muted}
+      style={{fontSize:15,color:colors.text,padding:0,fontFamily:'Inter_400Regular'}}/>
+    </View>
+   </View>
+  </View>
+  <Text style={{fontSize:12,color:colors.muted,marginTop:4}}>Repeats monthly on the selected date. Short months use the last day.</Text>
+  <Pressable accessibilityRole="button" disabled={busy} onPress={()=>{Keyboard.dismiss();void save()}}
+   style={{backgroundColor:accent,minHeight:50,borderRadius:10,alignItems:'center',justifyContent:'center',marginTop:8,opacity:busy?0.6:1}}>
+   <Text style={{color:'#fff',fontFamily:'Inter_600SemiBold',fontSize:15}}>{busy?'Saving…':id?'Save changes':'Save recurring bill'}</Text>
+  </Pressable>
+ </>}
+ </ScrollView>
+ {!noteFocused&&calculatorOpen&&!loading&&!loadError?<View style={{paddingHorizontal:12,paddingTop:6,paddingBottom:8,backgroundColor:colors.background}}>
+  <AmountCalculator value={amount} onChange={setAmount} onDisplayChange={setCalculatorDisplay} onDone={()=>setCalculatorOpen(false)}/>
+ </View>:null}
+ </KeyboardAvoidingView>
  <Modal visible={dateOpen} transparent animationType="fade" presentationStyle="overFullScreen" onRequestClose={()=>setDateOpen(false)}>
   <View style={{flex:1,justifyContent:'center',paddingHorizontal:24,backgroundColor:'rgba(0,0,0,0.55)'}}>
    <Pressable onPress={()=>setDateOpen(false)} style={{position:'absolute',top:0,bottom:0,left:0,right:0}} accessibilityLabel="Dismiss date picker"/>
@@ -150,7 +184,10 @@ export default function RecurringEditor(){
   <View style={{flex:1,justifyContent:'center',paddingHorizontal:24,backgroundColor:'rgba(0,0,0,0.55)'}}>
    <Pressable onPress={()=>setCategoryOpen(false)} style={{position:'absolute',top:0,bottom:0,left:0,right:0}} accessibilityLabel="Dismiss category picker"/>
    <View style={pickerCard}>
-    <Text style={{color:colors.text,fontFamily:'Inter_700Bold',fontSize:17,marginBottom:8}}>Category</Text>
+    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+     <Text style={{color:colors.text,fontFamily:'Inter_700Bold',fontSize:17}}>Category</Text>
+     <Pressable onPress={()=>setCategoryOpen(false)} style={{padding:8}}><Text style={{color:colors.muted}}>Close</Text></Pressable>
+    </View>
     <ScrollView style={{maxHeight:390}} nestedScrollEnabled>
      {options.map((name,index)=><Pressable key={name} accessibilityRole="button" onPress={()=>{setCategory(name);setCategoryOpen(false)}}
       style={{minHeight:47,flexDirection:'row',alignItems:'center',borderBottomWidth:index===options.length-1?0:1,borderColor:colors.border}}>
@@ -158,7 +195,9 @@ export default function RecurringEditor(){
       {name===category?<Text style={{color:accent,fontSize:18}}>✓</Text>:null}
      </Pressable>)}
     </ScrollView>
-    <Pressable accessibilityRole="button" onPress={()=>setCategoryOpen(false)} style={{alignSelf:'flex-end',padding:10}}><Text style={{color:colors.muted}}>Close</Text></Pressable>
+    <Pressable onPress={()=>{setCategoryOpen(false);router.push('/categories')}} style={{paddingVertical:12}}>
+     <Text style={{color:accent,fontSize:14,fontWeight:'600'}}>Manage categories ›</Text>
+    </Pressable>
    </View>
   </View>
  </Modal></>;
