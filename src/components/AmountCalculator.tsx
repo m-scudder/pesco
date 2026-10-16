@@ -3,7 +3,7 @@ import React,{useState} from 'react';
 import {Pressable,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/ThemeContext';
-import {initialCalculator,pressCalculator,type CalculatorState} from '@/lib/calculator';
+import {calculate,initialCalculator,pressCalculator,type CalculatorState} from '@/lib/calculator';
 
 const keys=['+','−','×','÷','7','8','9','=','4','5','6','.','1','2','3','Back','','0','','OK'];
 type Props={value:string;onChange:(amount:string)=>void;onDisplayChange?:(expression:string)=>void;onDone:()=>void};
@@ -20,13 +20,21 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
    if(next.error)return;
    const result=String(Number(next.display));
    publish(result);
-   if(label==='OK'){onChange(result);onDone();}
+   onChange(result);
+   if(label==='OK')onDone();
    return;
   }
   const key=label==='−'?'-':label==='Back'?'⌫':label;
   const next=pressCalculator(state,key);
   setState(next);
   if(next.error)return;
+  // Keep the editable amount in sync with typing; the checkmark only closes the keypad.
+  if(!next.startNew){
+   const pending=next.operator&&next.accumulator!==null
+    ?calculate(next.accumulator,Math.round(Number(next.display)*100),next.operator)
+    :Math.round(Number(next.display)*100);
+   if(pending!==null&&Number.isFinite(pending)&&pending>0)onChange(String(pending/100));
+  }
   if(key==='C'){publish('0');return}
   if(key==='%'){
    if(next===state)return;
