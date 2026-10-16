@@ -34,7 +34,7 @@ export function buildInsights(expenses:Expense[],scope:Scope,month:string,userId
   byCategory.set(e.category,current);
  }
  const categories:CategorySpend[]=Array.from(byCategory,([name,v])=>({
-  name,amount:v.amount,count:v.count,percent:spent>0?Math.round(v.amount/spent*100):0
+  name,amount:v.amount,count:v.count,percent:spent>0?Math.round(v.amount/spent*1000)/10:0
  })).sort((a,b)=>b.amount-a.amount||a.name.localeCompare(b.name));
  return {selected,spent,prior,difference,percentChange,own,partner:spent-own,monthSeries,categories};
 }
