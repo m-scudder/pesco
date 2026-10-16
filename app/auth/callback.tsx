@@ -19,7 +19,7 @@ export default function GoogleAuthCallback(){
    if(typeof value==='string')fallback.set(key,value);
   }
   const callbackUrl=url?.startsWith('pesco://auth/callback')?url:
-   fallback.size?'pesco://auth/callback?'+fallback.toString():null;
+   fallback.toString()?'pesco://auth/callback?'+fallback.toString():null;
   if(!callbackUrl)return;
   void completeGoogleSignIn(callbackUrl).then(()=>{
    if(active)router.replace('/onboarding');
