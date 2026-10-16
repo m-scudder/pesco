@@ -47,19 +47,19 @@ export default function Profile(){
  return <Screen modal style={{gap:12}}>
   {loading?<ActivityIndicator color={colors.household}/>:<>
    <View style={{alignItems:'center',paddingVertical:12,gap:6}}>
-    <View style={{height:64,width:64,borderRadius:32,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'}}>
+    <View style={{height:64,width:64,borderRadius:0,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'}}>
      <Text style={{fontSize:fontSizes.summary,color:colors.household,fontFamily:fontFamilies.displayBold}}>{(name.trim()[0]||googleName[0]||'P').toLocaleUpperCase()}</Text>
     </View>
     <Text style={{color:colors.text,fontFamily:fontFamilies.semibold,fontSize:fontSizes.section}}>{googleName}</Text>
     <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{user?.email??'Google account'}</Text>
    </View>
-   <View style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:12,padding:12,gap:8}}>
+   <View style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:0,padding:12,gap:8}}>
     <Text style={{color:colors.text,fontSize:fontSizes.label,fontFamily:fontFamilies.semibold}}>Nickname <Text style={{color:colors.muted,fontFamily:fontFamilies.regular}}>(optional)</Text></Text>
     <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
      <TextInput accessibilityLabel="Nickname" value={name} onChangeText={setName} maxLength={80} placeholder={googleName} placeholderTextColor={colors.muted} autoCapitalize="words"
-      style={{flex:1,height:42,borderRadius:9,borderWidth:1,borderColor:colors.border,paddingHorizontal:10,color:colors.text,fontSize:fontSizes.body}}/>
+      style={{flex:1,height:42,borderRadius:0,borderWidth:1,borderColor:colors.border,paddingHorizontal:10,color:colors.text,fontSize:fontSizes.body}}/>
      {name.trim()!==initial?<Pressable accessibilityRole="button" disabled={busy} onPress={()=>{void save()}}
-      style={{minHeight:42,minWidth:66,alignItems:'center',justifyContent:'center',backgroundColor:colors.household,borderRadius:9,paddingHorizontal:12,opacity:busy?0.6:1}}>
+      style={{minHeight:42,minWidth:66,alignItems:'center',justifyContent:'center',backgroundColor:colors.household,borderRadius:0,paddingHorizontal:12,opacity:busy?0.6:1}}>
       <Text style={{color:'#fff',fontSize:fontSizes.label,fontFamily:fontFamilies.semibold}}>{busy?'Saving…':'Save'}</Text>
      </Pressable>:null}
     </View>
