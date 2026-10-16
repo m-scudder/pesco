@@ -259,7 +259,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
   recurringGeneratedOn.current=null;
   setHousehold(null);setCloudExpenses([]);setCloudPersonal([]);setCloudReady(false);setSyncError(null);
   if(!user)return;
-  void refresh();
+  void refreshRef.current();
   // Realtime refreshes normally provide prompt updates; polling is a fallback after missed events.
   const interval=setInterval(()=>{if(AppState.currentState==='active')void refreshRef.current()},60000);
   // Fixed cadence: batch outbound changes once every 15 seconds while active.
@@ -272,7 +272,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
    clearInterval(interval);clearInterval(uploadInterval);app.remove();
    requested.current++;
   };
- },[user?.id,refresh]);
+ },[user?.id]);
 
  // Outbound writes are sent by the fixed interval above, not every new expense.
  // Foreground resume also triggers a flush; pending rows remain visible locally.
