@@ -17,6 +17,12 @@ const fmt=(amount:number)=>formatMoney(amount);
 function slicePath(cx:number,cy:number,r:number,start:number,end:number){
  const point=(angle:number)=>({x:cx+r*Math.cos(angle),y:cy+r*Math.sin(angle)});
  const a=point(start),b=point(end);
+ // A full 360° SVG arc starts and ends at the same point, rendering nothing.
+ // Split it into two arcs so single-category months still show a solid pie.
+ if(end-start>=2*Math.PI-0.000001){
+  const midpoint=point(start+Math.PI);
+  return `M ${cx} ${cy} L ${a.x} ${a.y} A ${r} ${r} 0 0 1 ${midpoint.x} ${midpoint.y} A ${r} ${r} 0 0 1 ${a.x} ${a.y} Z`;
+ }
  return `M ${cx} ${cy} L ${a.x} ${a.y} A ${r} ${r} 0 ${end-start>Math.PI?1:0} 1 ${b.x} ${b.y} Z`;
 }
 
@@ -38,7 +44,7 @@ export default function Insights(){
   for(const e of selected){const last=out[out.length-1];if(last&&last[0].date===e.date)last.push(e);else out.push([e]);}
   return out;
  },[selected]);
- const chartSize=Math.min(width-24,360);
+ const chartSize=Math.max(220,Math.min(width-24,360));
  const cx=chartSize/2,cy=chartSize/2,r=chartSize*0.37;
  let angle=-Math.PI/2;
  const slices=categories.filter(c=>c.amount>0).map((c,i)=>{
