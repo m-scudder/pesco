@@ -28,7 +28,7 @@ function budgetHealth(month:string,spent:number,budget:number,today:string){
  const expected=elapsed/daysInMonth*100;
  const ratio=expected>0?used/expected:0;
  return {
-  label:ratio>1.2?'Ahead of pace':ratio>1.05?'Slightly ahead':'On track',
+  label:ratio>1.2?'Spending too fast':ratio>1.05?'Spending a little more':'On track',
   color:ratio>1.2?'#D94B4B':ratio>1.05?'#C18A2B':'#259A63',
   used,daysLeft,context:daysLeft+' days left'
  };
