@@ -114,10 +114,10 @@ export default function ExpenseEditor(){
   </Pressable>:null}
   <CalendarDatePicker visible={datePickerOpen} value={date} onChange={setDate} onClose={()=>setDatePickerOpen(false)}/>
  </ScrollView>
- {!noteFocused&&categoryOpen?<View style={{paddingHorizontal:12,paddingBottom:8,backgroundColor:colors.background}}>
+ {!noteFocused&&categoryOpen?<View style={{paddingHorizontal:12,paddingTop:6,paddingBottom:8,backgroundColor:colors.background,borderTopWidth:1,borderTopColor:colors.border}}>
   <BottomCategoryPicker options={options} selected={category} onSelect={name=>{setCategory(name);setCategoryOpen(false)}} onClose={()=>setCategoryOpen(false)} onEdit={()=>{setCategoryOpen(false);router.push('/categories')}}/>
  </View>:null}
- {!noteFocused&&calculatorOpen?<View style={{paddingHorizontal:12,paddingTop:6,paddingBottom:8,backgroundColor:colors.background}}>
+ {!noteFocused&&calculatorOpen?<View style={{paddingHorizontal:12,paddingTop:6,paddingBottom:8,backgroundColor:colors.background,borderTopWidth:1,borderTopColor:colors.border}}>
   <AmountCalculator value={amount} onChange={setAmount} onDisplayChange={setCalculatorDisplay} onDone={()=>setCalculatorOpen(false)}/>
  </View>:null}
  </KeyboardAvoidingView></>
