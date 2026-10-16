@@ -61,14 +61,14 @@ export default function Home(){
     {demoEnabled?<Text style={{fontSize:fontSizes.caption,color:colors.muted,fontFamily:fontFamilies.medium}}>DEMO DATA · Sample expenses are read-only</Text>:null}
     <MonthPicker month={month} onChange={setMonth}/>
     <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-     <View style={{flex:1,flexDirection:'row',alignItems:'center',backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,borderRadius:11,paddingHorizontal:10}}>
+     <View style={{flex:1,flexDirection:'row',alignItems:'center',backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,borderRadius:0,paddingHorizontal:10}}>
       <Ionicons name="search-outline" color={colors.muted} size={18}/>
       <TextInput accessibilityLabel="Search expenses" value={search} onChangeText={setSearch} placeholder="Search expenses" placeholderTextColor={colors.muted}
        style={{flex:1,height:42,paddingHorizontal:8,color:colors.text,fontFamily:fontFamilies.regular,fontSize:fontSizes.body}}/>
       {search?<Pressable accessibilityLabel="Clear search" onPress={()=>setSearch('')}><Ionicons name="close-circle" color={colors.muted} size={18}/></Pressable>:null}
      </View>
      <Pressable accessibilityRole="button" accessibilityLabel="Expense filters" accessibilityState={{expanded:showFilters}} onPress={()=>setShowFilters(v=>!v)}
-      style={{height:44,width:44,alignItems:'center',justifyContent:'center',backgroundColor:showFilters?colors.secondary:colors.surface,borderRadius:11,borderWidth:1,borderColor:colors.border}}>
+      style={{height:44,width:44,alignItems:'center',justifyContent:'center',backgroundColor:showFilters?colors.secondary:colors.surface,borderRadius:0,borderWidth:1,borderColor:colors.border}}>
       <Ionicons name="options-outline" size={21} color={colors.text}/>
      </Pressable>
     </View>
@@ -76,21 +76,21 @@ export default function Home(){
      <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>Category</Text>
      <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
       {options.map(option=><Pressable key={option} onPress={()=>setCategoryFilter(option)}
-       style={{paddingHorizontal:10,paddingVertical:7,borderRadius:9,backgroundColor:categoryFilter===option?colors.household:colors.secondary}}>
+       style={{paddingHorizontal:10,paddingVertical:7,borderRadius:0,backgroundColor:categoryFilter===option?colors.household:colors.secondary}}>
        <Text style={{color:categoryFilter===option?'#fff':colors.text,fontSize:fontSizes.caption}}>{option}</Text>
       </Pressable>)}
      </View>
      {scope==='household'?<View style={{flexDirection:'row',alignItems:'center',gap:8}}>
       <Text style={{fontSize:fontSizes.caption,color:colors.muted,marginRight:4}}>Added by</Text>
       {(['all','me','partner'] as const).map(v=><Pressable key={v} onPress={()=>setContributor(v)}
-       style={{paddingHorizontal:11,paddingVertical:7,borderRadius:9,backgroundColor:contributor===v?colors.household:colors.secondary}}>
+       style={{paddingHorizontal:11,paddingVertical:7,borderRadius:0,backgroundColor:contributor===v?colors.household:colors.secondary}}>
        <Text style={{color:contributor===v?'#fff':colors.text,fontSize:fontSizes.caption}}>{v==='all'?'Everyone':v==='me'?'You':'Partner'}</Text>
       </Pressable>)}
      </View>:null}
      <View style={{flexDirection:'row',gap:8}}>
       {[{label:'Min ₹',value:minAmount,set:setMinAmount},{label:'Max ₹',value:maxAmount,set:setMaxAmount}].map(item=><TextInput key={item.label}
        accessibilityLabel={item.label} value={item.value} onChangeText={value=>item.set(value.replace(/[^0-9]/g,""))} keyboardType="number-pad" placeholder={item.label} placeholderTextColor={colors.muted}
-       style={{flex:1,height:40,borderRadius:9,borderWidth:1,borderColor:colors.border,paddingHorizontal:10,color:colors.text,backgroundColor:colors.surface}}/>)}
+       style={{flex:1,height:40,borderRadius:0,borderWidth:1,borderColor:colors.border,paddingHorizontal:10,color:colors.text,backgroundColor:colors.surface}}/>)}
      </View>
      <Pressable accessibilityRole="button" onPress={()=>{setSearch('');setCategoryFilter('All');setContributor('all');setMinAmount('');setMaxAmount('')}}>
       <Text style={{fontSize:fontSizes.label,color:colors.household,fontWeight:fontWeights.semibold}}>Clear filters</Text>
@@ -109,7 +109,7 @@ export default function Home(){
      return <View key={date}>
       <View style={{flexDirection:'row',alignItems:'center',gap:7,paddingHorizontal:12,paddingVertical:7,backgroundColor:colors.secondary,borderTopWidth:1,borderBottomWidth:1,borderColor:colors.border}}>
        <Text style={{fontSize:fontSizes.title,fontFamily:fontFamilies.displayBold,color:colors.text}}>{parsed.getDate()}</Text>
-       <View style={{backgroundColor:colors.surface,borderRadius:5,paddingHorizontal:6,paddingVertical:2}}>
+       <View style={{backgroundColor:colors.surface,borderRadius:0,paddingHorizontal:6,paddingVertical:2}}>
         <Text style={{fontSize:fontSizes.caption,color:colors.muted,fontWeight:fontWeights.semibold}}>{weekday}</Text>
        </View>
       </View>
@@ -137,7 +137,7 @@ export default function Home(){
     })
    }
    {filtered.length>visibleCount?<Pressable accessibilityRole="button" onPress={()=>setVisibleCount(count=>count+60)}
-    style={{margin:12,padding:12,borderRadius:10,alignItems:'center',backgroundColor:colors.secondary}}>
+    style={{margin:12,padding:12,borderRadius:0,alignItems:'center',backgroundColor:colors.secondary}}>
     <Text style={{color:colors.text,fontSize:fontSizes.label,fontFamily:fontFamilies.semibold}}>Show more ({filtered.length-visibleCount} remaining)</Text>
    </Pressable>:null}
   </Screen>
