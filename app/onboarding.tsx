@@ -34,7 +34,7 @@ export default function Onboarding(){
   void getMyHousehold().then(existing=>{if(active&&existing)void finish().then(()=>router.replace('/(tabs)'))}).catch(()=>{});
   return()=>{active=false};
  },[authenticated,user?.id]);
- const inputStyle={borderWidth:1 as const,borderColor:colors.border,borderRadius:9,height:44,paddingHorizontal:12,color:colors.text,fontSize:fontSizes.input};
+ const inputStyle={borderWidth:1 as const,borderColor:colors.border,borderRadius:0,height:44,paddingHorizontal:12,color:colors.text,fontSize:fontSizes.input};
 
  async function finishAndOpen(){
   await finish();
@@ -49,13 +49,13 @@ export default function Onboarding(){
  }
  const button=(label:string,onPress:()=>void,primary=true,disabled=false)=>(
   <Pressable accessibilityRole="button" disabled={busy||disabled} onPress={onPress}
-   style={{minHeight:44,alignItems:'center',justifyContent:'center',borderRadius:10,paddingHorizontal:12,backgroundColor:primary?colors.household:colors.secondary,opacity:busy||disabled?0.45:1}}>
+   style={{minHeight:44,alignItems:'center',justifyContent:'center',borderRadius:0,paddingHorizontal:12,backgroundColor:primary?colors.household:colors.secondary,opacity:busy||disabled?0.45:1}}>
    <Text style={{color:primary?'#fff':colors.text,fontSize:fontSizes.body,fontWeight:fontWeights.semibold}}>{label}</Text>
   </Pressable>
  );
  return <Screen style={{flexGrow:1,justifyContent:authenticated?'center':'space-between',paddingBottom:24,gap:22}}>
   <View style={{alignItems:'center',justifyContent:'center',gap:14,...(!authenticated?{flexGrow:1}:{} )}}>
-   <Image source={require('../assets/icon.png')} accessibilityLabel="PESCO app logo" resizeMode="contain" style={{width:92,height:92,borderRadius:22}}/>
+   <Image source={require('../assets/icon.png')} accessibilityLabel="PESCO app logo" resizeMode="contain" style={{width:92,height:92,borderRadius:0}}/>
    <Text style={{color:colors.muted,fontSize:fontSizes.body,fontFamily:fontFamilies.regular,textAlign:'center'}}>Household expenses, together</Text>
   </View>
   {!authenticated?<View style={{paddingHorizontal:0,gap:14,paddingBottom:6}}>
