@@ -8,7 +8,7 @@ import {supabase} from '@/lib/supabase';
 
 export function useAccountActions(){
  const router=useRouter();
- const {pendingCount,pendingEditCount,expenses,recurringRules,budgets,clearAll}=useData();
+ const {pendingCount,pendingEditCount,expenses,clearAll}=useData();
  const {user}=useAuth();
  const [loggingOut,setLoggingOut]=useState(false);
  const [deleting,setDeleting]=useState(false);
@@ -23,23 +23,18 @@ export function useAccountActions(){
    Alert.alert('Personal backup pending','Wait for personal expenses to finish syncing before logging out.');
    return;
   }
-  const hasLocalData=expenses.some(x=>x.scope==='household'&&x.ownerId==='local-user')||
-   recurringRules.length>0||budgets.household!==null||budgets.personal!==null;
-  Alert.alert('Log out of PESCO?',hasLocalData
-   ?'Some budgets and recurring rules are stored only on this device. Logging out will erase these device-only settings. Shared cloud expenses will remain. Export anything you need first.'
-   :'You will need to sign in with Google again. Your shared household expenses stay in the cloud.',[
+  Alert.alert('Log Out?','Your saved budgets and recurring bills will be kept for your next sign-in on this device.',[
    {text:'Cancel',style:'cancel'},
-   {text:hasLocalData?'Erase local data & log out':'Log out',style:hasLocalData?'destructive':'default',onPress:()=>{void (async()=>{
+   {text:'Log Out',onPress:()=>{void (async()=>{
     if(!supabase)return;
     setLoggingOut(true);
     try{
      const {error}=await supabase.auth.signOut({scope:'local'});
      if(error)throw error;
-     clearAll();
-     // User-scoped queue/cache data remains inaccessible after logout; remove private local categories.
-     await AsyncStorage.removeItem('pesco:personal-categories:v1');
+     // The data provider clears only in-memory state on auth change.
+     // Account-scoped local preferences must survive sign-out.
      router.replace('/onboarding');
-    }catch(e){Alert.alert('Could not log out',e instanceof Error?e.message:'Please try again')}
+    }catch(e){Alert.alert('Could Not Log Out',e instanceof Error?e.message:'Please try again')}
     finally{setLoggingOut(false)}
    })()}}
   ]);
