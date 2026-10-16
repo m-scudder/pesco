@@ -46,17 +46,17 @@ export default function Recurring(){
      const mine=!sharedRule||sharedRule.created_by===user?.id;
      const title=rule.note?.trim()||rule.category;
      const subtitle=rule.note?.trim()&&rule.note.trim()!==rule.category?rule.category+' · ':'';
-     return <View key={rule.id} style={{flexDirection:'row',alignItems:'center',paddingLeft:12,paddingRight:12,minHeight:58,gap:8,opacity:rule.active?1:0.45,backgroundColor:rule.active?undefined:colors.secondary,borderBottomWidth:index===items.length-1?0:1,borderColor:colors.border}}>
-      <Pressable accessibilityRole="button" disabled={!mine} onPress={()=>edit(rule.id)} style={{flex:1,gap:3,paddingVertical:8}}>
+     return <Pressable key={rule.id} accessibilityRole="button" disabled={!mine} onPress={()=>edit(rule.id)} style={{flexDirection:'row',alignItems:'center',paddingLeft:12,paddingRight:12,minHeight:58,gap:8,opacity:rule.active?1:0.45,backgroundColor:rule.active?undefined:colors.secondary,borderBottomWidth:index===items.length-1?0:1,borderColor:colors.border}}>
+      <View style={{flex:1,gap:3,paddingVertical:8}}>
        <Text numberOfLines={1} style={{fontFamily:fontFamilies.semibold,fontSize:fontSizes.label,color:rule.active?colors.text:colors.muted}}>{title}</Text>
        <Text numberOfLines={1} style={{fontFamily:fontFamilies.regular,color:colors.muted,fontSize:fontSizes.caption}}>{subtitle}{ordinal(day)} monthly</Text>
-      </Pressable>
+      </View>
       <View style={{alignItems:'flex-end',justifyContent:'center',gap:3}}>
        <Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.label,color:colors.text}}>{formatMoney(amount)}</Text>
        <Text style={{fontFamily:fontFamilies.regular,fontSize:fontSizes.caption,color:colors.muted}}>{!mine?"Partner's bill":rule.active?'Active':'Paused'}</Text>
       </View>
 
-     </View>
+     </Pressable>
     })}
    </View>:<View style={{alignItems:'center',paddingVertical:22}}><Text style={{color:colors.muted,fontSize:fontSizes.label}}>No recurring bills yet</Text></View>}
    {error?<Pressable accessibilityRole="button" onPress={()=>{void reload()}}><Text style={{color:'#C94F4F',fontSize:fontSizes.label}}>Could not sync bills · Retry</Text></Pressable>:null}
