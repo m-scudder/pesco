@@ -261,24 +261,21 @@ export function DataProvider({children}:{children:React.ReactNode}){
   if(!user)return;
   void refresh();
   // Realtime refreshes normally provide prompt updates; polling is a fallback after missed events.
-  const interval=setInterval(()=>{if(AppState.currentState==='active')void refresh()},60000);
+  const interval=setInterval(()=>{if(AppState.currentState==='active')void refreshRef.current()},60000);
+  // Fixed cadence: batch outbound changes once every 15 seconds while active.
+  const uploadInterval=setInterval(()=>{if(AppState.currentState==='active')void uploadRef.current()},15000);
   const app=AppState.addEventListener('change',s=>{
    if(s==='active'){void refreshRef.current();void uploadRef.current()}
    if(s==='background')void uploadRef.current();
   });
   return()=>{
-   clearInterval(interval);app.remove();
+   clearInterval(interval);clearInterval(uploadInterval);app.remove();
    requested.current++;
   };
  },[user?.id,refresh]);
 
- // Coalesce rapid writes but start uploading promptly while the app is active.
- // Do not wait for a foreground/background transition to share household rows.
- useEffect(()=>{
-  if(!user||!household||(!pending.length&&!mutations.length))return;
-  const timer=setTimeout(()=>{void uploadRef.current()},850);
-  return()=>clearTimeout(timer);
- },[user?.id,household?.id,pending,mutations]);
+ // Outbound writes are sent by the fixed interval above, not every new expense.
+ // Foreground resume also triggers a flush; pending rows remain visible locally.
 
  // Legacy personal entries have their own idempotent import path.
  useEffect(()=>{
