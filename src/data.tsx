@@ -62,6 +62,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const requested=useRef(0);
  const importing=useRef(false);
  const pendingBusy=useRef(false);
+ const refreshRef=useRef<()=>Promise<void>>(async()=>{});
  const verifiedUser=useRef<string|null>(null);
  const recurringGeneratedOn=useRef<string|null>(null);
  const [pending,setPending]=useState<PendingExpense[]>([]);
@@ -234,6 +235,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
    }
   }finally{if(request===requested.current)setSyncing(false)}
  },[user?.id,configured,localLoaded]);
+ refreshRef.current=refresh;
 
  useEffect(()=>{
   requested.current++;
@@ -244,16 +246,21 @@ export function DataProvider({children}:{children:React.ReactNode}){
   void refresh();
   // Realtime refreshes normally provide prompt updates; polling is a fallback after missed events.
   const interval=setInterval(()=>{if(AppState.currentState==='active')void refresh()},60000);
-  const app=AppState.addEventListener('change',s=>{if(s==='active')void refresh()});
+  const app=AppState.addEventListener('change',s=>{if(s==='active'||s==='background')void refreshRef.current()});
   return()=>{
    clearInterval(interval);app.remove();
    requested.current++;
   };
  },[user?.id,refresh]);
 
+ // Local saves finish before remote synchronization. Coalesce rapid edits
+ // and additions into a single upload instead of refreshing on every save.
  useEffect(()=>{
-  if(user&&localLoaded&&localExpenses.some(item=>item.scope==='personal'))void refresh();
- },[user?.id,localLoaded,localExpenses,refresh]);
+  if(!user||!localLoaded)return;
+  if(!pending.length&&!mutations.length&&!localExpenses.some(e=>e.scope==='personal'))return;
+  const timer=setTimeout(()=>{void refreshRef.current()},4000);
+  return()=>clearTimeout(timer);
+ },[user?.id,localLoaded,pending,mutations,localExpenses]);
 
  // Subscribe after membership is known. Re-subscribe if the household changes.
  // Realtime events invalidate the household feed, which is fetched under RLS.
@@ -295,13 +302,11 @@ export function DataProvider({children}:{children:React.ReactNode}){
    if(!user)throw new Error('Sign in required');
    const entry=await queueHouseholdExpense(user.id,{...draft,householdId:household.id});
    setPending(previous=>[...previous,entry]);
-   void refresh();
    return;
   }
   const now=new Date().toISOString();
   setLocalExpenses(prev=>[{...draft,id:now+'-'+Math.random().toString(36).slice(2),ownerId:'local-user',createdAt:now,updatedAt:now},...prev]);
-  void refresh();
- },[household,refresh,user?.id]);
+ },[household,user?.id]);
 
  const update=useCallback(async(id:string,draft:ExpenseDraft)=>{
   if(id.startsWith('demo:'))throw new Error('Demo records are read-only. Turn off sample data in Settings to view actual records.');
@@ -320,7 +325,6 @@ export function DataProvider({children}:{children:React.ReactNode}){
    const latest=await queueMutation(user!.id,household.id,id,'update',{...draft,householdId:household.id},cloud.updatedAt);
    mutationEpoch.current++;
    setMutations(latest);
-   void refresh();
    return;
   }
   if(cloudPersonal.some(e=>e.id===id)){
@@ -345,7 +349,6 @@ export function DataProvider({children}:{children:React.ReactNode}){
    const latest=await queueMutation(user.id,household.id,id,'delete',undefined,cloud.updatedAt);
    mutationEpoch.current++;
    setMutations(latest);
-   void refresh();
   }else if(cloudPersonal.some(e=>e.id===id)){
    await deleteCloudExpense(id);
    await refresh();
