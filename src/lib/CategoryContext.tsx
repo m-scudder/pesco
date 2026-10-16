@@ -7,7 +7,7 @@ import {supabase} from './supabase';
 import type {Scope} from '@/theme/palette';
 
 export const PRESET_CATEGORIES=['Groceries','Food & Drinks','Transport','Bills','Shopping','Health','Entertainment','Other'] as const;
-export type Category={id:string;name:string};
+export type Category={id:string;name:string;createdBy?:string|null;createdAt?:string|null};
 type CategoryStore={
  household:Category[];personal:Category[];loading:boolean;error:string|null;
  names:(scope:Scope)=>string[];refresh:()=>Promise<void>;
@@ -53,10 +53,10 @@ export function CategoryProvider({children}:{children:React.ReactNode}){
   if(!householdId||!supabase||!user){setHousehold([]);setError(null);return}
   setLoading(true);
   try{
-   const {data,error:readError}=await supabase.from('categories').select('id,name')
+   const {data,error:readError}=await supabase.from('categories').select('id,name,created_by,created_at')
     .eq('household_id',householdId).order('name',{ascending:true});
    if(readError)throw readError;
-   setHousehold((data??[]) as Category[]);setError(null);
+   setHousehold((data??[]).map(item=>({id:item.id,name:item.name,createdBy:item.created_by,createdAt:item.created_at})));setError(null);
   }catch(e){setError(e instanceof Error?e.message:'Unable to load categories')}
   finally{setLoading(false)}
  },[householdId,user?.id]);
@@ -81,7 +81,7 @@ export function CategoryProvider({children}:{children:React.ReactNode}){
   const items=scope==='household'?household:personal;
   const clean=validate(name,items);
   if(scope==='personal'){
-   setPersonal(previous=>[...previous,{id:'local-'+Date.now()+'-'+Math.random().toString(36).slice(2),name:clean}]);
+   setPersonal(previous=>[...previous,{id:'local-'+Date.now()+'-'+Math.random().toString(36).slice(2),name:clean,createdBy:'You',createdAt:new Date().toISOString()}]);
    return;
   }
   if(!supabase||!householdId||!user)throw new Error('Join a household first');
