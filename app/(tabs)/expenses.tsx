@@ -7,11 +7,13 @@ import {Heading,ScopeSwitch} from '@/components/UI';
 import {MonthPicker} from '@/components/MonthPicker';
 import {formatMoney,localDate,monthKey,useData} from '@/data';
 import {useAppTheme} from '@/theme/ThemeContext';
+import {useHouseholdPartnerName} from '@/lib/useHouseholdPartnerName';
 
 export default function Expenses(){
  const {colors,scope}=useAppTheme();
  const {expenses,refresh,syncError,currentUserId}=useData();
  const router=useRouter();
+ const partnerName=useHouseholdPartnerName();
  const [month,setMonth]=useState(monthKey(localDate()));
 
  useFocusEffect(React.useCallback(()=>{void refresh()},[refresh]));
@@ -65,7 +67,7 @@ export default function Expenses(){
        <View style={{flex:1,gap:2}}>
         <Text numberOfLines={2} style={{color:colors.text,fontSize:15,fontWeight:'500'}}>{expense.note?.trim()||expense.category}</Text>
         {scope==='household'?
-         <Text style={{color:colors.muted,fontSize:12}}>{expense.ownerId==='local-user'||expense.ownerId===currentUserId?'You':'Partner'}</Text>:null}
+         <Text style={{color:colors.muted,fontSize:12}}>{expense.ownerId==='local-user'||expense.ownerId===currentUserId?'You':partnerName}</Text>:null}
        </View>
        <Text style={{color:'#F25B59',fontSize:15,fontWeight:'500',textAlign:'right'}}>{formatMoney(expense.amountPaise)}</Text>
       </Pressable>)}
