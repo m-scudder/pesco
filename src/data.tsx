@@ -214,7 +214,12 @@ export function DataProvider({children}:{children:React.ReactNode}){
    catch(e){console.warn('Could not update offline household cache',e)}
    if(request===requested.current){
     verifiedUser.current=user.id;
-    setHousehold(membership);setCloudExpenses(rows);setCloudPersonal(personalRows);setSyncError(null);setCloudReady(true);
+    setHousehold(membership);setCloudExpenses(rows);setCloudPersonal(personalRows);
+    // Only retire optimistic rows once the fetched cloud snapshot contains them.
+    // This prevents a transient disappearance between upload ACK and refresh.
+    const remoteIds=new Set(rows.map(row=>row.id));
+    setPending(previous=>previous.filter(entry=>!remoteIds.has(entry.id)));
+    setSyncError(null);setCloudReady(true);
    }
   }catch(e){
    if(request===requested.current){
@@ -234,8 +239,8 @@ export function DataProvider({children}:{children:React.ReactNode}){
   try{
    const id=user.id,houseId=household.id;
    const pendingResult=await flushPending(id,houseId);
-   const pendingLatest=await loadPending(id);
-   setPending(pendingLatest);
+   // Do not drop optimistic entries here: cloud refresh may still be in flight.
+   // The refresh path removes an entry after its server record is visible.
    const mutationResult=await flushMutations(id,houseId);
    mutationEpoch.current++;
    setMutations(mutationResult.items);
