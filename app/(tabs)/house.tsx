@@ -123,5 +123,5 @@ export default function House(){
     </View>)}
    </View>
   </Card>
- </Screen>;
+ </Screen></MonthSwipeView>;
 }
