@@ -82,14 +82,14 @@ export default function Onboarding(){
    {!configured?<Text style={{color:'#C94F4F',textAlign:'center'}}>Cloud authentication is not configured.</Text>:null}
   </View>:mode==='choose'?<Card>
    <Text style={{fontSize:fontSizes.body,fontFamily:fontFamilies.semibold,color:colors.text,textAlign:'center',marginBottom:4}}>Set up your household</Text>
-   {button('Create household',()=>{setError(null);setMode('create')})}
-   {button('Join with code',()=>{setError(null);setMode('join')},false)}
+   {button('Create Household',()=>{setError(null);setMode('create')})}
+   {button('Join With Code',()=>{setError(null);setMode('join')},false)}
    <Pressable accessibilityRole="button" onPress={()=>void submit(async()=>{})} style={{alignItems:'center',paddingVertical:10}}>
-    <Text style={{color:colors.muted,fontSize:fontSizes.label}}>Use personal expenses only</Text>
+    <Text style={{color:colors.muted,fontSize:fontSizes.label}}>Use Personal Expenses Only</Text>
    </Pressable>
   </Card>:<Card>
    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-    <Body>{mode==='join'?'Join household':'Create household'}</Body>
+    <Body>{mode==='join'?'Join Household':'Create Household'}</Body>
     <Pressable onPress={()=>{setError(null);setMode('choose')}}><Text style={{color:colors.muted,fontSize:fontSizes.label}}>Back</Text></Pressable>
    </View>
    {mode==='create'?
@@ -98,7 +98,7 @@ export default function Onboarding(){
    }
    {!configured?<Body muted>Supabase is not configured. Add your URL and publishable key to .env.</Body>:
     !ready?<ActivityIndicator/>:
-    !user?<View style={{gap:8}}><Body muted>{authError||'Unable to sign in'}</Body>{button('Retry connection',()=>{void retry()},false)}</View>:
+    !user?<View style={{gap:8}}><Body muted>{authError||'Unable to sign in'}</Body>{button('Retry Connection',()=>{void retry()},false)}</View>:
     mode==='create'?button('Create',()=>void submit(async()=>{if(!name.trim())throw new Error('Enter a household name');await createHousehold(name.trim())}),true,!name.trim()):
     button('Join',()=>void submit(async()=>{const joined=await joinWithKey(code);if(!joined)throw new Error('Invalid, expired or rate-limited code')}),true,!VALID_CODE.test(code))
    }
