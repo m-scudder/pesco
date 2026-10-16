@@ -61,6 +61,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const [cloudPersonal,setCloudPersonal]=useState<Expense[]>([]);
  const personalImportBusy=useRef(false);
  const [syncError,setSyncError]=useState<string|null>(null);
+ const [hiddenDeleted,setHiddenDeleted]=useState<string[]>([]);
  const [syncing,setSyncing]=useState(false);
  const [cloudReady,setCloudReady]=useState(false);
  const requested=useRef(0);
@@ -381,8 +382,8 @@ export function DataProvider({children}:{children:React.ReactNode}){
 
  const realExpenses=useMemo(()=>[
   ...localExpenses.filter(e=>(e.scope==='personal'&&!cloudPersonal.some(remote=>remote.id===e.id))||(!household&&e.scope==='household')),
-  ...cloudPersonal,
-  ...(household?ledgerExpenses.filter(e=>!mutations.some(op=>op.id===e.id&&op.kind==='delete')).map(e=>{
+  ...cloudPersonal.filter(e=>!hiddenDeleted.includes(e.id)),
+  ...(household?ledgerExpenses.filter(e=>!hiddenDeleted.includes(e.id)&&!mutations.some(op=>op.id===e.id&&op.kind==='delete')).map(e=>{
    const op=mutations.find(item=>item.id===e.id&&item.kind==='update');
    return op?.draft?{...e,amountPaise:op.draft.amountPaise,category:op.draft.category,note:op.draft.note,date:op.draft.date}:e;
   }):[]),
@@ -390,7 +391,7 @@ export function DataProvider({children}:{children:React.ReactNode}){
    id:p.id,scope:'household' as Scope,amountPaise:p.draft.amountPaise,category:p.draft.category,note:p.draft.note,date:p.draft.date,
    ownerId:p.userId,createdAt:p.queuedAt,updatedAt:p.queuedAt
   }))
- ],[localExpenses,ledgerExpenses,cloudPersonal,household,pending,mutations]);
+ ],[localExpenses,ledgerExpenses,cloudPersonal,household,pending,mutations,hiddenDeleted]);
  const demoExpenses=useMemo(()=>__DEV__?makeDemoExpenses():[],[]);
  const expenses=useMemo(()=>demoEnabled&&__DEV__?[...realExpenses,...demoExpenses]:realExpenses,[demoEnabled,realExpenses,demoExpenses]);
 
