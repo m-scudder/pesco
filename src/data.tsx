@@ -73,18 +73,25 @@ export function DataProvider({children}:{children:React.ReactNode}){
  useEffect(()=>{
   let active=true;
   if(!user){setHousehold(null);setCloudExpenses([]);setLedgerExpenses([]);return}
-  AsyncStorage.getItem('pesco:household-cache:'+user.id).then(raw=>{
-   if(!raw||!active||verifiedUser.current===user.id)return;
-   const saved=JSON.parse(raw) as {household:Household|null;expenses:Expense[]};
-   if(saved.household&&Array.isArray(saved.expenses)){
-    setHousehold(old=>old??saved.household);
-    setCloudExpenses(old=>old.length?old:saved.expenses);
-    void seedHouseholdLedger(user.id,saved.household.id,saved.expenses)
-     .then(()=>loadHouseholdLedger(user.id,saved.household!.id))
-     .then(rows=>{if(active)setLedgerExpenses(prev=>prev.length?prev:rows)})
-     .catch(error=>console.warn('Household ledger migration failed',error));
-   }
-  }).catch(e=>console.warn('Could not load household cache',e));
+  const userId=user.id;
+  void (async()=>{
+   try{
+    const raw=await AsyncStorage.getItem('pesco:household-cache:'+userId);
+    if(!raw||!active||verifiedUser.current===userId)return;
+    const saved=JSON.parse(raw) as {household:Household|null;expenses:Expense[]};
+    if(!saved.household)return;
+    const householdId=saved.household.id;
+    if(active)setHousehold(previous=>previous??saved.household);
+    const cached=Array.isArray(saved.expenses)?saved.expenses:[];
+    // Existing installations already have an AsyncStorage snapshot.
+    // Import it without replacing newer SQLite records.
+    await seedHouseholdLedger(userId,householdId,cached);
+    const durable=await loadHouseholdLedger(userId,householdId);
+    if(!active)return;
+    setLedgerExpenses(previous=>previous.length?previous:durable);
+    setCloudExpenses(previous=>previous.length?previous:cached);
+   }catch(error){console.warn('Could not restore household ledger',error)}
+  })();
   return()=>{active=false};
  },[user?.id]);
  useEffect(()=>{
