@@ -12,7 +12,7 @@ import {useData} from '@/data';
 import type {Scope} from '@/theme/palette';
 
 type ListedCategory=Category&{origin:Scope};
-type SortField='name'|'createdBy';
+type SortField='name'|'createdBy'|'createdAt';
 export default function Categories(){
  const {colors}=useAppTheme();
  const router=useRouter();
@@ -29,11 +29,18 @@ export default function Categories(){
  const list=useMemo(()=>(scope==='household'?household:personal)
   .map(item=>({...item,origin:scope} as ListedCategory))
   .sort((a,b)=>{
+   if(sortField==='createdAt'){
+    // Presets/legacy categories lack timestamps. Treat those as oldest.
+    const at=a.createdAt?Date.parse(a.createdAt):0;
+    const bt=b.createdAt?Date.parse(b.createdAt):0;
+    const result=(Number.isFinite(at)?at:0)-(Number.isFinite(bt)?bt:0);
+    return (ascending?1:-1)*result||a.name.localeCompare(b.name);
+   }
    const creator=(item:ListedCategory)=>scope==='personal'||item.createdBy==='You'||item.createdBy===currentUserId?'You':item.createdBy?'Partner':'Default';
    const av=sortField==='name'?a.name:creator(a);
    const bv=sortField==='name'?b.name:creator(b);
    const result=av.localeCompare(bv,undefined,{sensitivity:'base'});
-   return (ascending?1:-1)*(result||a.name.localeCompare(b.name));
+   return (ascending?1:-1)*result||a.name.localeCompare(b.name);
   }),[scope,household,personal,sortField,ascending,currentUserId]);
  useEffect(()=>{void refresh()},[refresh]);
  useEffect(()=>{if(!activeHousehold&&scope==='household')setScope('personal')},[activeHousehold,scope]);
@@ -60,7 +67,7 @@ export default function Categories(){
    {text:'Cancel',style:'cancel'},
    {text:'Remove',style:'destructive',onPress:()=>{void remove(item.origin,item.id).catch(e=>Alert.alert('Could not remove',e instanceof Error?e.message:'Try again'))}}
   ]);
- const toggleSort=(field:SortField)=>{if(sortField===field)setAscending(value=>!value);else{setSortField(field);setAscending(true)}};
+ const toggleSort=(field:SortField)=>{if(sortField===field)setAscending(value=>!value);else{setSortField(field);setAscending(field!=='createdAt')}};
  return <><Stack.Screen options={{headerShown:false}}/>
  <View style={{flex:1,backgroundColor:colors.background}}>
   <View style={{paddingTop:insets.top+8,paddingHorizontal:16,paddingBottom:12,minHeight:insets.top+60,
@@ -84,9 +91,9 @@ export default function Categories(){
   </View>:null}
   <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{scope==='household'?'Shared categories sync with your partner.':'Personal categories stay on this device.'}</Text>
   <View style={{flexDirection:'row',gap:8,alignItems:'center'}}>
-   {(['name','createdBy'] as const).map(field=><Pressable key={field} accessibilityRole="button" onPress={()=>toggleSort(field)}
+   {(['name','createdAt','createdBy'] as const).map(field=><Pressable key={field} accessibilityRole="button" onPress={()=>toggleSort(field)}
     style={{flexDirection:'row',alignItems:'center',gap:5,paddingHorizontal:10,paddingVertical:8,borderRadius:8,backgroundColor:sortField===field?colors.secondary:colors.surface,borderWidth:1,borderColor:colors.border}}>
-    <Text style={{fontSize:fontSizes.caption,color:sortField===field?colors.text:colors.muted}}>{field==='name'?'Name':'Created by'}</Text>
+    <Text style={{fontSize:fontSizes.caption,color:sortField===field?colors.text:colors.muted}}>{field==='name'?'Name':field==='createdAt'?'Created at':'Created by'}</Text>
     {sortField===field?<Ionicons name={ascending?'arrow-up':'arrow-down'} size={13} color={colors.household}/>:null}
    </Pressable>)}
   </View>
