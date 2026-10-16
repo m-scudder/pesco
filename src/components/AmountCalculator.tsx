@@ -19,8 +19,8 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
    setState(next);
    if(next.error)return;
    const result=String(Number(next.display));
-   publish(result);onChange(result);
-   if(label==='OK')onDone();
+   publish(result);
+   if(label==='OK'){onChange(result);onDone();}
    return;
   }
   const key=label==='−'?'-':label==='Back'?'⌫':label;
@@ -67,10 +67,10 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
    {keys.map((label,index)=>{
     if(!label)return <View key={'blank-'+index} style={{width:'23%',flexGrow:1,minHeight:43}}/>;
     const isDone=label==='OK',isOperation=['+','−','×','÷','='].includes(label);
-    return <Pressable key={label} accessibilityRole="button" accessibilityLabel={isDone?'Use amount':label==='Back'?'Backspace':label==='C'?'Clear calculator':label}
+    return <Pressable key={label} accessibilityRole="button" accessibilityLabel={isDone?'Apply amount':label==='Back'?'Backspace':label==='C'?'Clear calculator':label}
      onPress={()=>tap(label)} style={{width:'23%',flexGrow:1,minHeight:43,borderRadius:7,alignItems:'center',justifyContent:'center',
       backgroundColor:isDone?accent:isOperation?colors.secondary:colors.background,borderWidth:1,borderColor:colors.border}}>
-     {label==='Back'?<Ionicons name="backspace-outline" size={23} color={colors.text}/>:isDone?<Ionicons name="return-down-back" size={24} color="#fff"/>:<Text style={{fontSize:fontSizes.title,fontWeight:fontWeights.medium,color:colors.text}}>{label}</Text>}
+     {label==='Back'?<Ionicons name="backspace-outline" size={23} color={colors.text}/>:isDone?<Ionicons name="checkmark" size={24} color="#fff"/>:<Text style={{fontSize:fontSizes.title,fontWeight:fontWeights.medium,color:colors.text}}>{label}</Text>}
     </Pressable>;
    })}
   </View>
