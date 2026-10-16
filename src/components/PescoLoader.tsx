@@ -27,16 +27,16 @@ export function PescoLoader({message='Getting things ready…'}:{message?:string
  },[bounce,fade]);
  return <View accessibilityRole="progressbar" accessibilityLabel={message}
   style={{flex:1,backgroundColor:bg,alignItems:'center',justifyContent:'center',gap:18,padding:24}}>
-  <Animated.View style={{transform:[{translateY:bounce}],height:90,width:90,borderRadius:25,backgroundColor:'#078B72',alignItems:'center',justifyContent:'center'}}>
+  <Animated.View style={{transform:[{translateY:bounce}],height:90,width:90,borderRadius:0,backgroundColor:'#078B72',alignItems:'center',justifyContent:'center'}}>
    <Ionicons name="home" size={48} color="#FFF9E8"/>
-   <View style={{position:'absolute',bottom:13,right:13,backgroundColor:'#FFC940',width:34,height:25,borderRadius:7,borderWidth:2,borderColor:'#078B72'}}/>
+   <View style={{position:'absolute',bottom:13,right:13,backgroundColor:'#FFC940',width:34,height:25,borderRadius:0,borderWidth:2,borderColor:'#078B72'}}/>
   </Animated.View>
   <View style={{alignItems:'center',gap:6}}>
    <Text style={{fontSize:23,fontWeight:'800',color:text,letterSpacing:1}}>PESCO</Text>
    <Text style={{color:muted,fontSize:13}}>{message}</Text>
   </View>
   <View style={{flexDirection:'row',gap:8}}>
-   {[0,1,2].map(i=><Animated.View key={i} style={{width:7,height:7,borderRadius:4,backgroundColor:'#19AF91',opacity:fade,transform:[{scale:i===1?1.25:1}]}}/>)}
+   {[0,1,2].map(i=><Animated.View key={i} style={{width:7,height:7,borderRadius:0,backgroundColor:'#19AF91',opacity:fade,transform:[{scale:i===1?1.25:1}]}}/>)}
   </View>
  </View>;
 }
