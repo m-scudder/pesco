@@ -5,6 +5,7 @@ import {Screen} from '@/components/Screen';
 import {ScopeSwitch} from '@/components/UI';
 import {Ionicons} from '@expo/vector-icons';
 import {AmountCalculator} from '@/components/AmountCalculator';
+import {BottomCategoryPicker} from '@/components/BottomCategoryPicker';
 import {CalendarDatePicker} from '@/components/CalendarDatePicker';
 import {localDate,parseMoney,useData} from '@/data';
 import {useCategories} from '@/lib/CategoryContext';
@@ -112,28 +113,10 @@ export default function ExpenseEditor(){
    <Text style={{color:'#C54B4B',fontFamily:'Inter_600SemiBold',fontSize:14}}>Delete expense</Text>
   </Pressable>:null}
   <CalendarDatePicker visible={datePickerOpen} value={date} onChange={setDate} onClose={()=>setDatePickerOpen(false)}/>
- <Modal visible={categoryOpen} transparent animationType="fade" presentationStyle="overFullScreen" onRequestClose={()=>setCategoryOpen(false)}>
- <View style={{flex:1,justifyContent:'center',paddingHorizontal:24,backgroundColor:'rgba(0,0,0,0.55)'}}>
-  <Pressable onPress={()=>setCategoryOpen(false)} style={{position:'absolute',top:0,bottom:0,left:0,right:0}} accessibilityLabel="Dismiss categories"/>
-  <View style={pickerCard}>
-   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-    <Text style={{color:colors.text,fontWeight:'700',fontSize:17}}>Category</Text>
-    <Pressable accessibilityRole="button" onPress={()=>setCategoryOpen(false)} style={{padding:8}}><Text style={{color:colors.muted,fontSize:14}}>Close</Text></Pressable>
-   </View>
-   <ScrollView style={{maxHeight:390}} nestedScrollEnabled>
-    {options.map((name,index)=><Pressable key={name} accessibilityRole="button" accessibilityState={{selected:category===name}}
-     onPress={()=>{setCategory(name);setCategoryOpen(false)}} style={{flexDirection:'row',alignItems:'center',minHeight:47,borderBottomWidth:index===options.length-1?0:1,borderBottomColor:colors.border}}>
-      <Text style={{flex:1,color:colors.text,fontSize:15}}>{name}</Text>
-      {category===name?<Text style={{color:colors.household,fontSize:18,fontWeight:'700'}}>✓</Text>:null}
-     </Pressable>)}
-   </ScrollView>
-   <Pressable accessibilityRole="button" onPress={()=>{setCategoryOpen(false);router.push('/categories')}} style={{paddingVertical:13,marginTop:6}}>
-    <Text style={{color:colors.household,fontSize:14,fontWeight:'600'}}>Manage categories ›</Text>
-   </Pressable>
-  </View>
- </View>
- </Modal>
  </ScrollView>
+ {!noteFocused&&categoryOpen?<View style={{paddingHorizontal:12,paddingBottom:8,backgroundColor:colors.background}}>
+  <BottomCategoryPicker options={options} selected={category} onSelect={name=>{setCategory(name);setCategoryOpen(false)}} onClose={()=>setCategoryOpen(false)} onEdit={()=>{setCategoryOpen(false);router.push('/categories')}}/>
+ </View>:null}
  {!noteFocused&&calculatorOpen?<View style={{paddingHorizontal:12,paddingTop:6,paddingBottom:8,backgroundColor:colors.background}}>
   <AmountCalculator value={amount} onChange={setAmount} onDisplayChange={setCalculatorDisplay} onDone={()=>setCalculatorOpen(false)}/>
  </View>:null}
