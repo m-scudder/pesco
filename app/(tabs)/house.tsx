@@ -62,9 +62,7 @@ export default function House(){
    <Text style={{color:colors.text,fontSize:fontSizes.summary,fontFamily:fontFamilies.displayBold}}>{formatMoney(spent)}</Text>
    <View style={{flexDirection:'row',justifyContent:'space-between',gap:8,flexWrap:'wrap'}}>
     <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{selected.length} {selected.length===1?'expense':'expenses'}</Text>
-    <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>
-     {prior>0&&percentChange!==null?`${difference>0?'↑':difference<0?'↓':'—'} ${percentChange}% vs last month`: 'No spending last month'}
-    </Text>
+
    </View>
    {budget!==null&&budget>0?<>
     <View style={{height:6,backgroundColor:colors.secondary,borderRadius:6,overflow:'hidden'}}>
@@ -82,28 +80,31 @@ export default function House(){
   </Card>
   <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
    <Text style={{color:colors.text,fontSize:fontSizes.body,fontFamily:fontFamilies.semibold}}>Monthly review</Text>
-   <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>Compared with previous month</Text>
+
   </View>
   <Card>
    <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
     <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>Change in household spending</Text>
-    <Text style={{color:colors.text,fontFamily:fontFamilies.semibold,fontSize:fontSizes.body}}>{prior===0?'No prior data':(difference>0?'+':difference<0?'−':'')+formatMoney(Math.abs(difference))}</Text>
+    <View style={{flexDirection:'row',alignItems:'center',gap:5}}>
+     {prior>0&&difference!==0?<Ionicons name={difference>0?'arrow-up':'arrow-down'} size={16} color={difference>0?'#D94B4B':'#259A63'}/>:null}
+     <Text style={{color:prior>0&&difference!==0?(difference>0?'#D94B4B':'#259A63'):colors.text,fontFamily:fontFamilies.semibold,fontSize:fontSizes.body}}>{prior===0?'No prior data':formatMoney(Math.abs(difference))}</Text>
+    </View>
    </View>
-   {prior>0?<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{difference===0?'Same as last month':`${percentChange}% ${difference>0?'higher':'lower'} than last month`}</Text>:null}
+   {prior>0?<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{difference===0?'Unchanged from last month':`${percentChange}% vs last month`}</Text>:null}
    <View style={{height:1,backgroundColor:colors.border}}/>
    {selected.length===0&&prior===0?<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>No spending to review yet</Text>:<>
     {increased.length?<View style={{gap:6}}>
      <Text style={{color:colors.muted,fontSize:fontSizes.caption,fontFamily:fontFamilies.semibold}}>SPENDING INCREASED</Text>
      {increased.slice(0,3).map(item=><View key={item.name} style={{flexDirection:'row',justifyContent:'space-between',gap:12}}>
       <Text numberOfLines={1} style={{flex:1,color:colors.text,fontSize:fontSizes.label}}>{item.name}</Text>
-      <Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.caption,color:colors.text}}>+{formatMoney(item.difference)}</Text>
+      <View style={{flexDirection:'row',alignItems:'center',gap:3}}><Ionicons name="arrow-up" size={14} color="#D94B4B"/><Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.caption,color:'#D94B4B'}}>{formatMoney(item.difference)}</Text></View>
      </View>)}
     </View>:null}
     {decreased.length?<View style={{gap:6}}>
      <Text style={{color:colors.muted,fontSize:fontSizes.caption,fontFamily:fontFamilies.semibold}}>SPENDING DECREASED</Text>
      {decreased.slice(0,3).map(item=><View key={item.name} style={{flexDirection:'row',justifyContent:'space-between',gap:12}}>
       <Text numberOfLines={1} style={{flex:1,color:colors.text,fontSize:fontSizes.label}}>{item.name}</Text>
-      <Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.caption,color:colors.text}}>−{formatMoney(Math.abs(item.difference))}</Text>
+      <View style={{flexDirection:'row',alignItems:'center',gap:3}}><Ionicons name="arrow-down" size={14} color="#259A63"/><Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.caption,color:'#259A63'}}>{formatMoney(Math.abs(item.difference))}</Text></View>
      </View>)}
     </View>:null}
     {!increased.length&&!decreased.length?<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>Category spending was unchanged.</Text>:null}

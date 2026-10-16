@@ -3,7 +3,7 @@ import React,{useState} from 'react';
 import {Pressable,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/ThemeContext';
-import {initialCalculator,pressCalculator,type CalculatorState} from '@/lib/calculator';
+import {calculate,initialCalculator,pressCalculator,type CalculatorState} from '@/lib/calculator';
 
 const keys=['+','−','×','÷','7','8','9','=','4','5','6','.','1','2','3','Back','','0','','OK'];
 type Props={value:string;onChange:(amount:string)=>void;onDisplayChange?:(expression:string)=>void;onDone:()=>void};
@@ -19,7 +19,8 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
    setState(next);
    if(next.error)return;
    const result=String(Number(next.display));
-   publish(result);onChange(result);
+   publish(result);
+   onChange(result);
    if(label==='OK')onDone();
    return;
   }
@@ -27,6 +28,13 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
   const next=pressCalculator(state,key);
   setState(next);
   if(next.error)return;
+  // Keep the editable amount in sync with typing; the checkmark only closes the keypad.
+  if(!next.startNew){
+   const pending=next.operator&&next.accumulator!==null
+    ?calculate(next.accumulator,Math.round(Number(next.display)*100),next.operator)
+    :Math.round(Number(next.display)*100);
+   if(pending!==null&&Number.isFinite(pending)&&pending>0)onChange(String(pending/100));
+  }
   if(key==='C'){publish('0');return}
   if(key==='%'){
    if(next===state)return;
@@ -67,10 +75,10 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
    {keys.map((label,index)=>{
     if(!label)return <View key={'blank-'+index} style={{width:'23%',flexGrow:1,minHeight:43}}/>;
     const isDone=label==='OK',isOperation=['+','−','×','÷','='].includes(label);
-    return <Pressable key={label} accessibilityRole="button" accessibilityLabel={isDone?'Use amount':label==='Back'?'Backspace':label==='C'?'Clear calculator':label}
+    return <Pressable key={label} accessibilityRole="button" accessibilityLabel={isDone?'Apply amount':label==='Back'?'Backspace':label==='C'?'Clear calculator':label}
      onPress={()=>tap(label)} style={{width:'23%',flexGrow:1,minHeight:43,borderRadius:7,alignItems:'center',justifyContent:'center',
       backgroundColor:isDone?accent:isOperation?colors.secondary:colors.background,borderWidth:1,borderColor:colors.border}}>
-     {label==='Back'?<Ionicons name="backspace-outline" size={23} color={colors.text}/>:isDone?<Ionicons name="return-down-back" size={24} color="#fff"/>:<Text style={{fontSize:fontSizes.title,fontWeight:fontWeights.medium,color:colors.text}}>{label}</Text>}
+     {label==='Back'?<Ionicons name="backspace-outline" size={23} color={colors.text}/>:isDone?<Ionicons name="checkmark" size={24} color="#fff"/>:<Text style={{fontSize:fontSizes.title,fontWeight:fontWeights.medium,color:colors.text}}>{label}</Text>}
     </Pressable>;
    })}
   </View>

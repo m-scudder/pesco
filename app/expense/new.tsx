@@ -20,6 +20,7 @@ export default function ExpenseEditor(){
  const scrollRef=useRef<ScrollView>(null);
  const [noteFocused,setNoteFocused]=useState(false);
  const [calculatorDisplay,setCalculatorDisplay]=useState('');
+
  const [amount,setAmount]=useState('');const [category,setCategory]=useState<string>('Groceries');const [note,setNote]=useState('');const [date,setDate]=useState(localDate());const [categoryOpen,setCategoryOpen]=useState(false);const [submitting,setSubmitting]=useState(false);const [calculatorOpen,setCalculatorOpen]=useState(!id);
  useEffect(()=>{if(!editing&&availableCategories.length&&!availableCategories.includes(category)){setCategory(availableCategories[0])}},[scope,availableCategories.join('|'),editing?.id]);
  useEffect(()=>{if(editing){setAmount(String(editing.amountPaise/100));setCategory(editing.category);setNote(editing.note);setDate(editing.date);setScope(editing.scope)}},[editing?.id]);
@@ -69,7 +70,7 @@ export default function ExpenseEditor(){
     style={{minHeight:50,minWidth:160,justifyContent:'center',alignItems:'center',paddingHorizontal:16}}>
     <Text adjustsFontSizeToFit numberOfLines={1} style={{color:amount?colors.text:colors.muted,fontSize:fontSizes.display,fontFamily:fontFamilies.displaySemibold,fontVariant:['tabular-nums']}}>{'₹ '+(calculatorOpen?calculatorDisplay||'0':amount||'0')}</Text>
    </Pressable>
-   <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>INR · Tap to edit</Text>
+
   </View>
   <View style={{marginBottom:5,gap:6}}><ScopeSwitch/><Text accessibilityRole="text" style={{textAlign:'center',fontSize:fontSizes.caption,color:colors.muted}}>{scope==='household'?'Shared expense · Visible to household members':'Personal expense · Visible only to you'}</Text></View>
   <View style={{backgroundColor:colors.surface,borderRadius:12,borderWidth:1,borderColor:colors.border,paddingHorizontal:16}}>
