@@ -17,7 +17,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-adaptive-foreground.png",
         "backgroundColor": "#007E68"
-      }
+      },
+      "package": "com.mayankagarwal.pesco"
     },
     "plugins": [
       "expo-router",
