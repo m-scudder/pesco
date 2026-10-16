@@ -71,7 +71,7 @@ export default function Insights(){
      {slices.map(s=><Path key={s.name} d={slicePath(cx,cy,r,s.start,s.end)} fill={s.color} stroke={highlighted===s.name?colors.text:colors.background} strokeWidth={highlighted===s.name?3:1.5} onPress={()=>setHighlighted(s.name)} />)}
     </Svg>
     {activeSlice?<Pressable accessibilityRole="button" accessibilityLabel={'Open '+activeSlice.name+' transactions'} onPress={()=>setChosen(activeSlice.name)} style={{flexDirection:'row',alignItems:'center',gap:8,paddingVertical:8,paddingHorizontal:12}}>
-     <View style={{width:12,height:12,borderRadius:3,backgroundColor:activeSlice.color}}/>
+     <View style={{width:12,height:12,borderRadius:0,backgroundColor:activeSlice.color}}/>
      <Text style={{fontSize:fontSizes.body,fontWeight:fontWeights.semibold,color:colors.text}}>{activeSlice.name}</Text>
      <Text style={{fontSize:fontSizes.label,color:colors.muted}}>{(activeSlice.amount/spent*100).toFixed(1)}%</Text>
      <Text style={{fontSize:fontSizes.body,color:colors.text}}>{fmt(activeSlice.amount)} ›</Text>
@@ -81,7 +81,7 @@ export default function Insights(){
     accessibilityLabel={s.name+', '+s.percent+' percent, '+fmt(s.amount)}
     onPress={()=>setChosen(s.name)}
     style={{flexDirection:'row',alignItems:'center',gap:10,paddingHorizontal:14,paddingVertical:13,minHeight:58,borderTopWidth:1,borderColor:colors.border}}>
-    <View style={{backgroundColor:s.color,borderRadius:5,paddingHorizontal:7,paddingVertical:5,minWidth:48,alignItems:'center'}}>
+    <View style={{backgroundColor:s.color,borderRadius:0,paddingHorizontal:7,paddingVertical:5,minWidth:48,alignItems:'center'}}>
      <Text style={{color:'#22252B',fontSize:fontSizes.label,fontWeight:fontWeights.bold}}>{s.percent>0&&s.percent<0.1?'<0.1':s.percent}%</Text>
     </View>
     <Text style={{color:colors.text,flex:1,fontSize:fontSizes.input}} numberOfLines={1}>{s.name}</Text>
