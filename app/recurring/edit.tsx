@@ -100,7 +100,7 @@ export default function RecurringEditor(){
  const line=()=> <View style={{height:1,backgroundColor:colors.border}}/>;
  const fieldLabel=()=>({width:83});
 
- return <><Stack.Screen options={{title:id?'Edit recurring bill':'Add recurring bill',presentation:'card'}}/>
+ return <><Stack.Screen options={{title:id?'Edit Recurring Bill':'Add Recurring Bill',presentation:'card'}}/>
  <KeyboardAvoidingView style={{flex:1,backgroundColor:colors.background}} behavior={Platform.OS==='ios'?'padding':undefined} keyboardVerticalOffset={Platform.OS==='ios'?90:0}>
  <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" contentContainerStyle={{paddingHorizontal:16,paddingTop:6,paddingBottom:20,gap:8}}>
  {loading?<Body muted>Loading bill…</Body>:loadError?<Body muted>{loadError}</Body>:<>
@@ -155,7 +155,7 @@ export default function RecurringEditor(){
   <Text style={{fontSize:fontSizes.caption,color:colors.muted,marginTop:4}}>Repeats monthly on the selected date. Short months use the last day.</Text>
   <Pressable accessibilityRole="button" disabled={busy} onPress={()=>{Keyboard.dismiss();void save()}}
    style={{backgroundColor:accent,minHeight:50,borderRadius:10,alignItems:'center',justifyContent:'center',marginTop:8,opacity:busy?0.6:1}}>
-   <Text style={{color:'#fff',fontFamily:fontFamilies.semibold,fontSize:fontSizes.input}}>{busy?'Saving…':id?'Save changes':'Save recurring bill'}</Text>
+   <Text style={{color:'#fff',fontFamily:fontFamilies.semibold,fontSize:fontSizes.input}}>{busy?'Saving…':id?'Save Changes':'Save Recurring Bill'}</Text>
   </Pressable>
  </>}
  </ScrollView>
