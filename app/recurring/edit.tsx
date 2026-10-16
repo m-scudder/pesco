@@ -163,10 +163,10 @@ export default function RecurringEditor(){
   </Pressable>
  </>}
  </ScrollView>
- {!noteFocused&&categoryOpen&&!loading&&!loadError?<View style={{paddingHorizontal:12,paddingBottom:8,backgroundColor:colors.background}}>
+ {!noteFocused&&categoryOpen&&!loading&&!loadError?<View style={{paddingHorizontal:12,paddingTop:6,paddingBottom:8,backgroundColor:colors.background,borderTopWidth:1,borderTopColor:colors.border}}>
   <BottomCategoryPicker options={options} selected={category} onSelect={name=>{setCategory(name);setCategoryOpen(false)}} onClose={()=>setCategoryOpen(false)} onEdit={()=>{setCategoryOpen(false);router.push('/categories')}}/>
  </View>:null}
- {!noteFocused&&calculatorOpen&&!loading&&!loadError?<View style={{paddingHorizontal:12,paddingTop:6,paddingBottom:8,backgroundColor:colors.background}}>
+ {!noteFocused&&calculatorOpen&&!loading&&!loadError?<View style={{paddingHorizontal:12,paddingTop:6,paddingBottom:8,backgroundColor:colors.background,borderTopWidth:1,borderTopColor:colors.border}}>
   <AmountCalculator value={amount} onChange={setAmount} onDisplayChange={setCalculatorDisplay} onDone={()=>setCalculatorOpen(false)}/>
  </View>:null}
  </KeyboardAvoidingView>
