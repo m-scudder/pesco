@@ -1,6 +1,6 @@
 import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
 import React,{useEffect,useRef,useState} from 'react';
-import {Alert,Keyboard,KeyboardAvoidingView,Pressable,ScrollView,Text,TextInput,View} from 'react-native';
+import {Alert,Keyboard,KeyboardAvoidingView,Platform,Pressable,ScrollView,Text,TextInput,View} from 'react-native';
 import {Stack,useLocalSearchParams,useRouter} from 'expo-router';
 import {AmountCalculator} from '@/components/AmountCalculator';
 import {CalendarDatePicker} from '@/components/CalendarDatePicker';
