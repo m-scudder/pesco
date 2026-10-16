@@ -1,3 +1,4 @@
+import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
 import React,{useEffect,useMemo,useState} from 'react';
 import {useRouter} from 'expo-router';
 import {Alert,Pressable,Text,TextInput,View} from 'react-native';
@@ -57,13 +58,13 @@ export default function Home(){
   <Screen style={{paddingHorizontal:0,gap:0}}>
    <View style={{paddingHorizontal:16,paddingBottom:8,gap:8}}>
     <ScopeSwitch/>
-    {demoEnabled?<Text style={{fontSize:11,color:colors.muted,fontFamily:'Inter_500Medium'}}>DEMO DATA · Sample expenses are read-only</Text>:null}
+    {demoEnabled?<Text style={{fontSize:fontSizes.caption,color:colors.muted,fontFamily:fontFamilies.medium}}>DEMO DATA · Sample expenses are read-only</Text>:null}
     <MonthPicker month={month} onChange={setMonth}/>
     <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
      <View style={{flex:1,flexDirection:'row',alignItems:'center',backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,borderRadius:11,paddingHorizontal:10}}>
       <Ionicons name="search-outline" color={colors.muted} size={18}/>
       <TextInput accessibilityLabel="Search expenses" value={search} onChangeText={setSearch} placeholder="Search expenses" placeholderTextColor={colors.muted}
-       style={{flex:1,height:42,paddingHorizontal:8,color:colors.text,fontFamily:'Inter_400Regular',fontSize:14}}/>
+       style={{flex:1,height:42,paddingHorizontal:8,color:colors.text,fontFamily:fontFamilies.regular,fontSize:fontSizes.body}}/>
       {search?<Pressable accessibilityLabel="Clear search" onPress={()=>setSearch('')}><Ionicons name="close-circle" color={colors.muted} size={18}/></Pressable>:null}
      </View>
      <Pressable accessibilityRole="button" accessibilityLabel="Expense filters" accessibilityState={{expanded:showFilters}} onPress={()=>setShowFilters(v=>!v)}
@@ -72,18 +73,18 @@ export default function Home(){
      </Pressable>
     </View>
     {showFilters?<View style={{gap:9,paddingVertical:6}}>
-     <Text style={{fontSize:12,color:colors.muted}}>Category</Text>
+     <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>Category</Text>
      <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
       {options.map(option=><Pressable key={option} onPress={()=>setCategoryFilter(option)}
        style={{paddingHorizontal:10,paddingVertical:7,borderRadius:9,backgroundColor:categoryFilter===option?colors.household:colors.secondary}}>
-       <Text style={{color:categoryFilter===option?'#fff':colors.text,fontSize:12}}>{option}</Text>
+       <Text style={{color:categoryFilter===option?'#fff':colors.text,fontSize:fontSizes.caption}}>{option}</Text>
       </Pressable>)}
      </View>
      {scope==='household'?<View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-      <Text style={{fontSize:12,color:colors.muted,marginRight:4}}>Added by</Text>
+      <Text style={{fontSize:fontSizes.caption,color:colors.muted,marginRight:4}}>Added by</Text>
       {(['all','me','partner'] as const).map(v=><Pressable key={v} onPress={()=>setContributor(v)}
        style={{paddingHorizontal:11,paddingVertical:7,borderRadius:9,backgroundColor:contributor===v?colors.household:colors.secondary}}>
-       <Text style={{color:contributor===v?'#fff':colors.text,fontSize:12}}>{v==='all'?'Everyone':v==='me'?'You':'Partner'}</Text>
+       <Text style={{color:contributor===v?'#fff':colors.text,fontSize:fontSizes.caption}}>{v==='all'?'Everyone':v==='me'?'You':'Partner'}</Text>
       </Pressable>)}
      </View>:null}
      <View style={{flexDirection:'row',gap:8}}>
@@ -92,14 +93,14 @@ export default function Home(){
        style={{flex:1,height:40,borderRadius:9,borderWidth:1,borderColor:colors.border,paddingHorizontal:10,color:colors.text,backgroundColor:colors.surface}}/>)}
      </View>
      <Pressable accessibilityRole="button" onPress={()=>{setSearch('');setCategoryFilter('All');setContributor('all');setMinAmount('');setMaxAmount('')}}>
-      <Text style={{fontSize:13,color:colors.household,fontWeight:'600'}}>Clear filters</Text>
+      <Text style={{fontSize:fontSizes.label,color:colors.household,fontWeight:fontWeights.semibold}}>Clear filters</Text>
      </Pressable>
     </View>:null}
    </View>
-   {scope==='household'&&syncError?<Text accessibilityRole="alert" style={{color:'#C94F4F',fontSize:12,paddingHorizontal:16,paddingVertical:6}}>Unable to sync. Open Pending uploads in Settings for details.</Text>:null}
+   {scope==='household'&&syncError?<Text accessibilityRole="alert" style={{color:'#C94F4F',fontSize:fontSizes.caption,paddingHorizontal:16,paddingVertical:6}}>Unable to sync. Open Pending uploads in Settings for details.</Text>:null}
    {groups.length===0?
     <View style={{paddingVertical:28,alignItems:'center'}}>
-     <Text style={{color:colors.muted,fontSize:14}}>No expenses for this month</Text>
+     <Text style={{color:colors.muted,fontSize:fontSizes.body}}>No expenses for this month</Text>
     </View>:
     groups.map(group=>{
      const date=group[0].date;
@@ -107,9 +108,9 @@ export default function Home(){
      const weekday=parsed.toLocaleDateString('en-IN',{weekday:'short'});
      return <View key={date}>
       <View style={{flexDirection:'row',alignItems:'center',gap:7,paddingHorizontal:12,paddingVertical:7,backgroundColor:colors.secondary,borderTopWidth:1,borderBottomWidth:1,borderColor:colors.border}}>
-       <Text style={{fontSize:20,fontFamily:'PlusJakartaSans_700Bold',color:colors.text}}>{parsed.getDate()}</Text>
+       <Text style={{fontSize:fontSizes.title,fontFamily:fontFamilies.displayBold,color:colors.text}}>{parsed.getDate()}</Text>
        <View style={{backgroundColor:colors.surface,borderRadius:5,paddingHorizontal:6,paddingVertical:2}}>
-        <Text style={{fontSize:12,color:colors.muted,fontWeight:'600'}}>{weekday}</Text>
+        <Text style={{fontSize:fontSizes.caption,color:colors.muted,fontWeight:fontWeights.semibold}}>{weekday}</Text>
        </View>
       </View>
       {group.map(expense=><Pressable
@@ -122,14 +123,14 @@ export default function Home(){
         router.push(mine?{pathname:'/expense/new',params:{id:expense.id}}:{pathname:'/expense/[id]',params:{id:expense.id}});
        }}
        style={{flexDirection:'row',alignItems:'center',paddingHorizontal:12,paddingVertical:9,gap:9,borderBottomWidth:1,borderColor:colors.border,minHeight:56}}>
-       <Text numberOfLines={2} style={{width:88,color:colors.muted,fontSize:11,lineHeight:17}}>{expense.category}</Text>
+       <Text numberOfLines={2} style={{width:88,color:colors.muted,fontSize:fontSizes.caption,lineHeight:17}}>{expense.category}</Text>
        <View style={{flex:1,gap:2}}>
-        <Text numberOfLines={2} style={{color:colors.text,fontSize:14,fontFamily:'Inter_500Medium'}}>{expense.note?.trim()||expense.category}</Text>
+        <Text numberOfLines={2} style={{color:colors.text,fontSize:fontSizes.body,fontFamily:fontFamilies.medium}}>{expense.note?.trim()||expense.category}</Text>
         {scope==='household'?
-         <Text style={{color:colors.muted,fontSize:12}}>{expense.ownerId==='local-user'||expense.ownerId===currentUserId?'You':'Partner'}</Text>:null}
+         <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{expense.ownerId==='local-user'||expense.ownerId===currentUserId?'You':'Partner'}</Text>:null}
        </View>
        <View style={{alignItems:'flex-end',gap:3}}>
-        <Text style={{color:'#F25B59',fontSize:15,fontWeight:'500',textAlign:'right'}}>{formatMoney(expense.amountPaise)}</Text>
+        <Text style={{color:'#F25B59',fontSize:fontSizes.input,fontWeight:fontWeights.medium,textAlign:'right'}}>{formatMoney(expense.amountPaise)}</Text>
        </View>
       </Pressable>)}
      </View>;
@@ -137,7 +138,7 @@ export default function Home(){
    }
    {filtered.length>visibleCount?<Pressable accessibilityRole="button" onPress={()=>setVisibleCount(count=>count+60)}
     style={{margin:12,padding:12,borderRadius:10,alignItems:'center',backgroundColor:colors.secondary}}>
-    <Text style={{color:colors.text,fontSize:13,fontFamily:'Inter_600SemiBold'}}>Show more ({filtered.length-visibleCount} remaining)</Text>
+    <Text style={{color:colors.text,fontSize:fontSizes.label,fontFamily:fontFamilies.semibold}}>Show more ({filtered.length-visibleCount} remaining)</Text>
    </Pressable>:null}
   </Screen>
   <AddExpenseButton/>
