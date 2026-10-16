@@ -29,9 +29,19 @@ export default function Onboarding(){
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState<string|null>(null);
  const [signingIn,setSigningIn]=useState(false);
+ const [checkingHousehold,setCheckingHousehold]=useState(false);
+ const [householdCheckedFor,setHouseholdCheckedFor]=useState<string|null>(null);
  const authenticated=!!user&&!user.is_anonymous&&!!user.identities?.some(i=>i.provider==='google'||i.provider==='apple');
- useEffect(()=>{if(!authenticated)return;let active=true;
-  void getMyHousehold().then(existing=>{if(active&&existing)void finish().then(()=>router.replace('/(tabs)'))}).catch(()=>{});
+ useEffect(()=>{
+  if(!authenticated||!user){setHouseholdCheckedFor(null);setCheckingHousehold(false);return}
+  let active=true;
+  setCheckingHousehold(true);
+  void getMyHousehold().then(async existing=>{
+   if(!active)return;
+   if(existing){await finish();if(active)router.replace('/(tabs)')}
+   else if(active)setHouseholdCheckedFor(user.id);
+  }).catch(e=>{if(active){setError(e instanceof Error?e.message:'Could not load household');setHouseholdCheckedFor(user.id)}})
+   .finally(()=>{if(active)setCheckingHousehold(false)});
   return()=>{active=false};
  },[authenticated,user?.id]);
  const inputStyle={borderWidth:1 as const,borderColor:colors.border,borderRadius:9,height:44,paddingHorizontal:12,color:colors.text,fontSize:fontSizes.input};
@@ -53,6 +63,7 @@ export default function Onboarding(){
    <Text style={{color:primary?'#fff':colors.text,fontSize:fontSizes.body,fontWeight:fontWeights.semibold}}>{label}</Text>
   </Pressable>
  );
+ if(authenticated&&(checkingHousehold||householdCheckedFor!==user?.id))return <View style={{flex:1,backgroundColor:colors.background,alignItems:'center',justifyContent:'center'}}><ActivityIndicator color={colors.household}/></View>;
  return <Screen style={{flexGrow:1,justifyContent:authenticated?'center':'space-between',paddingBottom:24,gap:22}}>
   <View style={{alignItems:'center',justifyContent:'center',gap:14,...(!authenticated?{flexGrow:1}:{} )}}>
    <Image source={require('../assets/icon.png')} accessibilityLabel="PESCO app logo" resizeMode="contain" style={{width:92,height:92,borderRadius:22}}/>
