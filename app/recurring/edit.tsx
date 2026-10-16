@@ -10,7 +10,7 @@ import {Body} from '@/components/UI';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {useCategories} from '@/lib/CategoryContext';
 import {localDate,parseMoney,useData} from '@/data';
-import {listHouseholdRecurring,saveHouseholdRecurring,generateHouseholdRecurring} from '@/lib/householdRecurring';
+import {listHouseholdRecurring,saveHouseholdRecurring,generateHouseholdRecurring,toggleHouseholdRecurring,deleteHouseholdRecurring} from '@/lib/householdRecurring';
 import type {Scope} from '@/theme/palette';
 
 const iso=(d:Date)=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -22,7 +22,7 @@ export default function RecurringEditor(){
  const {scope:scopeParam,id}=useLocalSearchParams<{scope?:string;id?:string}>();
  const scope:Scope=scopeParam==='household'?'household':'personal';
  const {colors}=useAppTheme();
- const {household,recurringRules,addRecurring,updateRecurring,refresh}=useData();
+ const {household,recurringRules,addRecurring,updateRecurring,refresh,setRecurringActive,deleteRecurring}=useData();
  const {names}=useCategories();
  const categories=names(scope);
  const [category,setCategory]=useState(categories[0]??'Groceries');
@@ -37,6 +37,7 @@ export default function RecurringEditor(){
  const [dateOpen,setDateOpen]=useState(false);
  const [categoryOpen,setCategoryOpen]=useState(false);
  const [busy,setBusy]=useState(false);
+ const [active,setActive]=useState(true);
  const [loading,setLoading]=useState(!!id&&scope==='household');
  const [loadError,setLoadError]=useState<string|null>(null);
  const accent=scope==='household'?colors.household:colors.personal;
@@ -61,6 +62,7 @@ export default function RecurringEditor(){
      setAmount(String(amountValue/100));
      setNote(selected.note);
      setCategory(selected.category);
+     setActive(selected.active);
     }
    }catch(e){if(active)setLoadError(e instanceof Error?e.message:'Could not load bill')}
    finally{if(active)setLoading(false)}
@@ -96,6 +98,36 @@ export default function RecurringEditor(){
    router.back();
   }catch(e){Alert.alert('Could not save',e instanceof Error?e.message:'Try again')}
   finally{setBusy(false)}
+ };
+ const toggleActive=async()=>{
+  if(!id||busy)return;
+  setBusy(true);
+  try{
+   if(scope==='household'){
+    if(!household)throw new Error('Household required');
+    await toggleHouseholdRecurring(household.id,id,!active);
+    await refresh();
+   }else setRecurringActive(id,!active);
+   setActive(!active);
+  }catch(e){Alert.alert('Could Not Update',e instanceof Error?e.message:String(e))}
+  finally{setBusy(false)}
+ };
+ const confirmDelete=()=>{
+  if(!id||busy)return;
+  Alert.alert('Delete Recurring Bill?','Existing expenses will remain.',[
+   {text:'Cancel',style:'cancel'},
+   {text:'Delete',style:'destructive',onPress:()=>{void (async()=>{
+    setBusy(true);
+    try{
+     if(scope==='household'){
+      if(!household)throw new Error('Household required');
+      await deleteHouseholdRecurring(household.id,id);
+      await refresh();
+     }else deleteRecurring(id);
+     router.back();
+    }catch(e){Alert.alert('Could Not Delete',e instanceof Error?e.message:String(e));setBusy(false)}
+   })()}}
+  ]);
  };
  const line=()=> <View style={{height:1,backgroundColor:colors.border}}/>;
  const fieldLabel=()=>({width:83});
@@ -153,10 +185,19 @@ export default function RecurringEditor(){
    </View>
   </View>
   <Text style={{fontSize:fontSizes.caption,color:colors.muted,marginTop:4}}>Repeats monthly on the selected date. Short months use the last day.</Text>
+  {id?<View style={{flexDirection:'row',gap:10,alignItems:'center',paddingVertical:10}}>
+   <Text style={{flex:1,color:colors.text,fontFamily:fontFamilies.medium,fontSize:fontSizes.body}}>Recurring Bill</Text>
+   <Pressable accessibilityRole="button" disabled={busy} onPress={()=>{void toggleActive()}} style={{padding:10,borderRadius:9,backgroundColor:colors.secondary}}>
+    <Text style={{color:colors.text,fontFamily:fontFamilies.semibold,fontSize:fontSizes.body}}>{active?'Pause':'Resume'}</Text>
+   </Pressable>
+  </View>:null}
   <Pressable accessibilityRole="button" disabled={busy} onPress={()=>{Keyboard.dismiss();void save()}}
    style={{backgroundColor:accent,minHeight:50,borderRadius:10,alignItems:'center',justifyContent:'center',marginTop:8,opacity:busy?0.6:1}}>
    <Text style={{color:'#fff',fontFamily:fontFamilies.semibold,fontSize:fontSizes.input}}>{busy?'Saving…':id?'Save Changes':'Save Recurring Bill'}</Text>
   </Pressable>
+  {id?<Pressable accessibilityRole="button" disabled={busy} onPress={confirmDelete} style={{minHeight:48,alignItems:'center',justifyContent:'center',marginTop:4}}>
+   <Text style={{color:'#C94F4F',fontFamily:fontFamilies.semibold,fontSize:fontSizes.body}}>Delete Recurring Bill</Text>
+  </Pressable>:null}
  </>}
  </ScrollView>
  {!noteFocused&&categoryOpen&&!loading&&!loadError?<View style={{paddingHorizontal:12,paddingTop:6,paddingBottom:8,backgroundColor:colors.background,borderTopWidth:1,borderTopColor:colors.border}}>
