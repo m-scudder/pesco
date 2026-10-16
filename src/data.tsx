@@ -199,7 +199,11 @@ export function DataProvider({children}:{children:React.ReactNode}){
    }
    const snapshotStartedAt=Date.now();
    const rows=membership?await fetchAllHouseholdExpenses(membership.id):[];
-   const localRows=membership?await reconcileHouseholdLedger(user.id,membership.id,rows,snapshotStartedAt):[];
+   let localRows=rows;
+   if(membership){
+    try{localRows=await reconcileHouseholdLedger(user.id,membership.id,rows,snapshotStartedAt)}
+    catch(error){console.warn('SQLite reconciliation failed; using cloud snapshot',error)}
+   }
    if(localLoaded&&!personalImportBusy.current){
     personalImportBusy.current=true;
     try{
