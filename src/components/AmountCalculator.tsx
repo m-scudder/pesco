@@ -5,7 +5,7 @@ import {Ionicons} from '@expo/vector-icons';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {calculate,initialCalculator,pressCalculator,type CalculatorState} from '@/lib/calculator';
 
-const keys=['+','−','×','÷','7','8','9','=','4','5','6','.','1','2','3','Back','','0','','OK'];
+const keys=['+','−','×','÷','7','8','9','=','4','5','6','%','1','2','3','.','C','0','Back','OK'];
 type Props={value:string;onChange:(amount:string)=>void;onDisplayChange?:(expression:string)=>void;onDone:()=>void};
 export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
  const {colors}=useAppTheme();
@@ -35,10 +35,10 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
     :Math.round(Number(next.display)*100);
    if(pending!==null&&Number.isFinite(pending)&&pending>0)onChange(String(pending/100));
   }
-  if(key==='C'){publish('0');return}
+  if(key==='C'){publish('0');onChange('');return}
   if(key==='%'){
    if(next===state)return;
-   publish(expression.trimEnd()+'%');
+   publish(next.display);
    return;
   }
   if(key==='⌫'){
@@ -59,7 +59,7 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
    }
    return;
   }
-  if(key==='.'&&state.startNew){publish(expression+'0.');return}
+  if(key==='.'&&state.startNew){publish(state.operator?expression+'0.':'0.');return}
   if(state.startNew&&state.operator){publish(expression+key);return}
   if(expression.endsWith('%')){
    publish(next.display);
@@ -67,7 +67,7 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
   }
   if(state.startNew){publish(key==='.'?'0.':key);return}
   if(expression==='0'&&key!=='.'){publish(key);return}
-  publish(expression+key);
+  publish(next.display);
  }
  return <View style={{paddingVertical:4}}>
   {state.error?<Text accessibilityRole="alert" style={{color:'#C94F4F',fontSize:fontSizes.caption,padding:6}}>{state.error}</Text>:null}
