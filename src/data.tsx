@@ -4,13 +4,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {Scope} from './theme/palette';
 import {useAuth} from './lib/AuthContext';
 import {getMyHousehold,type Household} from './lib/households';
-import {addCloudExpense,deleteCloudExpense,editCloudExpense,fetchAllHouseholdExpenses,fetchAllPersonalExpenses,importPersonalExpense} from './lib/cloudExpenses';
+import {addCloudExpense,deleteCloudExpense,editCloudExpense,fetchAllHouseholdExpenses,fetchHouseholdExpenseById,fetchAllPersonalExpenses,importPersonalExpense} from './lib/cloudExpenses';
 import {supabase} from './lib/supabase';
 import {makeDemoExpenses} from './lib/demoExpenses';
 import {generateHouseholdRecurring} from './lib/householdRecurring';
 import {queueHouseholdExpense,flushPending,loadPending,cancelPending,editPending,type PendingExpense} from './lib/pendingExpenses';
 import {loadMutations,flushMutations,queueMutation,discardMutation,type PendingMutation} from './lib/pendingMutations';
-import {loadHouseholdLedger,seedHouseholdLedger,upsertLocalHouseholdExpense,removeHouseholdLedgerExpense,reconcileHouseholdLedger} from './lib/localLedger';
+import {loadHouseholdLedger,seedHouseholdLedger,upsertLocalHouseholdExpense,removeHouseholdLedgerExpense,reconcileHouseholdLedger,upsertSyncedHouseholdExpense,removeSyncedHouseholdExpense} from './lib/localLedger';
 
 export const CATEGORIES=['Groceries','Food & Drinks','Shopping','Utilities','Rent','Transport','Health','Entertainment','Education','Travel','Other'] as const;
 export type Expense={id:string;scope:Scope;amountPaise:number;category:string;note:string;date:string;createdAt:string;updatedAt:string;ownerId:string};
@@ -299,24 +299,47 @@ export function DataProvider({children}:{children:React.ReactNode}){
   }
  },[user?.id,localLoaded,localExpenses]);
  
- // Subscribe after membership is known. Re-subscribe if the household changes.
- // Realtime events invalidate the household feed, which is fetched under RLS.
+ // The channel notifies us of changed IDs; read only those rows under RLS.
+ // Periodic and foreground full fetches recover missed events.
  useEffect(()=>{
   const client=supabase;
   if(!client||!user||!household?.id)return;
-  const channel=client.channel('household-expenses-'+household.id)
+  const userId=user.id,householdId=household.id;
+  let alive=true;
+  const channel=client.channel('household-expenses-'+householdId)
    .on('postgres_changes',{
-    event:'*',schema:'public',table:'expenses',
-    filter:'household_id=eq.'+household.id
-   },()=>{void refresh()})
+    event:'*',schema:'public',table:'expenses',filter:'household_id=eq.'+householdId
+   },payload=>{
+    const data=payload.eventType==='DELETE'?payload.old:payload.new;
+    const id=typeof data?.id==='string'?data.id:null;
+    if(!id){void refreshRef.current();return}
+    void (async()=>{
+     try{
+      if(payload.eventType==='DELETE'){
+       await removeSyncedHouseholdExpense(userId,id);
+       if(!alive)return;
+       setLedgerExpenses(previous=>previous.filter(row=>row.id!==id));
+       setCloudExpenses(previous=>previous.filter(row=>row.id!==id));
+      }else{
+       const row=await fetchHouseholdExpenseById(id,householdId);
+       if(!row||!alive)return;
+       await upsertSyncedHouseholdExpense(userId,householdId,row);
+       if(!alive)return;
+       setLedgerExpenses(previous=>[...previous.filter(item=>item.id!==id),row]);
+       setCloudExpenses(previous=>[...previous.filter(item=>item.id!==id),row]);
+      }
+     }catch(error){
+      console.warn('Realtime expense merge failed',error);
+      if(alive)void refreshRef.current();
+     }
+    })();
+   })
    .subscribe(status=>{
-    if(status==='SUBSCRIBED')void refresh();
-    if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
+    if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')
      console.warn('Household Realtime disconnected:',status);
-    }
    });
-  return()=>{void client.removeChannel(channel)};
- },[user?.id,household?.id,refresh]);
+  return()=>{alive=false;void client.removeChannel(channel)};
+ },[user?.id,household?.id]);
 
  const realExpenses=useMemo(()=>[
   ...localExpenses.filter(e=>(e.scope==='personal'&&!cloudPersonal.some(remote=>remote.id===e.id))||(!household&&e.scope==='household')),
