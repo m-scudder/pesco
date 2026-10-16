@@ -1,7 +1,8 @@
 import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
 import React,{useEffect,useMemo,useState} from 'react';
 import {useRouter} from 'expo-router';
-import {Alert,Pressable,Text,TextInput,View} from 'react-native';
+import {Alert,Keyboard,Modal,Pressable,ScrollView,Text,TextInput,View} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {Screen} from '@/components/Screen';
 import {AddExpenseButton} from '@/components/AddExpenseButton';
@@ -15,6 +16,7 @@ export default function Home(){
  const {colors,scope}=useAppTheme();
  const {expenses,syncError,currentUserId,demoEnabled}=useData();
  const router=useRouter();
+ const insets=useSafeAreaInsets();
  const [month,setMonth]=useState(monthKey(localDate()));
  const [search,setSearch]=useState('');
  const [showFilters,setShowFilters]=useState(false);
@@ -23,6 +25,14 @@ export default function Home(){
  const [minAmount,setMinAmount]=useState('');
  const [maxAmount,setMaxAmount]=useState('');
  const [visibleCount,setVisibleCount]=useState(60);
+ const [draftCategory,setDraftCategory]=useState('All');
+ const [draftContributor,setDraftContributor]=useState<'all'|'me'|'partner'>('all');
+ const [draftMin,setDraftMin]=useState('');
+ const [draftMax,setDraftMax]=useState('');
+ const activeFilterCount=Number(categoryFilter!=='All')+Number(scope==='household'&&contributor!=='all')+Number(Boolean(minAmount))+Number(Boolean(maxAmount));
+ const openFilters=()=>{setDraftCategory(categoryFilter);setDraftContributor(contributor);setDraftMin(minAmount);setDraftMax(maxAmount);setShowFilters(true)};
+ const applyFilters=()=>{setCategoryFilter(draftCategory);setContributor(draftContributor);setMinAmount(draftMin);setMaxAmount(draftMax);Keyboard.dismiss();setShowFilters(false)};
+ const resetFilters=()=>{setDraftCategory('All');setDraftContributor('all');setDraftMin('');setDraftMax('')};
  useEffect(()=>{setVisibleCount(60)},[scope,month,search,categoryFilter,contributor,minAmount,maxAmount]);
 
  const options=useMemo(()=>['All',...Array.from(new Set(expenses.filter(e=>e.scope===scope).map(e=>e.category))).sort()], [expenses,scope]);
@@ -67,35 +77,16 @@ export default function Home(){
        style={{flex:1,height:42,paddingHorizontal:8,color:colors.text,fontFamily:fontFamilies.regular,fontSize:fontSizes.body}}/>
       {search?<Pressable accessibilityLabel="Clear search" onPress={()=>setSearch('')}><Ionicons name="close-circle" color={colors.muted} size={18}/></Pressable>:null}
      </View>
-     <Pressable accessibilityRole="button" accessibilityLabel="Expense filters" accessibilityState={{expanded:showFilters}} onPress={()=>setShowFilters(v=>!v)}
-      style={{height:44,width:44,alignItems:'center',justifyContent:'center',backgroundColor:showFilters?colors.secondary:colors.surface,borderRadius:11,borderWidth:1,borderColor:colors.border}}>
-      <Ionicons name="options-outline" size={21} color={colors.text}/>
+     <Pressable accessibilityRole="button" accessibilityLabel="Expense filters" accessibilityState={{expanded:showFilters}} onPress={openFilters}
+      style={{height:44,width:44,alignItems:'center',justifyContent:'center',backgroundColor:activeFilterCount?colors.secondary:colors.surface,borderRadius:11,borderWidth:1,borderColor:colors.border}}>
+      <Ionicons name="options-outline" size={21} color={activeFilterCount?colors.household:colors.text}/>
+      {activeFilterCount>0?<View style={{position:"absolute",right:3,top:3,width:7,height:7,borderRadius:4,backgroundColor:colors.household}}/>:null}
      </Pressable>
     </View>
-    {showFilters?<View style={{gap:9,paddingVertical:6}}>
-     <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>Category</Text>
-     <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
-      {options.map(option=><Pressable key={option} onPress={()=>setCategoryFilter(option)}
-       style={{paddingHorizontal:10,paddingVertical:7,borderRadius:9,backgroundColor:categoryFilter===option?colors.household:colors.secondary}}>
-       <Text style={{color:categoryFilter===option?'#fff':colors.text,fontSize:fontSizes.caption}}>{option}</Text>
-      </Pressable>)}
-     </View>
-     {scope==='household'?<View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-      <Text style={{fontSize:fontSizes.caption,color:colors.muted,marginRight:4}}>Added by</Text>
-      {(['all','me','partner'] as const).map(v=><Pressable key={v} onPress={()=>setContributor(v)}
-       style={{paddingHorizontal:11,paddingVertical:7,borderRadius:9,backgroundColor:contributor===v?colors.household:colors.secondary}}>
-       <Text style={{color:contributor===v?'#fff':colors.text,fontSize:fontSizes.caption}}>{v==='all'?'Everyone':v==='me'?'You':'Partner'}</Text>
-      </Pressable>)}
-     </View>:null}
-     <View style={{flexDirection:'row',gap:8}}>
-      {[{label:'Min ₹',value:minAmount,set:setMinAmount},{label:'Max ₹',value:maxAmount,set:setMaxAmount}].map(item=><TextInput key={item.label}
-       accessibilityLabel={item.label} value={item.value} onChangeText={value=>item.set(value.replace(/[^0-9]/g,""))} keyboardType="number-pad" placeholder={item.label} placeholderTextColor={colors.muted}
-       style={{flex:1,height:40,borderRadius:9,borderWidth:1,borderColor:colors.border,paddingHorizontal:10,color:colors.text,backgroundColor:colors.surface}}/>)}
-     </View>
-     <Pressable accessibilityRole="button" onPress={()=>{setSearch('');setCategoryFilter('All');setContributor('all');setMinAmount('');setMaxAmount('')}}>
-      <Text style={{fontSize:fontSizes.label,color:colors.household,fontWeight:fontWeights.semibold}}>Clear Filters</Text>
-     </Pressable>
-    </View>:null}
+    {activeFilterCount>0?<Pressable accessibilityRole="button" accessibilityLabel="Edit active filters" onPress={openFilters} style={{alignSelf:'flex-start',paddingVertical:5,flexDirection:'row',alignItems:'center',gap:6}}>
+     <Ionicons name="funnel-outline" size={13} color={colors.household}/>
+     <Text style={{fontSize:fontSizes.caption,color:colors.household}}>{activeFilterCount} active {activeFilterCount===1?'filter':'filters'} · Edit</Text>
+    </Pressable>:null}
    </View>
    {scope==='household'&&syncError?<Text accessibilityRole="alert" style={{color:'#C94F4F',fontSize:fontSizes.caption,paddingHorizontal:16,paddingVertical:6}}>Unable to sync. Open Pending uploads in Settings for details.</Text>:null}
    {groups.length===0?
@@ -141,6 +132,55 @@ export default function Home(){
     <Text style={{color:colors.text,fontSize:fontSizes.label,fontFamily:fontFamilies.semibold}}>Show more ({filtered.length-visibleCount} remaining)</Text>
    </Pressable>:null}
   </Screen>
+  <Modal visible={showFilters} transparent animationType="slide" presentationStyle="overFullScreen" onRequestClose={()=>setShowFilters(false)}>
+   <View style={{flex:1,justifyContent:'flex-end',backgroundColor:'rgba(0,0,0,0.50)'}}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Dismiss filters" onPress={()=>setShowFilters(false)} style={{flex:1}}/>
+    <View style={{backgroundColor:colors.surface,borderTopLeftRadius:20,borderTopRightRadius:20,paddingTop:14,paddingBottom:Math.max(insets.bottom,16),maxHeight:'85%'}}>
+     <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:20,paddingBottom:12,borderBottomWidth:1,borderColor:colors.border}}>
+      <Text style={{fontSize:fontSizes.section,fontFamily:fontFamilies.displayBold,color:colors.text}}>Filter expenses</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel="Close filters" onPress={()=>setShowFilters(false)} style={{padding:7}}><Ionicons name="close" size={22} color={colors.muted}/></Pressable>
+     </View>
+     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{paddingHorizontal:20,paddingTop:18,paddingBottom:18,gap:18}}>
+      <View style={{gap:9}}>
+       <Text style={{fontSize:fontSizes.label,fontFamily:fontFamilies.semibold,color:colors.text}}>Category</Text>
+       <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
+        {options.map(option=><Pressable key={option} accessibilityRole="button" accessibilityState={{selected:draftCategory===option}} onPress={()=>setDraftCategory(option)}
+         style={{paddingHorizontal:13,paddingVertical:9,borderRadius:9,borderWidth:1,borderColor:draftCategory===option?colors.household:colors.border,backgroundColor:draftCategory===option?colors.household:colors.secondary}}>
+         <Text style={{fontSize:fontSizes.label,color:draftCategory===option?'#FFFFFF':colors.text}}>{option}</Text>
+        </Pressable>)}
+       </View>
+      </View>
+      {scope==='household'?<View style={{gap:9}}>
+       <Text style={{fontSize:fontSizes.label,fontFamily:fontFamilies.semibold,color:colors.text}}>Added by</Text>
+       <View style={{flexDirection:'row',gap:8}}>
+        {(['all','me','partner'] as const).map(value=><Pressable key={value} accessibilityRole="button" accessibilityState={{selected:draftContributor===value}} onPress={()=>setDraftContributor(value)}
+         style={{flex:1,alignItems:'center',paddingVertical:11,borderRadius:9,borderWidth:1,borderColor:draftContributor===value?colors.household:colors.border,backgroundColor:draftContributor===value?colors.household:colors.secondary}}>
+         <Text style={{fontSize:fontSizes.label,color:draftContributor===value?'#FFFFFF':colors.text}}>{value==='all'?'Everyone':value==='me'?'You':'Partner'}</Text>
+        </Pressable>)}
+       </View>
+      </View>:null}
+      <View style={{gap:9}}>
+       <Text style={{fontSize:fontSizes.label,fontFamily:fontFamilies.semibold,color:colors.text}}>Amount range</Text>
+       <View style={{flexDirection:'row',gap:10}}>
+        {[{label:'Minimum ₹',value:draftMin,set:setDraftMin},{label:'Maximum ₹',value:draftMax,set:setDraftMax}].map(item=><View key={item.label} style={{flex:1,gap:6}}>
+         <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{item.label}</Text>
+         <TextInput accessibilityLabel={item.label} value={item.value} onChangeText={v=>item.set(v.replace(/[^0-9]/g,''))} keyboardType="number-pad" placeholder="Any" placeholderTextColor={colors.muted}
+          style={{height:44,borderRadius:9,borderWidth:1,borderColor:colors.border,color:colors.text,backgroundColor:colors.secondary,paddingHorizontal:12,fontSize:fontSizes.body}}/>
+        </View>)}
+       </View>
+      </View>
+     </ScrollView>
+     <View style={{flexDirection:'row',gap:10,paddingHorizontal:20,paddingTop:12,borderTopWidth:1,borderColor:colors.border}}>
+      <Pressable accessibilityRole="button" onPress={resetFilters} style={{minHeight:48,paddingHorizontal:20,justifyContent:'center',alignItems:'center',borderRadius:10,backgroundColor:colors.secondary}}>
+       <Text style={{fontSize:fontSizes.body,fontFamily:fontFamilies.semibold,color:colors.text}}>Reset</Text>
+      </Pressable>
+      <Pressable accessibilityRole="button" onPress={applyFilters} style={{flex:1,minHeight:48,justifyContent:'center',alignItems:'center',borderRadius:10,backgroundColor:colors.household}}>
+       <Text style={{fontSize:fontSizes.body,fontFamily:fontFamilies.semibold,color:'#FFFFFF'}}>Show expenses</Text>
+      </Pressable>
+     </View>
+    </View>
+   </View>
+  </Modal>
   <AddExpenseButton/>
  </View></MonthSwipeView>;
 }
