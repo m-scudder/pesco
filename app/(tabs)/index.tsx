@@ -6,6 +6,7 @@ import {Screen} from '@/components/Screen';
 import {AddExpenseButton} from '@/components/AddExpenseButton';
 import {ScopeSwitch} from '@/components/UI';
 import {MonthPicker} from '@/components/MonthPicker';
+import {MonthSwipeView} from '@/components/MonthSwipeView';
 import {formatMoney,localDate,monthKey,useData} from '@/data';
 import {useAppTheme} from '@/theme/ThemeContext';
 
@@ -52,7 +53,7 @@ export default function Home(){
   return result;
  },[visibleExpenses]);
 
- return <View style={{flex:1,backgroundColor:colors.background}}>
+ return <MonthSwipeView month={month} onChange={setMonth}><View style={{flex:1,backgroundColor:colors.background}}>
   <Screen style={{paddingHorizontal:0,gap:0}}>
    <View style={{paddingHorizontal:16,paddingBottom:8,gap:8}}>
     <ScopeSwitch/>
