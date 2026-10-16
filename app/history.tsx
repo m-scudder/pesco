@@ -1,3 +1,4 @@
+import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
 import React,{useMemo,useState} from 'react';
 import {Alert,Modal,Platform,Pressable,Text,TextInput,View} from 'react-native';
 import DateTimePicker,{DateTimePickerAndroid} from '@react-native-community/datetimepicker';
@@ -56,62 +57,62 @@ export default function History(){
  };
  return <Screen modal style={{gap:12}}>
   <ScopeSwitch/>
-  <Text style={{fontSize:12,color:colors.muted}}>Search your expense history across months and export matching records.</Text>
+  <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>Search your expense history across months and export matching records.</Text>
   <View style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:11,padding:12,gap:10}}>
-   <Text style={{fontSize:11,fontFamily:'Inter_600SemiBold',color:colors.muted}}>DATE RANGE</Text>
+   <Text style={{fontSize:fontSizes.caption,fontFamily:fontFamilies.semibold,color:colors.muted}}>DATE RANGE</Text>
    <View style={{flexDirection:'row',gap:8}}>
     {(['from','to'] as const).map(target=><Pressable key={target} accessibilityRole="button" accessibilityLabel={'Select '+target+' date'} onPress={()=>choose(target)}
      style={{flex:1,borderRadius:9,backgroundColor:colors.secondary,padding:10,gap:3}}>
-     <Text style={{fontSize:11,color:colors.muted}}>{target==='from'?'From':'To'}</Text>
-     <Text style={{fontSize:13,color:colors.text,fontFamily:'Inter_500Medium'}}>{displayDate(target==='from'?from:to)} ▾</Text>
+     <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{target==='from'?'From':'To'}</Text>
+     <Text style={{fontSize:fontSizes.label,color:colors.text,fontFamily:fontFamilies.medium}}>{displayDate(target==='from'?from:to)} ▾</Text>
     </Pressable>)}
    </View>
    <TextInput accessibilityLabel="Search history" value={query} onChangeText={setQuery} placeholder="Search category, note or amount"
-    placeholderTextColor={colors.muted} style={{height:42,borderWidth:1,borderColor:colors.border,borderRadius:9,paddingHorizontal:10,color:colors.text,fontSize:13}}/>
-   {from>to?<Text style={{fontSize:12,color:'#C94F4F'}}>Start date must be before the end date.</Text>:null}
+    placeholderTextColor={colors.muted} style={{height:42,borderWidth:1,borderColor:colors.border,borderRadius:9,paddingHorizontal:10,color:colors.text,fontSize:fontSizes.label}}/>
+   {from>to?<Text style={{fontSize:fontSizes.caption,color:'#C94F4F'}}>Start date must be before the end date.</Text>:null}
   </View>
-  {syncError?<Pressable onPress={()=>{void refresh()}}><Text style={{fontSize:12,color:'#C94F4F'}}>Unable to refresh household expenses · Retry</Text></Pressable>:null}
-  {demoEnabled?<Text style={{fontSize:11,color:colors.muted}}>DEMO DATA · Included in history preview, excluded from CSV by default</Text>:null}
+  {syncError?<Pressable onPress={()=>{void refresh()}}><Text style={{fontSize:fontSizes.caption,color:'#C94F4F'}}>Unable to refresh household expenses · Retry</Text></Pressable>:null}
+  {demoEnabled?<Text style={{fontSize:fontSizes.caption,color:colors.muted}}>DEMO DATA · Included in history preview, excluded from CSV by default</Text>:null}
   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
-   <Text style={{fontSize:12,color:colors.muted}}>{records.length} records</Text>
-   <Text style={{fontSize:15,color:colors.text,fontFamily:'Inter_600SemiBold'}}>{formatMoney(total)}</Text>
+   <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{records.length} records</Text>
+   <Text style={{fontSize:fontSizes.input,color:colors.text,fontFamily:fontFamilies.semibold}}>{formatMoney(total)}</Text>
   </View>
   <View style={{backgroundColor:colors.surface,borderRadius:11,borderColor:colors.border,borderWidth:1,paddingHorizontal:12}}>
-   {records.length===0?<Text style={{color:colors.muted,paddingVertical:16,fontSize:13}}>No matching expenses</Text>:visible.map((expense,index)=><View key={expense.id}
+   {records.length===0?<Text style={{color:colors.muted,paddingVertical:16,fontSize:fontSizes.label}}>No matching expenses</Text>:visible.map((expense,index)=><View key={expense.id}
     style={{paddingVertical:10,borderBottomWidth:index===visible.length-1?0:1,borderColor:colors.border,flexDirection:'row',alignItems:'center',gap:12}}>
     <View style={{flex:1,gap:3}}>
-     <Text numberOfLines={1} style={{color:colors.text,fontFamily:'Inter_500Medium',fontSize:13}}>{expense.note||expense.category}{expense.id.startsWith('demo:')?' · Demo':''}</Text>
-     <Text style={{fontSize:11,color:colors.muted}}>{displayDate(expense.date)} · {expense.category}</Text>
+     <Text numberOfLines={1} style={{color:colors.text,fontFamily:fontFamilies.medium,fontSize:fontSizes.label}}>{expense.note||expense.category}{expense.id.startsWith('demo:')?' · Demo':''}</Text>
+     <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{displayDate(expense.date)} · {expense.category}</Text>
     </View>
-    <Text style={{fontSize:13,color:colors.text,fontFamily:'Inter_500Medium'}}>{formatMoney(expense.amountPaise)}</Text>
+    <Text style={{fontSize:fontSizes.label,color:colors.text,fontFamily:fontFamilies.medium}}>{formatMoney(expense.amountPaise)}</Text>
    </View>)}
   </View>
-  {records.length>visibleCount?<Pressable accessibilityRole="button" onPress={()=>setVisibleCount(n=>n+50)} style={{paddingVertical:12,alignItems:'center',borderRadius:10,backgroundColor:colors.secondary}}><Text style={{fontFamily:'Inter_600SemiBold',fontSize:13,color:colors.text}}>Show more ({records.length-visibleCount} remaining)</Text></Pressable>:null}
+  {records.length>visibleCount?<Pressable accessibilityRole="button" onPress={()=>setVisibleCount(n=>n+50)} style={{paddingVertical:12,alignItems:'center',borderRadius:10,backgroundColor:colors.secondary}}><Text style={{fontFamily:fontFamilies.semibold,fontSize:fontSizes.label,color:colors.text}}>Show more ({records.length-visibleCount} remaining)</Text></Pressable>:null}
   {demoEnabled?<Pressable accessibilityRole="checkbox" accessibilityState={{checked:includeDemo}} onPress={()=>setIncludeDemo(v=>!v)} style={{paddingVertical:4}}>
-   <Text style={{fontSize:12,color:colors.muted}}>{includeDemo?'☑':'□'} Include demo expenses in CSV</Text>
+   <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{includeDemo?'☑':'□'} Include demo expenses in CSV</Text>
   </Pressable>:null}
   <Pressable accessibilityRole="button" disabled={sharing||exportRecords.length===0||from>to} onPress={()=>{void share()}}
    style={{borderRadius:9,padding:12,alignItems:'center',backgroundColor:colors.household,opacity:sharing||!exportRecords.length||from>to?0.45:1}}>
-   <Text style={{color:'#fff',fontFamily:'Inter_600SemiBold',fontSize:13}}>{sharing?'Preparing…':'Export CSV'}</Text>
+   <Text style={{color:'#fff',fontFamily:fontFamilies.semibold,fontSize:fontSizes.label}}>{sharing?'Preparing…':'Export CSV'}</Text>
   </Pressable>
-  <Text style={{fontSize:11,color:colors.muted}}>Exports a .csv file to your device's share sheet. No export is uploaded by PESCO.</Text>
+  <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>Exports a .csv file to your device's share sheet. No export is uploaded by PESCO.</Text>
   <Modal visible={picker!==null} transparent animationType="fade" presentationStyle="overFullScreen" onRequestClose={()=>setPicker(null)}>
    <View style={{flex:1,justifyContent:'center',paddingHorizontal:24,backgroundColor:'rgba(0,0,0,0.55)'}}>
     <Pressable onPress={()=>setPicker(null)} accessibilityLabel="Dismiss date picker" style={{position:'absolute',top:0,bottom:0,left:0,right:0}}/>
     <View style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:14,padding:14}}>
-     <Text style={{color:colors.text,fontFamily:'Inter_600SemiBold',fontSize:15}}>{picker==='from'?'From date':'To date'}</Text>
+     <Text style={{color:colors.text,fontFamily:fontFamilies.semibold,fontSize:fontSizes.input}}>{picker==='from'?'From date':'To date'}</Text>
      <DateTimePicker value={pendingDate} mode="date" display="spinner" themeVariant={resolved} textColor={colors.text}
       style={{height:210,width:'100%'}} onChange={(event,date)=>{if(event.type==='set'&&date)setPendingDate(date)}}/>
      <View style={{flexDirection:'row',justifyContent:'flex-end',gap:18}}>
       <Pressable accessibilityRole="button" onPress={()=>setPicker(null)} style={{padding:10}}>
-       <Text style={{color:colors.muted,fontFamily:'Inter_500Medium',fontSize:13}}>Cancel</Text>
+       <Text style={{color:colors.muted,fontFamily:fontFamilies.medium,fontSize:fontSizes.label}}>Cancel</Text>
       </Pressable>
       <Pressable accessibilityRole="button" onPress={()=>{
        if(picker==='from')setFrom(dateString(pendingDate));
        if(picker==='to')setTo(dateString(pendingDate));
        setPicker(null);
       }} style={{padding:10}}>
-       <Text style={{color:colors.household,fontFamily:'Inter_600SemiBold',fontSize:13}}>Done</Text>
+       <Text style={{color:colors.household,fontFamily:fontFamilies.semibold,fontSize:fontSizes.label}}>Done</Text>
       </Pressable>
      </View>
     </View>
