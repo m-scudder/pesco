@@ -318,8 +318,14 @@ export function DataProvider({children}:{children:React.ReactNode}){
   // Batch outbound changes periodically instead of uploading every 15 seconds.
   const uploadInterval=setInterval(()=>{if(AppState.currentState==='active')void uploadRef.current()},30*60*1000);
   const app=AppState.addEventListener('change',s=>{
-   if(s==='active'){void refreshRef.current()}
-   if(s==='background')void uploadRef.current();
+   if(s==='active'){
+    // Retry after a suspended exit upload; pending rows are durable locally.
+    void refreshRef.current();
+    void uploadRef.current();
+   }
+   // iOS typically emits inactive before background: begin flushing while
+   // JavaScript can still execute. uploadBusy prevents duplicate flushes.
+   if(s==='inactive'||s==='background')void uploadRef.current();
   });
   return()=>{
    clearInterval(interval);clearInterval(uploadInterval);app.remove();
@@ -327,8 +333,8 @@ export function DataProvider({children}:{children:React.ReactNode}){
   };
  },[user?.id]);
 
- // Outbound writes are sent by the fixed interval above, not every new expense.
- // Foreground resume also triggers a flush; pending rows remain visible locally.
+ // Outbound writes run on app exit, foreground retry and the fallback interval.
+ // Force-quit may interrupt an upload; durable pending rows are retried later.
 
  // Legacy personal entries have their own idempotent import path.
  useEffect(()=>{
