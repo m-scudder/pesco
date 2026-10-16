@@ -68,7 +68,7 @@ export function AmountCalculator({value,onChange,onDisplayChange,onDone}:Props){
     const isDone=label==='OK',isOperation=['+','−','×','÷','='].includes(label);
     return <Pressable key={label} accessibilityRole="button" accessibilityLabel={isDone?'Use amount':label==='Back'?'Backspace':label==='C'?'Clear calculator':label}
      onPress={()=>tap(label)} style={{width:'23%',flexGrow:1,minHeight:43,borderRadius:7,alignItems:'center',justifyContent:'center',
-      backgroundColor:isDone?accent:isOperation?colors.secondary:colors.background}}>
+      backgroundColor:isDone?accent:isOperation?colors.secondary:colors.background,borderWidth:1,borderColor:colors.border}}>
      {label==='Back'?<Ionicons name="backspace-outline" size={23} color={colors.text}/>:isDone?<Ionicons name="return-down-back" size={24} color="#fff"/>:<Text style={{fontSize:19,fontWeight:'500',color:colors.text}}>{label}</Text>}
     </Pressable>;
    })}
