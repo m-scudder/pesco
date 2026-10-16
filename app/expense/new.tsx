@@ -65,7 +65,7 @@ export default function ExpenseEditor(){
  }
  const pickerCard={backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1 as const,borderRadius:16,padding:16,width:'100%' as const,maxWidth:420};
  const line=()=> <View style={{height:1,backgroundColor:colors.border}}/>;
- return <><Stack.Screen options={{title:editing?'Edit expense':'Add expense'}}/>
+ return <><Stack.Screen options={{title:editing?'Edit Expense':'Add Expense'}}/>
  <KeyboardAvoidingView style={{flex:1,backgroundColor:colors.background}} behavior={Platform.OS==='ios'?'padding':undefined} keyboardVerticalOffset={Platform.OS==='ios'?90:0}>
  <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" contentContainerStyle={{paddingHorizontal:16,paddingTop:6,paddingBottom:12,gap:8}}>
   <View style={{alignItems:'center',paddingTop:8,paddingBottom:10,gap:3}}>
