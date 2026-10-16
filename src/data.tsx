@@ -260,12 +260,17 @@ export function DataProvider({children}:{children:React.ReactNode}){
    const pendingResult=await flushPending(id,houseId);
    // Do not drop optimistic entries here: cloud refresh may still be in flight.
    // The refresh path removes an entry after its server record is visible.
+   const currentMutationEpoch=mutationEpoch.current;
    const mutationResult=await flushMutations(id,houseId);
-   mutationEpoch.current++;
-   setMutations(mutationResult.items);
    setQueueError(pendingResult.errorMessage??mutationResult.error);
-   if(pendingResult.sent>0||mutationResult.items.length===0)
-    void refreshRef.current();
+   // Read committed rows before clearing the optimistic edit/delete overlay.
+   // Otherwise old values flash back while the cloud refresh is in flight.
+   if(pendingResult.sent>0||!mutationResult.error)
+    await refreshRef.current();
+   if(currentMutationEpoch===mutationEpoch.current){
+    mutationEpoch.current++;
+    setMutations(mutationResult.items);
+   }
   }catch(error){
    setQueueError(error instanceof Error?error.message:String(error));
   }finally{uploadBusy.current=false}
