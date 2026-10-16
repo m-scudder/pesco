@@ -14,9 +14,9 @@ import {useAccountActions} from '@/lib/useAccountActions';
 
 function SettingsSection({title,children}:{title:string;children:React.ReactNode}){
  const {colors}=useAppTheme();
- return <View style={{backgroundColor:colors.surface,borderRadius:19,overflow:'hidden',borderWidth:1,borderColor:colors.border}}>
+ return <View style={{backgroundColor:colors.surface,borderRadius:0,overflow:'hidden',borderWidth:1,borderColor:colors.border}}>
   <View style={{paddingHorizontal:17,paddingTop:18,paddingBottom:8,flexDirection:'row',alignItems:'center',gap:11}}>
-   <View style={{width:3,height:25,borderRadius:2,backgroundColor:colors.household}}/>
+   <View style={{width:3,height:25,borderRadius:0,backgroundColor:colors.household}}/>
    <Text style={{color:colors.text,fontSize:fontSizes.section,fontFamily:fontFamilies.displayBold}}>{title}</Text>
   </View>
   <View>{children}</View>
@@ -60,7 +60,7 @@ export default function Settings(){
  return <Screen style={{gap:16,paddingBottom:95,flexGrow:1}}>
   <Pressable accessibilityRole="button" accessibilityLabel="Edit my profile" onPress={()=>router.push('/profile')}
    style={{flexDirection:'row',alignItems:'center',gap:12,paddingVertical:6,paddingHorizontal:3}}>
-   <View style={{width:54,height:54,borderRadius:27,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'}}>
+   <View style={{width:54,height:54,borderRadius:0,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'}}>
     <Text style={{fontSize:fontSizes.title,fontFamily:fontFamilies.displayBold,color:colors.household}}>{(displayName[0]||'P').toLocaleUpperCase()}</Text>
    </View>
    <View style={{flex:1,gap:3}}>
@@ -93,7 +93,7 @@ export default function Settings(){
   </SettingsSection>
   <View style={{height:8}}/>
   <View style={{gap:10,alignItems:'center'}}>
-   <Pressable accessibilityRole="button" disabled={loggingOut||deleting} onPress={logout} style={{width:'100%',minHeight:46,backgroundColor:colors.secondary,borderWidth:1,borderColor:colors.border,borderRadius:10,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,opacity:loggingOut||deleting?0.6:1}}>
+   <Pressable accessibilityRole="button" disabled={loggingOut||deleting} onPress={logout} style={{width:'100%',minHeight:46,backgroundColor:colors.secondary,borderWidth:1,borderColor:colors.border,borderRadius:0,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,opacity:loggingOut||deleting?0.6:1}}>
     <Ionicons name="log-out-outline" size={18} color={colors.text}/><Text style={{color:colors.text,fontSize:fontSizes.body,fontFamily:fontFamilies.semibold}}>{loggingOut?'Logging out…':'Log out'}</Text>
    </Pressable>
    <Pressable accessibilityRole="button" disabled={deleting||loggingOut} onPress={deleteAccount} style={{minHeight:42,alignItems:'center',justifyContent:'center',paddingHorizontal:16,opacity:deleting||loggingOut?0.6:1}}>
