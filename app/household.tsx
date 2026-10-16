@@ -65,7 +65,7 @@ export default function HouseholdSetup(){
      {household.created_by===user.id?<>
       {editingName?<View style={{gap:10}}>
        <TextInput accessibilityLabel="Edit household name" value={draftName} onChangeText={setDraftName} maxLength={100} style={input}/>
-       {action('Save name',()=>void submit(async()=>{await renameHousehold(household.id,draftName);setEditingName(false)}),true,!draftName.trim()||draftName.trim()===household.name)}
+       {action('Save Name',()=>void submit(async()=>{await renameHousehold(household.id,draftName);setEditingName(false)}),true,!draftName.trim()||draftName.trim()===household.name)}
        {action('Cancel',()=>{setEditingName(false);setDraftName(household.name)},false)}
       </View>:action('Edit household name',()=>setEditingName(true),false)}
      </>:null}
@@ -83,24 +83,24 @@ export default function HouseholdSetup(){
         {text:'Cancel',style:'cancel'},
         {text:'Remove',style:'destructive',onPress:()=>{void submit(()=>removeHouseholdPartner(household.id,member.user_id))}}
        ])} style={{paddingVertical:7,alignSelf:'flex-start'}}>
-        <Text style={{color:'#C94F4F',fontSize:fontSizes.label,fontWeight:fontWeights.semibold}}>Remove partner</Text>
+        <Text style={{color:'#C94F4F',fontSize:fontSizes.label,fontWeight:fontWeights.semibold}}>Remove Partner</Text>
        </Pressable>
       ):null}
      </View>)}
      {members.length===1?<Body muted>No partner has joined yet.</Body>:null}
     </Card>
     {household.created_by===user.id&&members.length<2?<Card>
-     {action('Invite partner',()=>{void submit(async()=>{const issued=await createJoiningKey(household.id);if(!SIX.test(issued))throw new Error('Server is not using 6-character keys');setInvite(issued)})})}
+     {action('Invite Partner',()=>{void submit(async()=>{const issued=await createJoiningKey(household.id);if(!SIX.test(issued))throw new Error('Server is not using 6-character keys');setInvite(issued)})})}
      {invite?<View style={{gap:9,alignItems:'center',paddingVertical:6}}>
       <Text selectable style={{fontSize:fontSizes.display,fontWeight:'800',letterSpacing:5,color:colors.text}}>{invite}</Text>
       <Body muted>Valid 24 hours · One use</Body>
-      {action('Share code',()=>{void Share.share({message:'Join my PESCO household. Code: '+invite})},false)}
+      {action('Share Code',()=>{void Share.share({message:'Join my PESCO household. Code: '+invite})},false)}
      </View>:null}
     </Card>:null}
    </>
    :mode==='choose'?<Card>
-    {action('Create household',()=>setMode('create'))}
-    {action('Join with code',()=>setMode('join'),false)}
+    {action('Create Household',()=>setMode('create'))}
+    {action('Join With Code',()=>setMode('join'),false)}
     <Body muted>Personal expenses work without a household.</Body>
    </Card>
    :mode==='create'?<Card>
@@ -112,7 +112,7 @@ export default function HouseholdSetup(){
    :<Card>
     <Body>6-character code</Body>
     <TextInput accessibilityLabel="Household joining code" value={key} onChangeText={v=>setKey(v.toUpperCase().replace(/[^A-Z2-9]/g,'').slice(0,6))} autoCapitalize="characters" autoCorrect={false} maxLength={6} placeholder="K7M2Q9" placeholderTextColor={colors.muted} style={{...input,fontSize:fontSizes.title,letterSpacing:4,textAlign:'center'}}/>
-    {action('Join household',()=>void submit(async()=>{const result=await joinWithKey(key);if(!result)throw new Error('Invalid, expired, or rate-limited code')}),true,!SIX.test(key))}
+    {action('Join Household',()=>void submit(async()=>{const result=await joinWithKey(key);if(!result)throw new Error('Invalid, expired, or rate-limited code')}),true,!SIX.test(key))}
     {action('Back',()=>setMode('choose'),false)}
    </Card>}
   {error?<Text accessibilityRole="alert" style={{color:'#C94F4F',fontSize:fontSizes.label}}>{error}</Text>:null}
