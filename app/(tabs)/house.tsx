@@ -14,6 +14,27 @@ import {supabase} from '@/lib/supabase';
 
 const compactMoney=(paise:number)=>formatMoney(paise).replace(/\\.00$/,'');
 
+function budgetHealth(month:string,spent:number,budget:number,today:string){
+ const [year,index]=month.split('-').map(Number);
+ const daysInMonth=new Date(year,index,0).getDate();
+ const isCurrent=month===today.slice(0,7);
+ const isFuture=month>today.slice(0,7);
+ const elapsed=isCurrent?Math.min(daysInMonth,Number(today.slice(8,10))):daysInMonth;
+ const daysLeft=isCurrent?daysInMonth-elapsed:0;
+ const used=spent/budget*100;
+ if(spent>budget)return {label:'Over budget',color:'#D94B4B',used,daysLeft,context:isCurrent?daysLeft+' days left':'Final result'};
+ if(isFuture)return {label:'Upcoming month',color:'#85919A',used,daysLeft,context:'Not started'};
+ if(!isCurrent)return {label:spent===budget?'At budget':'Within budget',color:'#259A63',used,daysLeft,context:'Final result'};
+ const expected=elapsed/daysInMonth*100;
+ const ratio=expected>0?used/expected:0;
+ return {
+  label:ratio>1.2?'Ahead of pace':ratio>1.05?'Slightly ahead':'On track',
+  color:ratio>1.2?'#D94B4B':ratio>1.05?'#C18A2B':'#259A63',
+  used,daysLeft,context:daysLeft+' days left'
+ };
+}
+
+
 export default function House(){
  const router=useRouter();
  const {colors}=useAppTheme();
@@ -40,6 +61,8 @@ export default function House(){
  // Omit empty historical months while keeping the selected month visible.
  const trendMonths=monthSeries.filter(item=>item.amount>0||item.selected);
  const maxMonth=Math.max(1,...trendMonths.map(m=>m.amount));
+ const today=localDate();
+ const health=budget!==null&&budget>0?budgetHealth(month,spent,budget,today):null;
  if(!household)return <View style={{flex:1,backgroundColor:colors.background,alignItems:'center',justifyContent:'center',paddingHorizontal:24}}>
   <View style={{alignItems:'center',gap:14,width:'100%',maxWidth:360}}>
    <View style={{width:64,height:64,borderRadius:18,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'}}>
@@ -70,16 +93,24 @@ export default function House(){
      </Text>
     </View>:null}
    </View>
-   {budget!==null&&budget>0?<Pressable accessibilityRole="button" accessibilityLabel="Manage household budget" onPress={()=>router.push('/budget')}
-    style={{paddingTop:10,borderTopWidth:1,borderColor:colors.border,flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:8}}>
-    <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>Budget · {compactMoney(budget)}</Text>
-    <View style={{flexDirection:'row',alignItems:'center',gap:5}}>
-     <Text style={{fontSize:fontSizes.caption,fontFamily:fontFamilies.medium,color:spent>budget?'#D94B4B':colors.muted}}>
-      {spent>budget?compactMoney(spent-budget)+' over':compactMoney(budget-spent)+' left'}
-     </Text>
-     <Ionicons name="chevron-forward" size={14} color={colors.muted}/>
+   {health&&budget!==null?<Pressable accessibilityRole="button" accessibilityLabel="Manage household budget" onPress={()=>router.push('/budget')}
+    style={{paddingTop:12,borderTopWidth:1,borderColor:colors.border,gap:9}}>
+    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:8}}>
+     <Text style={{fontSize:fontSizes.label,fontFamily:fontFamilies.semibold,color:colors.text}}>Budget health</Text>
+     <View style={{flexDirection:'row',alignItems:'center',gap:5}}>
+      <View style={{width:6,height:6,borderRadius:3,backgroundColor:health.color}}/>
+      <Text style={{fontSize:fontSizes.caption,fontFamily:fontFamilies.semibold,color:health.color}}>{health.label}</Text>
+      <Ionicons name="chevron-forward" size={14} color={colors.muted}/>
+     </View>
     </View>
-   </Pressable>:<Pressable onPress={()=>router.push('/budget')}>
+    <View style={{height:7,borderRadius:5,backgroundColor:colors.secondary,overflow:'hidden'}}>
+     <View style={{height:7,borderRadius:5,width:`${Math.min(100,Math.max(0,health.used))}%` as `${number}%`,backgroundColor:health.color}}/>
+    </View>
+    <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',gap:8}}>
+     <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{compactMoney(spent)} of {compactMoney(budget)} · {Math.round(health.used)}% used</Text>
+     <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{health.context}</Text>
+    </View>
+   </Pressable>:<Pressable accessibilityRole="button" onPress={()=>router.push('/budget')}>
     <Text style={{fontSize:fontSizes.caption,color:accent}}>Set household budget ›</Text>
    </Pressable>}
   </Card>
