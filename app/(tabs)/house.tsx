@@ -1,3 +1,4 @@
+import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
 import React,{useMemo,useState} from 'react';
 import {Pressable,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
@@ -31,25 +32,25 @@ export default function House(){
    <View style={{width:64,height:64,borderRadius:18,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'}}>
     <Ionicons name="home-outline" size={30} color={colors.household}/>
    </View>
-   <Text style={{fontFamily:'PlusJakartaSans_700Bold',fontSize:19,color:colors.text,textAlign:'center'}}>Your household starts here</Text>
-   <Text style={{fontFamily:'Inter_400Regular',fontSize:14,lineHeight:21,color:colors.muted,textAlign:'center'}}>Join a household or create your own.</Text>
+   <Text style={{fontFamily:fontFamilies.displayBold,fontSize:fontSizes.title,color:colors.text,textAlign:'center'}}>Your household starts here</Text>
+   <Text style={{fontFamily:fontFamilies.regular,fontSize:fontSizes.body,lineHeight:21,color:colors.muted,textAlign:'center'}}>Join a household or create your own.</Text>
    <Pressable accessibilityRole="button" onPress={()=>router.push('/household')} style={{marginTop:8,minHeight:46,width:'100%',backgroundColor:colors.household,borderRadius:10,alignItems:'center',justifyContent:'center'}}>
-    <Text style={{fontFamily:'Inter_600SemiBold',fontSize:14,color:'#FFFFFF'}}>Create or join household</Text>
+    <Text style={{fontFamily:fontFamilies.semibold,fontSize:fontSizes.body,color:'#FFFFFF'}}>Create or join household</Text>
    </Pressable>
   </View>
  </View>;
  return <MonthSwipeView month={month} onChange={setMonth}><Screen style={{gap:12}}>
   <MonthPicker month={month} onChange={setMonth}/>
-  {demoEnabled?<Text style={{color:colors.muted,fontSize:11,fontFamily:'Inter_500Medium'}}>DEMO DATA · Includes read-only sample expenses</Text>:null}
+  {demoEnabled?<Text style={{color:colors.muted,fontSize:fontSizes.caption,fontFamily:fontFamilies.medium}}>DEMO DATA · Includes read-only sample expenses</Text>:null}
   {syncError?<Pressable onPress={()=>{void refresh()}}>
-   <Text style={{fontSize:12,color:'#C94F4F'}}>Unable to refresh shared expenses · Retry</Text>
+   <Text style={{fontSize:fontSizes.caption,color:'#C94F4F'}}>Unable to refresh shared expenses · Retry</Text>
   </Pressable>:null}
   <Card>
    <Body muted>Household spending</Body>
-   <Text style={{color:colors.text,fontSize:26,fontFamily:'PlusJakartaSans_700Bold'}}>{formatMoney(spent)}</Text>
+   <Text style={{color:colors.text,fontSize:fontSizes.summary,fontFamily:fontFamilies.displayBold}}>{formatMoney(spent)}</Text>
    <View style={{flexDirection:'row',justifyContent:'space-between',gap:8,flexWrap:'wrap'}}>
-    <Text style={{fontSize:12,color:colors.muted}}>{selected.length} {selected.length===1?'expense':'expenses'}</Text>
-    <Text style={{fontSize:12,color:colors.muted}}>
+    <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>{selected.length} {selected.length===1?'expense':'expenses'}</Text>
+    <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>
      {prior>0&&percentChange!==null?`${difference>0?'↑':difference<0?'↓':'—'} ${percentChange}% vs last month`: 'No spending last month'}
     </Text>
    </View>
@@ -58,68 +59,68 @@ export default function House(){
      <View style={{height:6,width:`${Math.min(100,Math.round(spent/budget*100))}%` as const,backgroundColor:accent}}/>
     </View>
     <View style={{flexDirection:'row',justifyContent:'space-between',gap:8}}>
-     <Text style={{fontSize:12,color:colors.muted}}>Budget · {formatMoney(budget)}</Text>
-     <Text style={{fontSize:12,color:spent>budget?'#C94F4F':colors.muted}}>
+     <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>Budget · {formatMoney(budget)}</Text>
+     <Text style={{fontSize:fontSizes.caption,color:spent>budget?'#C94F4F':colors.muted}}>
       {spent>budget?formatMoney(spent-budget)+' over':formatMoney(budget-spent)+' left'}
      </Text>
     </View>
    </>:<Pressable onPress={()=>router.push('/budget')}>
-    <Text style={{fontSize:12,color:accent}}>Set household budget ›</Text>
+    <Text style={{fontSize:fontSizes.caption,color:accent}}>Set household budget ›</Text>
    </Pressable>}
   </Card>
-  <Text style={{color:colors.text,fontSize:14,fontFamily:'Inter_600SemiBold'}}>Spending by category</Text>
+  <Text style={{color:colors.text,fontSize:fontSizes.body,fontFamily:fontFamilies.semibold}}>Spending by category</Text>
   <Card>
-   {categories.length===0?<Text style={{color:colors.muted,fontSize:12}}>No household spending this month</Text>:categories.slice(0,6).map(item=><View key={item.name} style={{gap:6,marginVertical:3}}>
+   {categories.length===0?<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>No household spending this month</Text>:categories.slice(0,6).map(item=><View key={item.name} style={{gap:6,marginVertical:3}}>
     <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',gap:10}}>
-     <Text numberOfLines={1} style={{color:colors.text,fontSize:13,fontFamily:'Inter_500Medium',flex:1}}>{item.name}</Text>
-     <Text style={{color:colors.text,fontSize:13,fontFamily:'Inter_500Medium'}}>{formatMoney(item.amount)}</Text>
+     <Text numberOfLines={1} style={{color:colors.text,fontSize:fontSizes.label,fontFamily:fontFamilies.medium,flex:1}}>{item.name}</Text>
+     <Text style={{color:colors.text,fontSize:fontSizes.label,fontFamily:fontFamilies.medium}}>{formatMoney(item.amount)}</Text>
     </View>
-    {categoryLimits.find(limit=>limit.category===item.name)?<Text style={{fontSize:11,color:item.amount>(categoryLimits.find(limit=>limit.category===item.name)?.amountPaise??Infinity)?'#C94F4F':colors.muted}}>Limit {formatMoney(categoryLimits.find(limit=>limit.category===item.name)!.amountPaise)}{item.amount>categoryLimits.find(limit=>limit.category===item.name)!.amountPaise?' · Over limit':''}</Text>:null}
+    {categoryLimits.find(limit=>limit.category===item.name)?<Text style={{fontSize:fontSizes.caption,color:item.amount>(categoryLimits.find(limit=>limit.category===item.name)?.amountPaise??Infinity)?'#C94F4F':colors.muted}}>Limit {formatMoney(categoryLimits.find(limit=>limit.category===item.name)!.amountPaise)}{item.amount>categoryLimits.find(limit=>limit.category===item.name)!.amountPaise?' · Over limit':''}</Text>:null}
     <View style={{height:5,borderRadius:4,backgroundColor:colors.secondary,overflow:'hidden'}}>
      <View style={{height:'100%',width:`${item.percent}%` as const,backgroundColor:accent,borderRadius:4}}/>
     </View>
    </View>)}
-   {categories.length>6?<Text style={{fontSize:11,color:colors.muted}}>Plus {categories.length-6} more categories</Text>:null}
+   {categories.length>6?<Text style={{fontSize:fontSizes.caption,color:colors.muted}}>Plus {categories.length-6} more categories</Text>:null}
   </Card>
   <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-   <Text style={{color:colors.text,fontSize:14,fontFamily:'Inter_600SemiBold'}}>Monthly review</Text>
-   <Text style={{color:colors.muted,fontSize:11}}>Compared with previous month</Text>
+   <Text style={{color:colors.text,fontSize:fontSizes.body,fontFamily:fontFamilies.semibold}}>Monthly review</Text>
+   <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>Compared with previous month</Text>
   </View>
   <Card>
    <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
-    <Text style={{color:colors.muted,fontSize:12}}>Change in household spending</Text>
-    <Text style={{color:colors.text,fontFamily:'Inter_600SemiBold',fontSize:14}}>{prior===0?'No prior data':(difference>0?'+':difference<0?'−':'')+formatMoney(Math.abs(difference))}</Text>
+    <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>Change in household spending</Text>
+    <Text style={{color:colors.text,fontFamily:fontFamilies.semibold,fontSize:fontSizes.body}}>{prior===0?'No prior data':(difference>0?'+':difference<0?'−':'')+formatMoney(Math.abs(difference))}</Text>
    </View>
-   {prior>0?<Text style={{color:colors.muted,fontSize:11}}>{difference===0?'Same as last month':`${percentChange}% ${difference>0?'higher':'lower'} than last month`}</Text>:null}
+   {prior>0?<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{difference===0?'Same as last month':`${percentChange}% ${difference>0?'higher':'lower'} than last month`}</Text>:null}
    <View style={{height:1,backgroundColor:colors.border}}/>
-   {selected.length===0&&prior===0?<Text style={{color:colors.muted,fontSize:12}}>No spending to review yet</Text>:<>
+   {selected.length===0&&prior===0?<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>No spending to review yet</Text>:<>
     {increased.length?<View style={{gap:6}}>
-     <Text style={{color:colors.muted,fontSize:11,fontFamily:'Inter_600SemiBold'}}>SPENDING INCREASED</Text>
+     <Text style={{color:colors.muted,fontSize:fontSizes.caption,fontFamily:fontFamilies.semibold}}>SPENDING INCREASED</Text>
      {increased.slice(0,3).map(item=><View key={item.name} style={{flexDirection:'row',justifyContent:'space-between',gap:12}}>
-      <Text numberOfLines={1} style={{flex:1,color:colors.text,fontSize:13}}>{item.name}</Text>
-      <Text style={{fontFamily:'Inter_500Medium',fontSize:12,color:colors.text}}>+{formatMoney(item.difference)}</Text>
+      <Text numberOfLines={1} style={{flex:1,color:colors.text,fontSize:fontSizes.label}}>{item.name}</Text>
+      <Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.caption,color:colors.text}}>+{formatMoney(item.difference)}</Text>
      </View>)}
     </View>:null}
     {decreased.length?<View style={{gap:6}}>
-     <Text style={{color:colors.muted,fontSize:11,fontFamily:'Inter_600SemiBold'}}>SPENDING DECREASED</Text>
+     <Text style={{color:colors.muted,fontSize:fontSizes.caption,fontFamily:fontFamilies.semibold}}>SPENDING DECREASED</Text>
      {decreased.slice(0,3).map(item=><View key={item.name} style={{flexDirection:'row',justifyContent:'space-between',gap:12}}>
-      <Text numberOfLines={1} style={{flex:1,color:colors.text,fontSize:13}}>{item.name}</Text>
-      <Text style={{fontFamily:'Inter_500Medium',fontSize:12,color:colors.text}}>−{formatMoney(Math.abs(item.difference))}</Text>
+      <Text numberOfLines={1} style={{flex:1,color:colors.text,fontSize:fontSizes.label}}>{item.name}</Text>
+      <Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.caption,color:colors.text}}>−{formatMoney(Math.abs(item.difference))}</Text>
      </View>)}
     </View>:null}
-    {!increased.length&&!decreased.length?<Text style={{color:colors.muted,fontSize:12}}>Category spending was unchanged.</Text>:null}
+    {!increased.length&&!decreased.length?<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>Category spending was unchanged.</Text>:null}
    </>}
   </Card>
-  <Text style={{color:colors.text,fontSize:14,fontFamily:'Inter_600SemiBold'}}>Monthly trend</Text>
+  <Text style={{color:colors.text,fontSize:fontSizes.body,fontFamily:fontFamilies.semibold}}>Monthly trend</Text>
   <Card>
    <View style={{height:125,flexDirection:'row',alignItems:'flex-end',gap:8}}>
     {monthSeries.map(item=><View key={item.key} style={{flex:1,height:'100%',justifyContent:'flex-end',alignItems:'center',gap:5}}>
-     <Text numberOfLines={1} style={{fontSize:10,color:colors.muted}}>
+     <Text numberOfLines={1} style={{fontSize:fontSizes.caption,color:colors.muted}}>
       {item.amount===maxMonth&&item.amount>0?formatMoney(item.amount).replace(/\.00$/,''):''}
      </Text>
      <View style={{width:'72%',height:item.amount?Math.max(4,Math.round(item.amount/maxMonth*78)):3,
       borderRadius:4,backgroundColor:item.amount?(item.selected?accent:colors.muted):colors.secondary,opacity:item.selected?1:0.65}}/>
-     <Text style={{fontSize:11,color:item.selected?colors.text:colors.muted,fontWeight:item.selected?'700':'400'}}>{item.label}</Text>
+     <Text style={{fontSize:fontSizes.caption,color:item.selected?colors.text:colors.muted,fontWeight:item.selected?'700':'400'}}>{item.label}</Text>
     </View>)}
    </View>
   </Card>
