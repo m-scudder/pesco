@@ -60,7 +60,7 @@ export default function ExpenseEditor(){
  }
  const pickerCard={backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1 as const,borderRadius:16,padding:16,width:'100%' as const,maxWidth:420};
  const line=()=> <View style={{height:1,backgroundColor:colors.border}}/>;
- return <><Stack.Screen options={{title:editing?'Edit expense':'Add expense'}}/>
+ return <><Stack.Screen options={{title:editing?'Edit Expense':'Add Expense'}}/>
  <KeyboardAvoidingView style={{flex:1,backgroundColor:colors.background}} behavior={Platform.OS==='ios'?'padding':undefined} keyboardVerticalOffset={Platform.OS==='ios'?90:0}>
  <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" contentContainerStyle={{paddingHorizontal:16,paddingTop:6,paddingBottom:12,gap:8}}>
   <View style={{alignItems:'center',paddingTop:8,paddingBottom:10,gap:3}}>
@@ -107,11 +107,11 @@ export default function ExpenseEditor(){
   <View style={{height:4}}/>
   <Pressable accessibilityRole="button" disabled={submitting||!loaded} onPress={()=>{Keyboard.dismiss();void save()}}
    style={{backgroundColor:scope==='household'?colors.household:colors.personal,minHeight:50,borderRadius:10,alignItems:'center',justifyContent:'center',marginTop:8,opacity:submitting||!loaded?0.6:1}}>
-   <Text style={{color:'#fff',fontFamily:fontFamilies.semibold,fontSize:fontSizes.input}}>{submitting?'Saving…':editing?'Save changes':'Save expense'}</Text>
+   <Text style={{color:'#fff',fontFamily:fontFamilies.semibold,fontSize:fontSizes.input}}>{submitting?'Saving…':editing?'Save Changes':'Save Expense'}</Text>
   </Pressable>
   {editing?<Pressable accessibilityRole="button" accessibilityLabel="Delete expense" disabled={submitting} onPress={confirmDelete}
    style={{paddingVertical:11,alignItems:'center',opacity:submitting?0.5:1}}>
-   <Text style={{color:'#C54B4B',fontFamily:fontFamilies.semibold,fontSize:fontSizes.body}}>Delete expense</Text>
+   <Text style={{color:'#C54B4B',fontFamily:fontFamilies.semibold,fontSize:fontSizes.body}}>Delete Expense</Text>
   </Pressable>:null}
   <CalendarDatePicker visible={datePickerOpen} value={date} onChange={setDate} onClose={()=>setDatePickerOpen(false)}/>
  </ScrollView>
