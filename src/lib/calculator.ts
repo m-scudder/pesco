@@ -26,6 +26,8 @@ export function calculate(a:number,b:number,op:Operator):number|null{
  return valid(result)?result:null;
 }
 export function pressCalculator(s:CalculatorState,key:string):CalculatorState{
+ // The keypad displays Unicode minus; normalize it to the internal operator.
+ if(key==='−')key='-';
  if(key==='C')return initialCalculator();
  if(key==='%'){
   if(s.error||s.startNew)return s;
