@@ -67,9 +67,9 @@ export default function Settings(){
     <Text numberOfLines={1} style={{fontSize:fontSizes.section,fontFamily:fontFamilies.semibold,color:colors.text}}>{displayName}</Text>
     <Text numberOfLines={1} style={{fontSize:fontSizes.caption,color:colors.muted}}>{user?.email??'Google account'}</Text>
    </View>
-   <Ionicons name="chevron-forward" size={18} color={colors.muted}/>
+   <Ionicons name="diamond-outline" size={21} color={colors.household}/>\n   <Ionicons name="chevron-forward" size={18} color={colors.muted}/>
   </Pressable>
-  <SettingsSection title="Manage">
+  <SettingsSection title="Manage">\n   <SettingsRow icon="diamond-outline" label="PESCO Plus" subtitle="Explore additional household features" onPress={()=>router.push("/plus")}/>
    {household?<SettingsRow icon="people-outline" label="Household" subtitle="Members, house name and partner invitations" onPress={()=>router.push('/household')}/>:null}
    <SettingsRow icon="repeat-outline" label="Recurring bills" subtitle="Automatically record monthly personal expenses" onPress={()=>router.push('/recurring')}/>
    <SettingsRow icon="wallet-outline" label="Monthly budgets" subtitle="Manage household and personal limits" onPress={()=>router.push('/budget')}/>
