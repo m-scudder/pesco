@@ -23,6 +23,13 @@
     "plugins": [
       "expo-router",
       "expo-apple-authentication",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow PESCO to select receipt photos.",
+          "cameraPermission": "Allow PESCO to photograph receipts."
+        }
+      ],
       "./plugins/withAndroidLauncherIcons.cjs"
     ],
     "experiments": {
