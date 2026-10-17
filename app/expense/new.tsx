@@ -1,6 +1,6 @@
 import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
 import React,{useEffect,useRef,useState} from 'react';
-import {Alert,Keyboard,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,Text,TextInput,View} from 'react-native';
+import {Alert,Image,Keyboard,KeyboardAvoidingView,Modal,Platform,Pressable,ScrollView,Text,TextInput,View} from 'react-native';
 import {Stack,useLocalSearchParams,useRouter} from 'expo-router';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Screen} from '@/components/Screen';
@@ -9,12 +9,15 @@ import {Ionicons} from '@expo/vector-icons';
 import {AmountCalculator} from '@/components/AmountCalculator';
 import {BottomCategoryPicker} from '@/components/BottomCategoryPicker';
 import {CalendarDatePicker} from '@/components/CalendarDatePicker';
-import {ExpenseReceipts} from '@/components/ExpenseReceipts';
+import {ExpenseReceipts,uploadReceiptFile,type LocalReceipt} from '@/components/ExpenseReceipts';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import {supabase} from '@/lib/supabase';
 import {localDate,parseMoney,useData} from '@/data';
 import {useCategories} from '@/lib/CategoryContext';
 import {useAppTheme} from '@/theme/ThemeContext';
 export default function ExpenseEditor(){
- const {id,scope:initialScope}=useLocalSearchParams<{id?:string;scope?:'household'|'personal'}>();const router=useRouter();const {expenses,add,update,remove,loaded,household,currentUserId}=useData();const {colors,resolved,scope,setScope}=useAppTheme();const editing=id?expenses.find(e=>e.id===id):undefined;
+ const {id,scope:initialScope}=useLocalSearchParams<{id?:string;scope?:'household'|'personal'}>();const router=useRouter();const {expenses,add,syncNow,update,remove,loaded,household,currentUserId}=useData();const {colors,resolved,scope,setScope}=useAppTheme();const editing=id?expenses.find(e=>e.id===id):undefined;
  const {names:categoryNames}=useCategories();
  const availableCategories=categoryNames(scope);
  const options=editing&&!availableCategories.includes(editing.category)?[editing.category,...availableCategories]:availableCategories;
@@ -24,6 +27,37 @@ export default function ExpenseEditor(){
  const [noteFocused,setNoteFocused]=useState(false);
  const [deleting,setDeleting]=useState(false);
  const [calculatorDisplay,setCalculatorDisplay]=useState('');
+ const [draftReceipts,setDraftReceipts]=useState<LocalReceipt[]>([]);
+ const createdId=useRef<string|null>(null);
+ const addDraftReceipt=(file:LocalReceipt)=>setDraftReceipts(prev=>prev.length>=5?prev:[...prev,file]);
+ const pickDraftPhoto=async(camera:boolean)=>{
+  if(camera){
+   const {granted}=await ImagePicker.requestCameraPermissionsAsync();
+   if(!granted){Alert.alert('Camera access required','Allow PESCO to use the camera in device settings.');return}
+  }
+  const result=camera?await ImagePicker.launchCameraAsync({mediaTypes:['images'],quality:0.75}):
+   await ImagePicker.launchImageLibraryAsync({mediaTypes:['images'],quality:0.75});
+  if(result.canceled)return;
+  for(const file of result.assets.slice(0,5-draftReceipts.length)){
+   addDraftReceipt({uri:file.uri,name:file.fileName??'Receipt.jpg',mime:file.mimeType??'image/jpeg'});
+  }
+ };
+ const pickDraftFile=async()=>{
+  const result=await DocumentPicker.getDocumentAsync({type:['application/pdf','image/jpeg','image/png','image/webp'],copyToCacheDirectory:true});
+  if(!result.canceled)for(const file of result.assets.slice(0,5-draftReceipts.length))
+   addDraftReceipt({uri:file.uri,name:file.name,mime:file.mimeType??'application/pdf'});
+ };
+ const chooseDraftReceipt=()=>{
+  if(scope==='personal'){Alert.alert('Household receipts','Receipt attachments are currently available for household expenses.');return}
+  if(draftReceipts.length>=5){Alert.alert('Receipt limit','A maximum of five receipts is supported.');return}
+  Keyboard.dismiss();setCalculatorOpen(false);setCategoryOpen(false);
+  Alert.alert('Add Receipt','Select a source',[
+   {text:'Camera',onPress:()=>{void pickDraftPhoto(true)}},
+   {text:'Photo Library',onPress:()=>{void pickDraftPhoto(false)}},
+   {text:'File',onPress:()=>{void pickDraftFile()}},
+   {text:'Cancel',style:'cancel'}
+  ]);
+ };
 
  const [amount,setAmount]=useState('');const [category,setCategory]=useState<string>('Groceries');const [note,setNote]=useState('');const [date,setDate]=useState(localDate());const [categoryOpen,setCategoryOpen]=useState(false);const [submitting,setSubmitting]=useState(false);const [calculatorOpen,setCalculatorOpen]=useState(!id);
  useEffect(()=>{if(!id&&(initialScope==='household'||initialScope==='personal'))setScope(initialScope)},[id,initialScope,setScope]);
@@ -37,7 +71,16 @@ export default function ExpenseEditor(){
  const commit=async()=>{
   setSubmitting(true);
   try{
-   if(editing)await update(editing.id,draft);else await add(draft);
+   if(editing)await update(editing.id,draft);
+   else if(!createdId.current)createdId.current=await add(draft);
+   if(!editing&&draftReceipts.length){
+    if(!supabase||scope!=='household')throw new Error('Receipt uploads require a household account');
+    await syncNow();
+    const {data:exists,error:lookupError}=await supabase.from('expenses').select('id').eq('id',createdId.current!).maybeSingle();
+    if(lookupError||!exists)throw new Error('Expense saved locally. Could not upload receipts yet. Reopen this screen when syncing completes.');
+    for(const file of draftReceipts){await uploadReceiptFile(createdId.current!,file)}
+    setDraftReceipts([]);
+   }
    router.back();
   }catch(error){Alert.alert('Could not save',error instanceof Error?error.message:'Try again');setSubmitting(false)}
  };
@@ -118,11 +161,28 @@ export default function ExpenseEditor(){
       style={{fontSize:fontSizes.input,color:colors.text,padding:0,fontFamily:fontFamilies.regular}}/>
     </View>
    </View>
+   {line()}
+   <View style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:64,paddingVertical:12}}>
+    <Ionicons name="receipt-outline" size={19} color={colors.muted}/>
+    <View style={{flex:1,gap:7}}>
+     <Text style={{fontSize:fontSizes.caption,color:colors.muted,fontFamily:fontFamilies.medium}}>Receipts</Text>
+     {editing?<ExpenseReceipts expenseId={editing.id} editable={editing.ownerId==='local-user'||editing.ownerId===currentUserId}/>:
+      <View style={{flexDirection:'row',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+       <Pressable accessibilityRole="button" onPress={chooseDraftReceipt} style={{borderRadius:9,borderWidth:1,borderColor:colors.border,backgroundColor:colors.secondary,paddingHorizontal:12,paddingVertical:9}}>
+        <Text style={{fontSize:fontSizes.label,color:colors.text,fontFamily:fontFamilies.medium}}>Add Receipt</Text>
+       </Pressable>
+       {draftReceipts.map((file,index)=><View key={file.uri+index} style={{width:48,height:48}}>
+        {file.mime.startsWith('image/')?<Image source={{uri:file.uri}} style={{width:44,height:44,borderRadius:7}}/>:
+         <Ionicons name="document-text-outline" size={26} color={colors.muted}/>}
+        <Pressable accessibilityLabel={'Remove receipt '+(index+1)} accessibilityRole="button" onPress={()=>setDraftReceipts(prev=>prev.filter((_,i)=>i!==index))}
+         style={{position:'absolute',top:-4,right:-4,width:23,height:23,borderRadius:12,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:colors.border}}>
+         <Ionicons name="close" color={colors.text} size={15}/>
+        </Pressable>
+       </View>)}
+      </View>}
+    </View>
+   </View>
   </View>
-  {editing?<View style={{paddingVertical:5,gap:8}}>
-   <Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.label,color:colors.muted}}>Receipts</Text>
-   <ExpenseReceipts expenseId={editing.id} editable={editing.ownerId==='local-user'||editing.ownerId===currentUserId}/>
-  </View>:null}
   <View style={{height:4}}/>
   <Pressable accessibilityRole="button" disabled={submitting||!loaded} onPress={()=>{Keyboard.dismiss();void save()}}
    style={{backgroundColor:scope==='household'?colors.household:colors.personal,minHeight:50,borderRadius:10,alignItems:'center',justifyContent:'center',marginTop:8,opacity:submitting||!loaded?0.6:1}}>
