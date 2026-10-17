@@ -9,6 +9,7 @@ import {Ionicons} from '@expo/vector-icons';
 import {AmountCalculator} from '@/components/AmountCalculator';
 import {BottomCategoryPicker} from '@/components/BottomCategoryPicker';
 import {CalendarDatePicker} from '@/components/CalendarDatePicker';
+import {ExpenseReceipts} from '@/components/ExpenseReceipts';
 import {localDate,parseMoney,useData} from '@/data';
 import {useCategories} from '@/lib/CategoryContext';
 import {useAppTheme} from '@/theme/ThemeContext';
@@ -118,6 +119,10 @@ export default function ExpenseEditor(){
     </View>
    </View>
   </View>
+  {editing?<View style={{paddingVertical:5,gap:8}}>
+   <Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.label,color:colors.muted}}>Receipts</Text>
+   <ExpenseReceipts expenseId={editing.id} editable={editing.ownerId==='local-user'||editing.ownerId===currentUserId}/>
+  </View>:null}
   <View style={{height:4}}/>
   <Pressable accessibilityRole="button" disabled={submitting||!loaded} onPress={()=>{Keyboard.dismiss();void save()}}
    style={{backgroundColor:scope==='household'?colors.household:colors.personal,minHeight:50,borderRadius:10,alignItems:'center',justifyContent:'center',marginTop:8,opacity:submitting||!loaded?0.6:1}}>
