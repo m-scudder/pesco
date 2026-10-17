@@ -11,13 +11,13 @@ import {MonthPicker} from '@/components/MonthPicker';
 import {MonthSwipeView} from '@/components/MonthSwipeView';
 import {formatMoney,localDate,monthKey,useData} from '@/data';
 import {useAppTheme} from '@/theme/ThemeContext';
-import {useHouseholdPartnerName} from '@/lib/useHouseholdPartnerName';
+import {useHouseholdMemberNames} from '@/lib/useHouseholdPartnerName';
 
 export default function Home(){
  const {colors,scope}=useAppTheme();
  const {expenses,syncError,currentUserId,demoEnabled}=useData();
  const router=useRouter();
- const partnerName=useHouseholdPartnerName();
+ const memberNames=useHouseholdMemberNames();
  const insets=useSafeAreaInsets();
  const [month,setMonth]=useState(monthKey(localDate()));
  const [search,setSearch]=useState('');
@@ -120,7 +120,7 @@ export default function Home(){
        <View style={{flex:1,gap:2}}>
         <Text numberOfLines={2} style={{color:colors.text,fontSize:fontSizes.body,fontFamily:fontFamilies.medium}}>{expense.note?.trim()||expense.category}</Text>
         {scope==='household'?
-         <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{expense.ownerId==='local-user'||expense.ownerId===currentUserId?'You':partnerName}</Text>:null}
+         <Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{expense.ownerId==='local-user'||expense.ownerId===currentUserId?'You':(memberNames[expense.ownerId]??'Member')}</Text>:null}
        </View>
        <View style={{alignItems:'flex-end',gap:3}}>
         <Text style={{color:'#F25B59',fontSize:fontSizes.input,fontWeight:fontWeights.medium,textAlign:'right'}}>{formatMoney(expense.amountPaise)}</Text>
@@ -157,7 +157,7 @@ export default function Home(){
        <View style={{flexDirection:'row',gap:8}}>
         {(['all','me','partner'] as const).map(value=><Pressable key={value} accessibilityRole="button" accessibilityState={{selected:draftContributor===value}} onPress={()=>setDraftContributor(value)}
          style={{flex:1,alignItems:'center',paddingVertical:11,borderRadius:9,borderWidth:1,borderColor:draftContributor===value?colors.household:colors.border,backgroundColor:draftContributor===value?colors.household:colors.secondary}}>
-         <Text style={{fontSize:fontSizes.label,color:draftContributor===value?'#FFFFFF':colors.text}}>{value==='all'?'Everyone':value==='me'?'You':partnerName}</Text>
+         <Text style={{fontSize:fontSizes.label,color:draftContributor===value?'#FFFFFF':colors.text}}>{value==='all'?'Everyone':value==='me'?'You':(memberNames[expense.ownerId]??'Member')}</Text>
         </Pressable>)}
        </View>
       </View>:null}
