@@ -26,6 +26,8 @@ export default function HouseholdSetup(){
  const [key,setKey]=useState('');
  const [invite,setInvite]=useState<string|null>(null);
  const [inviteExpires,setInviteExpires]=useState<number|null>(null);
+ const [clock,setClock]=useState(Date.now());
+ useEffect(()=>{const timer=setInterval(()=>setClock(Date.now()),30000);return()=>clearInterval(timer)},[]);
  const [error,setError]=useState<string|null>(null);
  const [mode,setMode]=useState<'choose'|'create'|'join'>('choose');
 
@@ -106,7 +108,7 @@ export default function HouseholdSetup(){
      {members.length===1?<Body muted>No other members have joined yet.</Body>:null}
     </Card>
     {household.created_by===user.id&&members.length<memberLimit?<Card>
-     {invite&&inviteExpires&&inviteExpires>Date.now()?<View style={{gap:9,alignItems:'center',paddingVertical:6}}>
+     {invite&&inviteExpires&&inviteExpires>clock?<View style={{gap:9,alignItems:'center',paddingVertical:6}}>
       <Text style={{fontSize:fontSizes.label,color:colors.muted}}>Invite code</Text>
       <Text selectable style={{fontSize:fontSizes.display,fontWeight:'800',letterSpacing:5,color:colors.text}}>{invite}</Text>
       <Body muted>Expires {new Date(inviteExpires).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})} · One use</Body>
