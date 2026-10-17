@@ -5,6 +5,7 @@ import {Ionicons} from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import {File} from 'expo-file-system';
+import * as Crypto from 'expo-crypto';
 import {supabase} from '@/lib/supabase';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {fontFamilies,fontSizes} from '@/theme/typography';
@@ -42,7 +43,7 @@ export function ExpenseReceipts({expenseId,editable}:{expenseId:string;editable:
    if(bytes.byteLength>MAX_BYTES||bytes.byteLength===0)throw new Error('Receipt must be smaller than 5 MB.');
    const {data:user,error:authError}=await supabase.auth.getUser();
    if(authError||!user.user)throw new Error('Sign in to attach receipts.');
-   const receiptId=crypto.randomUUID();
+   const receiptId=Crypto.randomUUID();
    const ext=cleanMime==='application/pdf'?'pdf':cleanMime==='image/png'?'png':cleanMime==='image/webp'?'webp':'jpg';
    const path=expenseId+'/'+receiptId+'.'+ext;
    const storage=supabase.storage.from(BUCKET);
