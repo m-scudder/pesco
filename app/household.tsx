@@ -7,6 +7,7 @@ import {useAppTheme} from '@/theme/ThemeContext';
 import {useAuth} from '@/lib/AuthContext';
 import {useData} from '@/data';
 import {supabase} from '@/lib/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {createHousehold,createJoiningKey,getMyHousehold,joinWithKey,getHouseholdMembers,renameHousehold,removeHouseholdPartner,type Household,type HouseholdMember} from '@/lib/households';
 
 const SIX=/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
@@ -24,6 +25,7 @@ export default function HouseholdSetup(){
  const [name,setName]=useState('Our Household');
  const [key,setKey]=useState('');
  const [invite,setInvite]=useState<string|null>(null);
+ const [inviteExpires,setInviteExpires]=useState<number|null>(null);
  const [error,setError]=useState<string|null>(null);
  const [mode,setMode]=useState<'choose'|'create'|'join'>('choose');
 
@@ -35,6 +37,14 @@ export default function HouseholdSetup(){
    const {data:limit}=await supabase.rpc('household_member_limit',{target_household:current.id});
    setMemberLimit(typeof limit==='number'?limit:2);
   }else setMemberLimit(2);
+  if(current){
+   const cached=await AsyncStorage.getItem('pesco:invite:'+current.id);
+   let value:{code:string;expires:number}|null=null;
+   try{value=cached?JSON.parse(cached):null}catch{}
+   if(value&&SIX.test(value.code)&&value.expires>Date.now()){
+    setInvite(value.code);setInviteExpires(value.expires);
+   }else{setInvite(null);setInviteExpires(null);if(cached)await AsyncStorage.removeItem('pesco:invite:'+current.id)}
+  }else{setInvite(null);setInviteExpires(null)}
   setDraftName(current?.name??'');setError(null)}
   catch(e){setError(e instanceof Error?e.message:'Could not load household')}
   finally{setLoading(false)}
@@ -60,7 +70,6 @@ export default function HouseholdSetup(){
  if(!user)return <Screen modal style={{gap:12}}><Card><Body muted>{authError||'Connection unavailable'}</Body>{action('Retry',()=>{void retry()})}</Card></Screen>;
 
  return <Screen modal style={{gap:12}}>
-  <Text style={{color:colors.muted,fontSize:fontSizes.label,marginBottom:2}}>Track household expenses together</Text>
   {household?
    <>
     <Card>
@@ -97,12 +106,18 @@ export default function HouseholdSetup(){
      {members.length===1?<Body muted>No other members have joined yet.</Body>:null}
     </Card>
     {household.created_by===user.id&&members.length<memberLimit?<Card>
-     {action('Invite Member',()=>{void submit(async()=>{const issued=await createJoiningKey(household.id);if(!SIX.test(issued))throw new Error('Server is not using 6-character keys');setInvite(issued)})})}
-     {invite?<View style={{gap:9,alignItems:'center',paddingVertical:6}}>
+     {invite&&inviteExpires&&inviteExpires>Date.now()?<View style={{gap:9,alignItems:'center',paddingVertical:6}}>
+      <Text style={{fontSize:fontSizes.label,color:colors.muted}}>Invite code</Text>
       <Text selectable style={{fontSize:fontSizes.display,fontWeight:'800',letterSpacing:5,color:colors.text}}>{invite}</Text>
-      <Body muted>Valid 24 hours · One use</Body>
-      {action('Share Invite Code',()=>{void Share.share({message:'Join my household on PESCO.\\n\\nDownload or open PESCO: '+'pesco://onboarding'+'\\n\\nIn the app, choose Join Household and enter this invite code: '+invite+'\\n\\nThis code expires after 24 hours.'})},false)}
-     </View>:null}
+      <Body muted>Expires {new Date(inviteExpires).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})} · One use</Body>
+      {action('Share Invite Code',()=>{void Share.share({message:'Join my PESCO household.\n\nOpen PESCO: pesco://onboarding\n\nIn the app, select Join Household and enter this code: '+invite+'\n\nThe code expires in 24 hours.'})},false)}
+     </View>:action('Generate Invite Code',()=>{void submit(async()=>{
+      const issued=await createJoiningKey(household.id);
+      if(!SIX.test(issued))throw new Error('Server is not using 6-character keys');
+      const expires=Date.now()+24*60*60*1000;
+      await AsyncStorage.setItem('pesco:invite:'+household.id,JSON.stringify({code:issued,expires}));
+      setInvite(issued);setInviteExpires(expires);
+     })})}
     </Card>:null}
    </>
    :mode==='choose'?<Card>
