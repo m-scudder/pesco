@@ -49,14 +49,7 @@ export default function Detail(){
      <Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.input,color:row.label==='Note'&&!expense.note.trim()?colors.muted:colors.text}}>{row.value}</Text>
     </View>
    </View>)}
-   <View style={{height:1,backgroundColor:colors.border}}/>
-   <View style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:72,paddingVertical:14}}>
-    <Ionicons name="receipt-outline" size={19} color={colors.muted}/>
-    <View style={{flex:1,gap:6}}>
-     <Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.caption,color:colors.muted}}>Receipts</Text>
-     <ExpenseReceipts expenseId={expense.id} editable={editable}/>
-    </View>
-   </View>
+   <ExpenseReceipts expenseId={expense.id} editable={editable} hideWhenEmpty detailRow/>
   </View>
   {editable?<View style={{gap:10}}>
    <Pressable accessibilityRole="button" onPress={()=>router.push({pathname:'/expense/new',params:{id:expense.id}})}
