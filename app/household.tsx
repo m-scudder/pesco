@@ -2,8 +2,7 @@ import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
 import React,{useCallback,useEffect,useState} from 'react';
 import {ActivityIndicator,Alert,Pressable,Share,Text,TextInput,View} from 'react-native';
 import {Screen} from '@/components/Screen';
-import {Body,Card} from '@/components/UI';\nimport * as Linking from 'expo-linking';
-import {useAppTheme} from '@/theme/ThemeContext';
+import {Body,Card} from '@/components/UI';\nimport {useAppTheme} from '@/theme/ThemeContext';
 import {useAuth} from '@/lib/AuthContext';
 import {useData} from '@/data';
 import {createHousehold,createJoiningKey,getMyHousehold,joinWithKey,getHouseholdMembers,renameHousehold,removeHouseholdPartner,type Household,type HouseholdMember} from '@/lib/households';
@@ -94,7 +93,7 @@ export default function HouseholdSetup(){
      {invite?<View style={{gap:9,alignItems:'center',paddingVertical:6}}>
       <Text selectable style={{fontSize:fontSizes.display,fontWeight:'800',letterSpacing:5,color:colors.text}}>{invite}</Text>
       <Body muted>Valid 24 hours · One use</Body>
-      {action('Share Code',()=>{void Share.share({message:'Join my household on PESCO.\\n\\nDownload or open PESCO: '+Linking.createURL('/onboarding')+'\\n\\nIn the app, choose Join Household and enter this invite code: '+invite+'\\n\\nThis code expires after 24 hours.'})},false)}
+      {action('Share Code',()=>{void Share.share({message:'Join my household on PESCO.\\n\\nDownload or open PESCO: '+'pesco://onboarding'+'\\n\\nIn the app, choose Join Household and enter this invite code: '+invite+'\\n\\nThis code expires after 24 hours.'})},false)}
      </View>:null}
     </Card>:null}
    </>
