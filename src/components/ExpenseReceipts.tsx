@@ -116,10 +116,10 @@ export function ExpenseReceipts({expenseId,editable}:{expenseId:string;editable:
    finally{setBusy(false)}
   })()}}
  ]);
- return <View style={{gap:9}}>
+ return <View style={{flex:1,gap:9}}>
   <View style={{flexDirection:'row',alignItems:'center',gap:9,flexWrap:'wrap'}}>
    {editable&&receipts.length<LIMIT?<Pressable accessibilityRole="button" disabled={busy} onPress={choose}
-    style={{flexDirection:'row',alignItems:'center',gap:6,minHeight:44,paddingHorizontal:12,borderRadius:9,borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface,opacity:busy?0.5:1}}>
+    style={{flexDirection:'row',alignItems:'center',gap:6,minHeight:38,paddingHorizontal:10,borderRadius:9,borderWidth:1,borderColor:colors.border,backgroundColor:colors.secondary,opacity:busy?0.5:1}}>
     <Ionicons name="attach-outline" size={18} color={colors.text}/>
     <Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.label,color:colors.text}}>Add Receipt</Text>
    </Pressable>:null}
