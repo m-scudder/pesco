@@ -36,7 +36,7 @@ export async function uploadReceiptFile(expenseId:string,file:LocalReceipt){
  });
  if(metaError){await store.remove([path]);throw metaError}
 }
-export function ExpenseReceipts({expenseId,editable,hideWhenEmpty=false}:{expenseId:string;editable:boolean;hideWhenEmpty?:boolean}){
+export function ExpenseReceipts({expenseId,editable,hideWhenEmpty=false,detailRow=false}:{expenseId:string;editable:boolean;hideWhenEmpty?:boolean;detailRow?:boolean}){
  const {colors}=useAppTheme();
  const {household}=useData();
  const router=useRouter();
@@ -138,7 +138,7 @@ export function ExpenseReceipts({expenseId,editable,hideWhenEmpty=false}:{expens
   })()}}
  ]);
  if(hideWhenEmpty&&receipts.length===0)return null;
- return <View style={{flex:1,gap:9}}>
+ const content=<View style={{flex:1,gap:9}}>
   <View style={{flexDirection:'row',alignItems:'center',gap:9,flexWrap:'wrap'}}>
    {editable&&receipts.length<LIMIT?<Pressable accessibilityRole="button" disabled={busy} onPress={choose}
     style={{flexDirection:'row',alignItems:'center',gap:6,minHeight:38,paddingHorizontal:10,borderRadius:9,borderWidth:1,borderColor:colors.border,backgroundColor:colors.secondary,opacity:busy?0.5:1}}>
@@ -161,4 +161,15 @@ export function ExpenseReceipts({expenseId,editable,hideWhenEmpty=false}:{expens
   </View>
   {error?<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{error}</Text>:null}
  </View>;
+ if(detailRow)return <>
+  <View style={{height:1,backgroundColor:colors.border}}/>
+  <View style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:65,paddingVertical:12}}>
+   <Ionicons name="receipt-outline" size={19} color={colors.muted}/>
+   <View style={{flex:1,gap:5}}>
+    <Text style={{color:colors.muted,fontFamily:fontFamilies.medium,fontSize:fontSizes.caption}}>Receipts</Text>
+    {content}
+   </View>
+  </View>
+ </>;
+ return content;
 }
