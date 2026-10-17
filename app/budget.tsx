@@ -1,5 +1,6 @@
 import {fontSizes,fontFamilies,fontWeights} from '@/theme/typography';
 import React,{useEffect,useState} from 'react';
+import {useFocusEffect,useRouter} from 'expo-router';
 import {Alert,Pressable,Text,TextInput,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {AppState} from 'react-native';
@@ -110,7 +111,19 @@ function BudgetForm({scope,value,spent,onSave}:{scope:Scope;value:number|null;sp
 
 function CategoryBudgetSection({scope,current}:{scope:Scope;current:string}){
  const {colors}=useAppTheme();
- const {expenses}=useData();
+ const router=useRouter();
+ const {expenses,household}=useData();
+ const [plus,setPlus]=useState(false);
+ useFocusEffect(React.useCallback(()=>{
+  let active=true;
+  if(household?.id&&supabase){
+   void supabase.from('household_entitlements').select('tier,valid_until')
+    .eq('household_id',household.id).maybeSingle().then(({data})=>{
+     if(active)setPlus(data?.tier==='plus'&&!!data.valid_until&&Date.parse(data.valid_until)>Date.now());
+    });
+  }else setPlus(false);
+  return ()=>{active=false};
+ },[household?.id]));
  const {names}=useCategories();
  const {items,save,error,refresh}=useCategoryBudgets(scope);
  const categories=names(scope);
@@ -119,6 +132,13 @@ function CategoryBudgetSection({scope,current}:{scope:Scope;current:string}){
  const [open,setOpen]=useState(false);
  const [busy,setBusy]=useState(false);
  const submit=async()=>{
+  if(!plus&&!items.some(item=>item.category===category)&&items.length>=1){
+   Alert.alert('Category limit','Free households can set one category budget. Upgrade to add more.',[
+    {text:'Cancel',style:'cancel'},
+    {text:'Explore Plus',onPress:()=>router.push('/plus')}
+   ]);
+   return;
+  }
   const value=parseMoney(amount);
   if(value===null){Alert.alert('Invalid Limit','Enter a positive monthly amount.');return}
   if(!categories.includes(category)){Alert.alert('Choose Category','Select a category first.');return}
