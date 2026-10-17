@@ -33,7 +33,7 @@ function recurringDates(rule:RecurringRule,today:string):string[]{
 type Store={
  loaded:boolean;demoEnabled:boolean;setDemoEnabled:(enabled:boolean)=>void;pendingCount:number;pendingEditCount:number;pendingMutations:PendingMutation[];discardPendingMutation:(id:string)=>Promise<void>;pendingIds:string[];pendingEntries:PendingExpense[];expenses:Expense[];recurringRules:RecurringRule[];addRecurring:(draft:Omit<RecurringRule,'id'|'active'>)=>void;setRecurringActive:(id:string,active:boolean)=>void;updateRecurring:(id:string,draft:Omit<RecurringRule,'id'|'active'>)=>void;deleteRecurring:(id:string)=>void;budgets:Budgets;household:Household|null;syncing:boolean;syncError:string|null;
  localHouseholdCount:number;currentUserId:string|null;
- refresh:()=>Promise<void>;add:(draft:ExpenseDraft)=>Promise<void>;update:(id:string,draft:ExpenseDraft)=>Promise<void>;
+ refresh:()=>Promise<void>;add:(draft:ExpenseDraft)=>Promise<string>;syncNow:()=>Promise<void>;update:(id:string,draft:ExpenseDraft)=>Promise<void>;
  remove:(id:string)=>Promise<void>;importLocalHousehold:()=>Promise<number>;
  setBudget:(scope:Scope,value:number|null)=>void;clearAll:()=>void;
 };
@@ -413,10 +413,12 @@ export function DataProvider({children}:{children:React.ReactNode}){
     setLedgerExpenses(previous=>previous.some(row=>row.id===optimistic.id)?previous:[...previous,optimistic]);
    }catch(error){console.warn('Local ledger write failed; outbox is safe',error)}
    setPending(previous=>[...previous,entry]);
-   return;
+   return entry.id;
   }
   const now=new Date().toISOString();
-  setLocalExpenses(prev=>[{...draft,id:now+'-'+Math.random().toString(36).slice(2),ownerId:'local-user',createdAt:now,updatedAt:now},...prev]);
+  const localId=now+'-'+Math.random().toString(36).slice(2);
+  setLocalExpenses(prev=>[{...draft,id:localId,ownerId:'local-user',createdAt:now,updatedAt:now},...prev]);
+  return localId;
  },[household,user?.id]);
 
  const update=useCallback(async(id:string,draft:ExpenseDraft)=>{
@@ -509,8 +511,8 @@ export function DataProvider({children}:{children:React.ReactNode}){
  const value=useMemo<Store>(()=>({
   loaded:localLoaded&&(!user||cloudReady),demoEnabled:__DEV__&&demoEnabled,setDemoEnabled:changeDemoEnabled,pendingEditCount:mutations.filter(item=>item.householdId===household?.id).length,pendingMutations:mutations,discardPendingMutation,pendingCount:pending.filter(x=>x.draft.householdId===household?.id).length,pendingIds:pending.filter(x=>x.draft.householdId===household?.id).map(x=>x.id),pendingEntries:pending,expenses,recurringRules,addRecurring,setRecurringActive,updateRecurring,deleteRecurring,budgets,household,syncing,syncError:syncError??queueError,
   currentUserId:user?.id??null,localHouseholdCount:household?localExpenses.filter(e=>e.scope==='household').length:0,
-  refresh,add,update,remove,importLocalHousehold,setBudget,clearAll
- }),[localLoaded,user?.id,cloudReady,demoEnabled,changeDemoEnabled,expenses,pending,mutations,discardPendingMutation,queueError,recurringRules,addRecurring,setRecurringActive,updateRecurring,deleteRecurring,budgets,household,syncing,syncError,localExpenses,refresh,add,update,remove,importLocalHousehold,setBudget,clearAll]);
+  refresh,add,syncNow:syncOutgoing,update,remove,importLocalHousehold,setBudget,clearAll
+ }),[localLoaded,user?.id,cloudReady,demoEnabled,changeDemoEnabled,expenses,pending,mutations,discardPendingMutation,queueError,recurringRules,addRecurring,setRecurringActive,updateRecurring,deleteRecurring,budgets,household,syncing,syncError,localExpenses,refresh,add,syncOutgoing,update,remove,importLocalHousehold,setBudget,clearAll]);
  return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 export function useData(){const store=useContext(Context);if(!store)throw new Error('Missing DataProvider');return store}
