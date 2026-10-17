@@ -78,8 +78,10 @@ export default function ExpenseEditor(){
     await syncNow();
     const {data:exists,error:lookupError}=await supabase.from('expenses').select('id').eq('id',createdId.current!).maybeSingle();
     if(lookupError||!exists)throw new Error('Expense saved locally. Could not upload receipts yet. Reopen this screen when syncing completes.');
-    for(const file of draftReceipts){await uploadReceiptFile(createdId.current!,file)}
-    setDraftReceipts([]);
+    for(const file of draftReceipts){
+     await uploadReceiptFile(createdId.current!,file);
+     setDraftReceipts(prev=>prev.filter(item=>item!==file));
+    }
    }
    router.back();
   }catch(error){Alert.alert('Could not save',error instanceof Error?error.message:'Try again');setSubmitting(false)}
