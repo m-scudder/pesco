@@ -7,6 +7,7 @@ import {Screen} from '@/components/Screen';
 import {formatMoney,useData} from '@/data';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {useHouseholdPartnerName} from '@/lib/useHouseholdPartnerName';
+import {ExpenseReceipts} from '@/components/ExpenseReceipts';
 
 export default function Detail(){
  const {id}=useLocalSearchParams<{id:string}>();
@@ -49,6 +50,7 @@ export default function Detail(){
     </View>
    </View>)}
   </View>
+  <ExpenseReceipts expenseId={expense.id} editable={editable}/>
   {editable?<View style={{gap:10}}>
    <Pressable accessibilityRole="button" onPress={()=>router.push({pathname:'/expense/new',params:{id:expense.id}})}
     style={{minHeight:48,borderRadius:10,alignItems:'center',justifyContent:'center',backgroundColor:colors.household}}>
