@@ -3,21 +3,30 @@ import {useFocusEffect} from 'expo-router';
 import {getHouseholdMembers} from '@/lib/households';
 import {useData} from '@/data';
 
-/** Display the other household member's configured nickname, with a safe fallback. */
-export function useHouseholdPartnerName(){
+/** Household nickname lookup keyed by the expense owner's user ID. */
+export function useHouseholdMemberNames(){
  const {household,currentUserId}=useData();
- const [name,setName]=useState('Partner');
- const householdId=household?.id;
+ const [names,setNames]=useState<Record<string,string>>({});
  useFocusEffect(useCallback(()=>{
   let active=true;
-  if(!householdId||!currentUserId){setName('Partner');return ()=>{active=false}}
-  void getHouseholdMembers(householdId).then(members=>{
+  if(!household?.id||!currentUserId){setNames({});return ()=>{active=false}}
+  void getHouseholdMembers(household.id).then(members=>{
    if(!active)return;
-   const other=members.find(member=>member.user_id!==currentUserId);
-   const display=other?.display_name?.trim();
-   setName(display&&display!=='Member'?display:'Partner');
-  }).catch(()=>{if(active)setName('Partner')});
+   setNames(Object.fromEntries(members.map(member=>[
+    member.user_id,
+    member.user_id===currentUserId?'You':
+     member.display_name.trim()&&member.display_name!=='Member'?member.display_name:'Member'
+   ])));
+  }).catch(()=>{if(active)setNames({})});
   return ()=>{active=false};
- },[householdId,currentUserId]));
- return name;
+ },[household?.id,currentUserId]));
+ return names;
+}
+
+/** Legacy two-person fallback for interface labels, not transaction ownership. */
+export function useHouseholdPartnerName(){
+ const {currentUserId}=useData();
+ const names=useHouseholdMemberNames();
+ const others=Object.entries(names).filter(([id])=>id!==currentUserId);
+ return others.length===1?others[0][1]:others.length>1?'Others':'Member';
 }
