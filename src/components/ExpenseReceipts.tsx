@@ -36,7 +36,7 @@ export async function uploadReceiptFile(expenseId:string,file:LocalReceipt){
  });
  if(metaError){await store.remove([path]);throw metaError}
 }
-export function ExpenseReceipts({expenseId,editable,hideWhenEmpty=false,detailRow=false}:{expenseId:string;editable:boolean;hideWhenEmpty?:boolean;detailRow?:boolean}){
+export function ExpenseReceipts({expenseId,editable,hideWhenEmpty=false,detailRow=false,compactAction=false}:{expenseId:string;editable:boolean;hideWhenEmpty?:boolean;detailRow?:boolean;compactAction?:boolean}){
  const {colors}=useAppTheme();
  const {household}=useData();
  const router=useRouter();
@@ -140,10 +140,10 @@ export function ExpenseReceipts({expenseId,editable,hideWhenEmpty=false,detailRo
  if(hideWhenEmpty&&receipts.length===0)return null;
  const content=<View style={{flex:1,gap:9}}>
   <View style={{flexDirection:'row',alignItems:'center',gap:9,flexWrap:'wrap'}}>
-   {editable&&receipts.length<LIMIT?<Pressable accessibilityRole="button" disabled={busy} onPress={choose}
-    style={{flexDirection:'row',alignItems:'center',gap:6,minHeight:38,paddingHorizontal:10,borderRadius:9,borderWidth:1,borderColor:colors.border,backgroundColor:colors.secondary,opacity:busy?0.5:1}}>
-    <Ionicons name="attach-outline" size={18} color={colors.text}/>
-    <Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.label,color:colors.text}}>Add</Text>
+   {editable&&receipts.length<LIMIT?<Pressable accessibilityRole="button" accessibilityLabel="Add Attachment" disabled={busy} onPress={choose}
+    style={{flexDirection:'row',alignItems:'center',gap:6,minHeight:38,paddingHorizontal:10,borderRadius:9,borderWidth:1,borderColor:colors.border,backgroundColor:compactAction?'transparent':colors.secondary,opacity:busy?0.5:1}}>
+    <Ionicons name="attach-outline" size={20} color={colors.muted}/>
+    {!compactAction?<Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.label,color:colors.text}}>Add</Text>:null}
    </Pressable>:null}
    {busy?<ActivityIndicator size="small" color={colors.household}/>:null}
    {receipts.map(item=><View key={item.id} style={{width:50,height:50}}>
@@ -164,9 +164,9 @@ export function ExpenseReceipts({expenseId,editable,hideWhenEmpty=false,detailRo
  if(detailRow)return <>
   <View style={{height:1,backgroundColor:colors.border}}/>
   <View style={{flexDirection:'row',alignItems:'center',gap:14,minHeight:65,paddingVertical:12}}>
-   <Ionicons name="receipt-outline" size={19} color={colors.muted}/>
+   <Ionicons name="document-attach-outline" size={19} color={colors.muted}/>
    <View style={{flex:1,gap:5}}>
-    <Text style={{color:colors.muted,fontFamily:fontFamilies.medium,fontSize:fontSizes.caption}}>Receipts</Text>
+    <Text style={{color:colors.muted,fontFamily:fontFamilies.medium,fontSize:fontSizes.caption}}>Attachments</Text>
     {content}
    </View>
   </View>
