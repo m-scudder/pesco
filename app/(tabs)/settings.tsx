@@ -58,8 +58,9 @@ export default function Settings(){
  },[user?.id]));
  const version=Constants.expoConfig?.version??'0.1.0';
  return <Screen style={{gap:16,paddingBottom:95,flexGrow:1}}>
-  <Pressable accessibilityRole="button" accessibilityLabel="Edit my profile" onPress={()=>router.push('/profile')}
-   style={{flexDirection:'row',alignItems:'center',gap:12,paddingVertical:6,paddingHorizontal:3}}>
+  <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
+   <Pressable accessibilityRole="button" accessibilityLabel="Edit my profile" onPress={()=>router.push('/profile')}
+    style={{flex:1,flexDirection:'row',alignItems:'center',gap:12,paddingVertical:6,paddingHorizontal:3}}>
    <View style={{width:54,height:54,borderRadius:27,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'}}>
     <Text style={{fontSize:fontSizes.title,fontFamily:fontFamilies.displayBold,color:colors.household}}>{(displayName[0]||'P').toLocaleUpperCase()}</Text>
    </View>
@@ -69,7 +70,7 @@ export default function Settings(){
    </View>
    <Ionicons name="diamond-outline" size={21} color={colors.household}/>\n   <Ionicons name="chevron-forward" size={18} color={colors.muted}/>
   </Pressable>
-  <SettingsSection title="Manage">\n   <SettingsRow icon="diamond-outline" label="PESCO Plus" subtitle="Explore additional household features" onPress={()=>router.push("/plus")}/>
+  <SettingsSection title="Manage">\n
    {household?<SettingsRow icon="people-outline" label="Household" subtitle="Members, house name and partner invitations" onPress={()=>router.push('/household')}/>:null}
    <SettingsRow icon="repeat-outline" label="Recurring bills" subtitle="Automatically record monthly personal expenses" onPress={()=>router.push('/recurring')}/>
    <SettingsRow icon="wallet-outline" label="Monthly budgets" subtitle="Manage household and personal limits" onPress={()=>router.push('/budget')}/>
