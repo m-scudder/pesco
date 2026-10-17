@@ -171,7 +171,7 @@ export default function ExpenseEditor(){
      {editing?<ExpenseReceipts expenseId={editing.id} editable={editing.ownerId==='local-user'||editing.ownerId===currentUserId}/>:
       <View style={{flexDirection:'row',gap:8,alignItems:'center',flexWrap:'wrap'}}>
        <Pressable accessibilityRole="button" onPress={chooseDraftReceipt} style={{borderRadius:9,borderWidth:1,borderColor:colors.border,backgroundColor:colors.secondary,paddingHorizontal:12,paddingVertical:9}}>
-        <Text style={{fontSize:fontSizes.label,color:colors.text,fontFamily:fontFamilies.medium}}>Add Receipt</Text>
+        <Text style={{fontSize:fontSizes.label,color:colors.text,fontFamily:fontFamilies.medium}} >Add</Text>
        </Pressable>
        {draftReceipts.map((file,index)=><View key={file.uri+index} style={{width:48,height:48}}>
         {file.mime.startsWith('image/')?<Image source={{uri:file.uri}} style={{width:44,height:44,borderRadius:7}}/>:
