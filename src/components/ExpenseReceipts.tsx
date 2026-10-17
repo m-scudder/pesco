@@ -139,12 +139,7 @@ export function ExpenseReceipts({expenseId,editable,hideWhenEmpty=false,detailRo
  ]);
  if(hideWhenEmpty&&receipts.length===0)return null;
  const content=<View style={{flex:1,gap:9}}>
-  <View style={{flexDirection:'row',alignItems:'center',gap:9,flexWrap:'wrap'}}>
-   {editable&&receipts.length<LIMIT?<Pressable accessibilityRole="button" accessibilityLabel="Add Attachment" disabled={busy} onPress={choose}
-    style={{flexDirection:'row',alignItems:'center',gap:6,minHeight:38,paddingHorizontal:10,borderRadius:9,borderWidth:1,borderColor:colors.border,backgroundColor:compactAction?'transparent':colors.secondary,opacity:busy?0.5:1}}>
-    <Ionicons name="attach-outline" size={20} color={colors.muted}/>
-    {!compactAction?<Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.label,color:colors.text}}>Add</Text>:null}
-   </Pressable>:null}
+  <View style={{flexDirection:'row',alignItems:'center',gap:9,flexWrap:'wrap',justifyContent:compactAction?'flex-end':'flex-start'}}>
    {busy?<ActivityIndicator size="small" color={colors.household}/>:null}
    {receipts.map(item=><View key={item.id} style={{width:50,height:50}}>
     <Pressable accessibilityRole="button" accessibilityLabel={'View '+item.file_name}
@@ -158,6 +153,11 @@ export function ExpenseReceipts({expenseId,editable,hideWhenEmpty=false,detailRo
      <Ionicons name="close" size={12} color={colors.text}/>
     </Pressable>:null}
    </View>)}
+    {editable&&receipts.length<LIMIT?<Pressable accessibilityRole="button" accessibilityLabel="Add Attachment" disabled={busy} onPress={choose}
+     style={{flexDirection:'row',alignItems:'center',gap:6,minHeight:38,paddingHorizontal:10,borderRadius:9,borderWidth:1,borderColor:colors.border,backgroundColor:compactAction?'transparent':colors.secondary,opacity:busy?0.5:1}}>
+     <Ionicons name="attach-outline" size={20} color={colors.muted}/>
+     {!compactAction?<Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.label,color:colors.text}}>Add</Text>:null}
+    </Pressable>:null}
   </View>
   {error?<Text style={{color:colors.muted,fontSize:fontSizes.caption}}>{error}</Text>:null}
  </View>;
