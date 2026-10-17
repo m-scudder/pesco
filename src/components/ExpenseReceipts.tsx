@@ -15,6 +15,27 @@ type Receipt={id:string;storage_path:string;file_name:string;mime_type:string;ur
 const BUCKET='expense-receipts';
 const LIMIT=5;
 const MAX_BYTES=5*1024*1024;
+export type LocalReceipt={uri:string;name:string;mime:string};
+export async function uploadReceiptFile(expenseId:string,file:LocalReceipt){
+ if(!supabase)throw new Error('Cloud storage unavailable');
+ const mime=file.mime==='image/jpg'?'image/jpeg':file.mime;
+ if(!['image/jpeg','image/png','image/webp','application/pdf'].includes(mime))throw new Error('Unsupported receipt format');
+ const bytes=await new File(file.uri).arrayBuffer();
+ if(bytes.byteLength===0||bytes.byteLength>MAX_BYTES)throw new Error('Receipt must be smaller than 5 MB');
+ const {data:user,error:authError}=await supabase.auth.getUser();
+ if(authError||!user.user)throw new Error('Sign in required');
+ const receiptId=Crypto.randomUUID();
+ const ext=mime==='application/pdf'?'pdf':mime==='image/png'?'png':mime==='image/webp'?'webp':'jpg';
+ const path=expenseId+'/'+receiptId+'.'+ext;
+ const store=supabase.storage.from(BUCKET);
+ const {error:storageError}=await store.upload(path,bytes,{contentType:mime,upsert:false});
+ if(storageError)throw storageError;
+ const {error:metaError}=await supabase.from('expense_receipts').insert({
+  id:receiptId,expense_id:expenseId,uploaded_by:user.user.id,storage_path:path,
+  mime_type:mime,file_name:file.name.slice(0,255),size_bytes:bytes.byteLength
+ });
+ if(metaError){await store.remove([path]);throw metaError}
+}
 export function ExpenseReceipts({expenseId,editable}:{expenseId:string;editable:boolean}){
  const {colors}=useAppTheme();
  const {household}=useData();
