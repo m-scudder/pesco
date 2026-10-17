@@ -1,6 +1,7 @@
 import React,{useCallback,useState} from 'react';
-import {Alert,ActivityIndicator,Image,Pressable,ScrollView,Text,View} from 'react-native';
-import {useFocusEffect} from 'expo-router';
+import {Alert,ActivityIndicator,Image,Pressable,Text,View} from 'react-native';
+import {useFocusEffect,useRouter} from 'expo-router';
+import {useData} from '@/data';
 import {Ionicons} from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -16,6 +17,9 @@ const LIMIT=5;
 const MAX_BYTES=5*1024*1024;
 export function ExpenseReceipts({expenseId,editable}:{expenseId:string;editable:boolean}){
  const {colors}=useAppTheme();
+ const {household}=useData();
+ const router=useRouter();
+ const [plus,setPlus]=useState(false);
  const [receipts,setReceipts]=useState<Receipt[]>([]);
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
@@ -31,7 +35,16 @@ export function ExpenseReceipts({expenseId,editable}:{expenseId:string;editable:
   }));
   setReceipts(next);setError('');
  },[expenseId]);
- useFocusEffect(useCallback(()=>{void load()},[load]));
+ useFocusEffect(useCallback(()=>{
+  void load();
+  let active=true;
+  if(supabase&&household?.id)void supabase.from('household_entitlements').select('tier,valid_until')
+   .eq('household_id',household.id).maybeSingle().then(({data})=>{
+    if(active)setPlus(data?.tier==='plus'&&!!data.valid_until&&Date.parse(data.valid_until)>Date.now());
+   });
+  else setPlus(false);
+  return()=>{active=false};
+ },[load,household?.id]));
  const upload=async(uri:string,name:string,mime:string)=>{
   if(!supabase||busy)return;
   if(receipts.length>=LIMIT){Alert.alert('Receipt limit','Up to five receipts can be attached to an expense.');return}
@@ -81,12 +94,13 @@ export function ExpenseReceipts({expenseId,editable}:{expenseId:string;editable:
   const asset=result.assets[0];
   await upload(asset.uri,asset.name,asset.mimeType??'application/pdf');
  };
- const choose=()=>Alert.alert('Add Receipt','Choose a source',[
+ const choose=()=>{if(!plus){router.push('/plus');return}
+  Alert.alert('Add Receipt','Choose a source',[
   {text:'Camera',onPress:()=>{void choosePhoto(true)}},
   {text:'Photo Library',onPress:()=>{void choosePhoto(false)}},
   {text:'File',onPress:()=>{void chooseFile()}},
   {text:'Cancel',style:'cancel'}
- ]);
+ ]);};
  const remove=(item:Receipt)=>Alert.alert('Remove Receipt?','The attached file will be deleted.',[
   {text:'Cancel',style:'cancel'},
   {text:'Remove',style:'destructive',onPress:()=>{void (async()=>{
