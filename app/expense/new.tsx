@@ -183,7 +183,7 @@ export default function ExpenseEditor(){
         style={{minWidth:38,minHeight:38,alignItems:'center',justifyContent:'center'}}>
         <Ionicons name="attach-outline" size={22} color={colors.muted}/>
        </Pressable>
-      </View>
+      </View>}
     </View>
    </View>
   </View>
