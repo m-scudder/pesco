@@ -157,7 +157,7 @@ export default function Home(){
        <View style={{flexDirection:'row',gap:8}}>
         {(['all','me','partner'] as const).map(value=><Pressable key={value} accessibilityRole="button" accessibilityState={{selected:draftContributor===value}} onPress={()=>setDraftContributor(value)}
          style={{flex:1,alignItems:'center',paddingVertical:11,borderRadius:9,borderWidth:1,borderColor:draftContributor===value?colors.household:colors.border,backgroundColor:draftContributor===value?colors.household:colors.secondary}}>
-         <Text style={{fontSize:fontSizes.label,color:draftContributor===value?'#FFFFFF':colors.text}}>{value==='all'?'Everyone':value==='me'?'You':(memberNames[expense.ownerId]??'Member')}</Text>
+         <Text style={{fontSize:fontSizes.label,color:draftContributor===value?'#FFFFFF':colors.text}}>{value==='all'?'Everyone':value==='me'?'You':'Others'}</Text>
         </Pressable>)}
        </View>
       </View>:null}
