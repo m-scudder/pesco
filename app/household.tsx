@@ -6,6 +6,7 @@ import {Body,Card} from '@/components/UI';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {useAuth} from '@/lib/AuthContext';
 import {useData} from '@/data';
+import {supabase} from '@/lib/supabase';
 import {createHousehold,createJoiningKey,getMyHousehold,joinWithKey,getHouseholdMembers,renameHousehold,removeHouseholdPartner,type Household,type HouseholdMember} from '@/lib/households';
 
 const SIX=/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
@@ -15,6 +16,7 @@ export default function HouseholdSetup(){
  const {configured,ready,user,error:authError,retry}=useAuth();
  const [household,setHousehold]=useState<Household|null>(null);
  const [members,setMembers]=useState<HouseholdMember[]>([]);
+ const [memberLimit,setMemberLimit]=useState(2);
  const [editingName,setEditingName]=useState(false);
  const [draftName,setDraftName]=useState('');
  const [loading,setLoading]=useState(false);
@@ -28,7 +30,12 @@ export default function HouseholdSetup(){
  const refresh=useCallback(async()=>{
   if(!configured||!user)return;
   setLoading(true);
-  try{const current=await getMyHousehold();setHousehold(current);setMembers(current?await getHouseholdMembers(current.id):[]);setDraftName(current?.name??'');setError(null)}
+  try{const current=await getMyHousehold();setHousehold(current);setMembers(current?await getHouseholdMembers(current.id):[]);
+  if(current&&supabase){
+   const {data:limit}=await supabase.rpc('household_member_limit',{target_household:current.id});
+   setMemberLimit(typeof limit==='number'?limit:2);
+  }else setMemberLimit(2);
+  setDraftName(current?.name??'');setError(null)}
   catch(e){setError(e instanceof Error?e.message:'Could not load household')}
   finally{setLoading(false)}
  },[configured,user?.id]);
@@ -53,7 +60,7 @@ export default function HouseholdSetup(){
  if(!user)return <Screen modal style={{gap:12}}><Card><Body muted>{authError||'Connection unavailable'}</Body>{action('Retry',()=>{void retry()})}</Card></Screen>;
 
  return <Screen modal style={{gap:12}}>
-  <Text style={{color:colors.muted,fontSize:fontSizes.label,marginBottom:2}}>Share expenses with one partner</Text>
+  <Text style={{color:colors.muted,fontSize:fontSizes.label,marginBottom:2}}>Track household expenses together</Text>
   {household?
    <>
     <Card>
@@ -71,7 +78,7 @@ export default function HouseholdSetup(){
      </>:null}
     </Card>
     <Card>
-     <Text style={{color:colors.text,fontWeight:fontWeights.bold,fontSize:fontSizes.section}}>Members · {members.length}/2</Text>
+     <Text style={{color:colors.text,fontWeight:fontWeights.bold,fontSize:fontSizes.section}}>Members · {members.length}/{memberLimit}</Text>
      {members.map(member=><View key={member.user_id} style={{gap:5,paddingVertical:10,borderBottomWidth:1,borderColor:colors.border}}>
       <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',gap:8}}>
        <Text style={{flex:1,color:colors.text,fontSize:fontSizes.input,fontWeight:fontWeights.semibold}}>{member.display_name==='Member'?(member.user_id===user.id?'You':'Member'):member.display_name}{member.user_id===user.id?' (You)':''}</Text>
@@ -87,14 +94,14 @@ export default function HouseholdSetup(){
        </Pressable>
       ):null}
      </View>)}
-     {members.length===1?<Body muted>No partner has joined yet.</Body>:null}
+     {members.length===1?<Body muted>No other members have joined yet.</Body>:null}
     </Card>
-    {household.created_by===user.id&&members.length<2?<Card>
-     {action('Invite Partner',()=>{void submit(async()=>{const issued=await createJoiningKey(household.id);if(!SIX.test(issued))throw new Error('Server is not using 6-character keys');setInvite(issued)})})}
+    {household.created_by===user.id&&members.length<memberLimit?<Card>
+     {action('Invite Member',()=>{void submit(async()=>{const issued=await createJoiningKey(household.id);if(!SIX.test(issued))throw new Error('Server is not using 6-character keys');setInvite(issued)})})}
      {invite?<View style={{gap:9,alignItems:'center',paddingVertical:6}}>
       <Text selectable style={{fontSize:fontSizes.display,fontWeight:'800',letterSpacing:5,color:colors.text}}>{invite}</Text>
       <Body muted>Valid 24 hours · One use</Body>
-      {action('Share Code',()=>{void Share.share({message:'Join my household on PESCO.\\n\\nDownload or open PESCO: '+'pesco://onboarding'+'\\n\\nIn the app, choose Join Household and enter this invite code: '+invite+'\\n\\nThis code expires after 24 hours.'})},false)}
+      {action('Share Invite Code',()=>{void Share.share({message:'Join my household on PESCO.\\n\\nDownload or open PESCO: '+'pesco://onboarding'+'\\n\\nIn the app, choose Join Household and enter this invite code: '+invite+'\\n\\nThis code expires after 24 hours.'})},false)}
      </View>:null}
     </Card>:null}
    </>
