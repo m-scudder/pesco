@@ -169,11 +169,8 @@ export default function ExpenseEditor(){
     <View style={{flex:1,gap:7}}>
      <Text style={{fontSize:fontSizes.caption,color:colors.muted,fontFamily:fontFamilies.medium}}>Attachments</Text>
      {editing?<ExpenseReceipts expenseId={editing.id} editable={editing.ownerId==='local-user'||editing.ownerId===currentUserId} compactAction/>:
-      <View style={{flexDirection:'row',gap:8,alignItems:'center',flexWrap:'wrap'}}>
-       <Pressable accessibilityRole="button" accessibilityLabel="Add Attachment" onPress={chooseDraftReceipt}
-        style={{minWidth:38,minHeight:38,alignItems:'center',justifyContent:'center'}}>
-        <Ionicons name="attach-outline" size={22} color={colors.muted}/>
-       </Pressable>
+      <View style={{flexDirection:'row',gap:8,alignItems:'center',justifyContent:'flex-end',flexWrap:'wrap'}}>
+
        {draftReceipts.map((file,index)=><View key={file.uri+index} style={{width:48,height:48}}>
         {file.mime.startsWith('image/')?<Image source={{uri:file.uri}} style={{width:44,height:44,borderRadius:7}}/>:
          <Ionicons name="document-text-outline" size={26} color={colors.muted}/>}
@@ -182,7 +179,11 @@ export default function ExpenseEditor(){
          <Ionicons name="close" color={colors.text} size={15}/>
         </Pressable>
        </View>)}
-      </View>}
+       <Pressable accessibilityRole="button" accessibilityLabel="Add Attachment" onPress={chooseDraftReceipt}
+        style={{minWidth:38,minHeight:38,alignItems:'center',justifyContent:'center'}}>
+        <Ionicons name="attach-outline" size={22} color={colors.muted}/>
+       </Pressable>
+      </View>
     </View>
    </View>
   </View>
