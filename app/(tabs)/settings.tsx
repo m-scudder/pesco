@@ -61,16 +61,22 @@ export default function Settings(){
   <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
    <Pressable accessibilityRole="button" accessibilityLabel="Edit my profile" onPress={()=>router.push('/profile')}
     style={{flex:1,flexDirection:'row',alignItems:'center',gap:12,paddingVertical:6,paddingHorizontal:3}}>
-   <View style={{width:54,height:54,borderRadius:27,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'}}>
-    <Text style={{fontSize:fontSizes.title,fontFamily:fontFamilies.displayBold,color:colors.household}}>{(displayName[0]||'P').toLocaleUpperCase()}</Text>
-   </View>
-   <View style={{flex:1,gap:3}}>
-    <Text numberOfLines={1} style={{fontSize:fontSizes.section,fontFamily:fontFamilies.semibold,color:colors.text}}>{displayName}</Text>
-    <Text numberOfLines={1} style={{fontSize:fontSizes.caption,color:colors.muted}}>{user?.email??'Google account'}</Text>
-   </View>
-   <Ionicons name="diamond-outline" size={21} color={colors.household}/>\n   <Ionicons name="chevron-forward" size={18} color={colors.muted}/>
-  </Pressable>
-  <SettingsSection title="Manage">\n
+    <View style={{width:54,height:54,borderRadius:27,backgroundColor:colors.secondary,alignItems:'center',justifyContent:'center'}}>
+     <Text style={{fontSize:fontSizes.title,fontFamily:fontFamilies.displayBold,color:colors.household}}>{(displayName[0]||'P').toLocaleUpperCase()}</Text>
+    </View>
+    <View style={{flex:1,gap:3}}>
+     <Text numberOfLines={1} style={{fontSize:fontSizes.section,fontFamily:fontFamilies.semibold,color:colors.text}}>{displayName}</Text>
+     <Text numberOfLines={1} style={{fontSize:fontSizes.caption,color:colors.muted}}>{user?.email??'Google account'}</Text>
+    </View>
+    <Ionicons name="chevron-forward" size={18} color={colors.muted}/>
+   </Pressable>
+   <Pressable accessibilityRole="button" accessibilityLabel="Explore PESCO Plus" onPress={()=>router.push('/plus')}
+    style={{width:44,height:48,alignItems:'center',justifyContent:'center'}}>
+    <Ionicons name="diamond-outline" size={22} color={colors.household}/>
+   </Pressable>
+  </View>
+  <SettingsSection title="Manage">
+
    {household?<SettingsRow icon="people-outline" label="Household" subtitle="Members, house name and partner invitations" onPress={()=>router.push('/household')}/>:null}
    <SettingsRow icon="repeat-outline" label="Recurring bills" subtitle="Automatically record monthly personal expenses" onPress={()=>router.push('/recurring')}/>
    <SettingsRow icon="wallet-outline" label="Monthly budgets" subtitle="Manage household and personal limits" onPress={()=>router.push('/budget')}/>
