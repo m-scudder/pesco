@@ -1,54 +1,49 @@
 # PESCO Plus — testing handoff
 
-Branch: `feat/pesco-plus` (do not merge to main while billing is a preview).
+Branch: `feat/pesco-plus` (keep `main` untouched until billing verification and store setup are complete).
 
-## Implemented and verified by CI
-- Streamlined PESCO Plus paywall preview at `/plus`, entered from the diamond beside the Settings profile header. The preview has **no working payment flow**.
-- Single household invite message with six-character invite code and `pesco://onboarding` installed-app deep link.
-- Compact receipts on Expense Details and Edit Expense: Camera, Photo Library, File; 44×44 image thumbnails/PDF icon; remove action.
-- Private receipt storage with Supabase row-level security; only the expense creator may add/remove; household members may view.
-- Household entitlement model: 2 members free, up to 6 with active Plus (server-enforced in invitation RPCs).
-- Free household category limit: first category free, additional categories require Plus; existing limits remain editable/readable.
-- Actual creator nicknames displayed for multiple members, not a single hard-coded 'partner'.
-- GitHub Actions CI checks TypeScript and regression tests on every feature-branch push.
+## Implemented on this branch
+- Streamlined paywall at `/plus`, entered from the diamond beside the Settings profile header.
+- RevenueCat client integration for current offerings, localized package prices, purchase initiation, and restore purchases.
+- Purchases are gated behind `EXPO_PUBLIC_REVENUECAT_PURCHASES_ENABLED=true` and a platform API key; the default is disabled.
+- Paywall reads the server-managed `household_entitlements` row to determine whether Plus is active. Client purchase state alone does not unlock Plus.
+- Supabase Edge Function at `supabase/functions/revenuecat-webhook/index.ts` to process RevenueCat entitlement events and update household entitlements.
+- Setup and release checklist: `docs/REVENUECAT_SETUP.md`.
+- Existing household invitation, receipt, category-budget, and creator-nickname work remains on this branch.
 
-## Connected PESCO Supabase backend
-The following migrations were applied successfully:
+## Existing backend
+The following migrations were previously applied to the connected PESCO Supabase project:
 - `20261018000000_expense_receipts.sql`
 - `20261018001000_household_entitlements.sql`
 - `20261018002000_plus_receipt_guard.sql`
 - `20261018003000_plus_category_limit.sql`
 
-The existing PESCO household received a **temporary internal test entitlement** (not a store purchase), valid until **24 October 2026 (UTC)**. It expires automatically and does not charge anyone. It should not be extended or used as a substitute for purchase verification in a public release.
+The old temporary internal test entitlement expired on **24 October 2026 (UTC)**. It was not a store purchase and must not be extended as a substitute for purchase verification.
 
-## Local setup
+## Before local/EAS build
+The RevenueCat SDK dependency is now declared in `package.json`. Regenerate and commit the lockfile before using an EAS build that runs `npm ci`:
+
 ```bash
 git fetch origin
 git switch feat/pesco-plus
 git pull origin feat/pesco-plus
-npx expo install expo-image-picker expo-document-picker
+npm install
 npm run typecheck
 npm test
+git add package.json package-lock.json
+git commit -m "chore(pesco-plus): lock RevenueCat SDK dependency"
 ```
-Commit `package-lock.json` after installing dependencies before any EAS build that uses `npm ci`. Make a fresh native development or preview build for camera/file-picker native code.
 
-## Physical-device acceptance tests
-1. Verify profile diamond opens the compact Plus preview and no extra Plus badges are scattered around the app.
-2. Confirm the main budget screen layout is unchanged.
-3. Edit an existing synced household expense: attach an image from the gallery and confirm the small thumbnail appears.
-4. Add a receipt from Camera and a PDF using Files; test invalid MIME and over-5MB rejection.
-5. Tap a thumbnail; verify image/PDF opens. Remove a receipt using its X control; verify it disappears after a refresh.
-6. Open the same household expense on a second member's device: confirm thumbnails are visible but removal is unavailable to non-creators.
-7. Create a 3rd and up to a 6th member with a new six-character code per invitation; ensure 7th cannot join.
-8. Test an invitation via Share: the `pesco://onboarding` link opens an already-installed app. **There is no public store-installation link yet.**
-9. Confirm the expense list and detail view show the correct creator nickname for all members.
-10. Create a second category budget under active internal Plus, then verify the other household member sees it.
-11. Test without Plus after test entitlement expiry: maximum two *new* members, first new category limit free, receipt upload directs to paywall. Existing >2 members, receipts, and budgets remain accessible.
+A fresh native development/preview build is required after installing the native purchase SDK. Expo Go can preview the UI but cannot make real purchases.
 
-## Not ready for public paid release
-- RevenueCat/StoreKit/Google Play Billing account configuration and real purchase/restore actions.
-- Signed server-side purchase verification and webhook entitlement updates.
-- Store product IDs and localized prices; current ₹ amounts are illustrative only.
-- Real public App Store / Play Store links, universal links.
-- Orphan receipt cleanup on expense deletion and comprehensive offline receipt retry.
-- Full Android and iOS physical-device acceptance run (requires your devices).
+## External setup still required
+1. Create the RevenueCat project and configure App Store Connect and Google Play credentials.
+2. Create monthly/annual store products and RevenueCat packages; create entitlement ID `pesco_plus`.
+3. Set EAS environment variables for platform SDK keys and `EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID=pesco_plus`.
+4. Deploy the `revenuecat-webhook` Edge Function with JWT verification disabled and set `REVENUECAT_WEBHOOK_AUTHORIZATION` to the same shared-secret header configured in RevenueCat.
+5. Test sandbox purchase, cancellation, expiration, and restore on physical iOS and Android devices. Keep purchases disabled until the webhook has been tested.
+
+## Other release gates
+- Public App Store / Play Store URLs and universal links for household invitations.
+- Orphan receipt cleanup when an expense is deleted and comprehensive offline receipt retry.
+- Full iOS and Android physical-device acceptance run.
