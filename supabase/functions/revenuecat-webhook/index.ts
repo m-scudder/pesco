@@ -42,8 +42,8 @@ Deno.serve(async (req: Request) => {
     status: 200, headers: {...corsHeaders, 'Content-Type': 'application/json'},
   });
 
-  const activeTypes = new Set(['INITIAL_PURCHASE', 'RENEWAL', 'UNCANCELLATION', 'PRODUCT_CHANGE', 'SUBSCRIPTION_EXTENDED', 'NON_RENEWING_PURCHASE', 'TEMPORARY_ENTITLEMENT_GRANT']);
-  const inactiveTypes = new Set(['EXPIRATION', 'REFUND_REVERSED']);
+  const activeTypes = new Set(['INITIAL_PURCHASE', 'RENEWAL', 'UNCANCELLATION', 'PRODUCT_CHANGE', 'SUBSCRIPTION_EXTENDED', 'NON_RENEWING_PURCHASE', 'TEMPORARY_ENTITLEMENT_GRANT', 'REFUND_REVERSED']);
+  const inactiveTypes = new Set(['EXPIRATION', 'REFUND']);
   const userId = event.app_user_id && !event.app_user_id.startsWith('$RCAnonymousID:')
     ? event.app_user_id : event.original_app_user_id;
   if (!userId || userId.startsWith('$RCAnonymousID:')) {
@@ -67,6 +67,17 @@ Deno.serve(async (req: Request) => {
 
   const expiry = event.expiration_at_ms ? new Date(event.expiration_at_ms).toISOString() : null;
   const active = activeTypes.has(eventType) && Boolean(expiry && new Date(expiry).getTime() > Date.now());
+  // Never let a delayed expiration/refund webhook downgrade a newer active subscription.
+  if (inactiveTypes.has(eventType)) {
+    const {data: current} = await supabase.from('household_entitlements')
+      .select('tier,valid_until').eq('household_id', membership.household_id).maybeSingle();
+    if (current?.tier === 'plus' && current.valid_until && new Date(current.valid_until).getTime() > Date.now()) {
+      return new Response(JSON.stringify({ok: true, ignored: true, reason: 'Newer active entitlement already exists'}), {
+        status: 200, headers: {...corsHeaders, 'Content-Type': 'application/json'},
+      });
+    }
+  }
+
   const values = active
     ? {household_id: membership.household_id, tier: 'plus', valid_until: expiry, provider: 'revenuecat',
        external_subscription_id: event.original_transaction_id ?? null, updated_at: new Date().toISOString()}
