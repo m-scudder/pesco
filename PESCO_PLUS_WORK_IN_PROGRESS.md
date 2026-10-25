@@ -21,17 +21,15 @@ The following migrations were previously applied to the connected PESCO Supabase
 The old temporary internal test entitlement expired on **24 October 2026 (UTC)**. It was not a store purchase and must not be extended as a substitute for purchase verification.
 
 ## Before local/EAS build
-The RevenueCat SDK dependency is now declared in `package.json`. Regenerate and commit the lockfile before using an EAS build that runs `npm ci`:
+The RevenueCat SDK and its dependencies are locked in `package-lock.json`. The feature-branch CI now uses `npm ci` to validate reproducible installs.
 
 ```bash
 git fetch origin
 git switch feat/pesco-plus
 git pull origin feat/pesco-plus
-npm install
+npm ci
 npm run typecheck
 npm test
-git add package.json package-lock.json
-git commit -m "chore(pesco-plus): lock RevenueCat SDK dependency"
 ```
 
 A fresh native development/preview build is required after installing the native purchase SDK. Expo Go can preview the UI but cannot make real purchases.
