@@ -1,6 +1,6 @@
 # PESCO Plus — RevenueCat integration
 
-The app-side billing client and Supabase webhook endpoint live on `feat/pesco-plus`. Paid purchases must remain disabled until the RevenueCat products and webhook are configured. A successful native purchase is **not** itself the source of truth for household access: the webhook updates `household_entitlements`, and server-side feature guards read that table.
+The app-side billing client and Supabase webhook endpoint live on `feat/pesco-plus`. The paywall reads current RevenueCat offering packages and displays store-localized prices; it does not use illustrative hardcoded pricing. Paid purchases must remain disabled until the RevenueCat products and webhook are configured. A successful native purchase is **not** itself the source of truth for household access: the webhook updates `household_entitlements`, and server-side feature guards read that table.
 
 ## RevenueCat dashboard
 
@@ -23,7 +23,7 @@ The app-side billing client and Supabase webhook endpoint live on `feat/pesco-pl
 
 ## Native build and validation
 
-- Install the SDK with `npx expo install react-native-purchases`, then commit the updated `package.json` and `package-lock.json`.
+- The SDK dependency is declared in `package.json`. Regenerate and commit `package-lock.json` with `npm install` before using an EAS build configured for `npm ci`.
 - Build a new EAS development/preview build after installing the native module; Expo Go cannot run RevenueCat's native purchase SDK.
 - Run `npm run typecheck` and `npm test`, then test purchase, cancellation, restore, expired subscription, and both stores' sandbox flows on physical devices.
 - Keep purchases disabled until both the webhook and store products are ready. No live prices or products are assumed by the app.
