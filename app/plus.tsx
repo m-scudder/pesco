@@ -91,7 +91,10 @@ export default function Plus(){
    }
   }catch(e){
    const purchaseError=e as {userCancelled?:boolean;message?:string};
-   if(!purchaseError.userCancelled)setError(purchaseError.message??'The purchase could not be completed. Please try again.');
+   if(storePurchaseCompleted){
+    setPurchaseAwaitingVerification(true);
+    setError('Your store purchase completed, but PESCO could not verify household access yet. Do not purchase again; restore purchases or reopen this screen later.');
+   }else if(!purchaseError.userCancelled)setError(purchaseError.message??'The purchase could not be completed. Please try again.');
   }finally{setBusy(false)}
  };
 
