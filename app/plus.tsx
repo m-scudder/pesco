@@ -7,7 +7,7 @@ import {fontSizes,fontFamilies} from '@/theme/typography';
 import {useAuth} from '@/lib/AuthContext';
 import {useData} from '@/data';
 import {supabase} from '@/lib/supabase';
-import {getPlusPlans,isPlusBillingConfigured,purchasePlusPlan,restorePlusPurchases,type PlusPlan} from '@/lib/plusBilling';
+import {getPlusPlans,getPlusCustomerInfo,hasActivePlusEntitlement,isPlusBillingConfigured,purchasePlusPlan,restorePlusPurchases,type PlusPlan} from '@/lib/plusBilling';
 
 const features=[
  {icon:'people-outline' as const,title:'More people at home',detail:'Expand your household from 2 to 6 members'},
@@ -28,7 +28,7 @@ export default function Plus(){
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState<string|null>(null);
- const [entitlement,setEntitlement]=useState<Entitlement|null>(null);
+ const [entitlement,setEntitlement]=useState<Entitlement|null>(null);\n const [purchaseAwaitingVerification,setPurchaseAwaitingVerification]=useState(false);
  const billingConfigured=isPlusBillingConfigured();
  const plusActive=entitlement?.tier==='plus'&&Boolean(entitlement.valid_until)&&new Date(entitlement!.valid_until!).getTime()>Date.now();
 
@@ -130,7 +130,7 @@ export default function Plus(){
     </View>}
   </View>
   {error?<Text accessibilityRole="alert" style={{fontSize:fontSizes.caption,color:'#C94F4F'}}>{error}</Text>:null}
-  {billingConfigured&&!plusActive?
+  {billingConfigured&&!plusActive&&!purchaseAwaitingVerification?
    <Pressable accessibilityRole="button" disabled={busy||loading||!selectedPlan} onPress={handlePurchase} style={{minHeight:48,backgroundColor:colors.household,borderRadius:10,alignItems:'center',justifyContent:'center',opacity:busy||loading||!selectedPlan?0.6:1}}>
     {busy?<ActivityIndicator color="#FFFFFF"/>:<Text style={{fontFamily:fontFamilies.semibold,fontSize:fontSizes.body,color:'#FFFFFF'}}>Upgrade to Plus</Text>}
    </Pressable>:null}
