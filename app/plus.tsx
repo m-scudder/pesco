@@ -135,7 +135,7 @@ export default function Plus(){
    <Pressable accessibilityRole="button" disabled={busy||loading||!selectedPlan} onPress={handlePurchase} style={{minHeight:48,backgroundColor:colors.household,borderRadius:10,alignItems:'center',justifyContent:'center',opacity:busy||loading||!selectedPlan?0.6:1}}>
     {busy?<ActivityIndicator color="#FFFFFF"/>:<Text style={{fontFamily:fontFamilies.semibold,fontSize:fontSizes.body,color:'#FFFFFF'}}>Upgrade to Plus</Text>}
    </Pressable>:null}
-  {billingConfigured?
+  {billingConfigured&&household?
    <Pressable accessibilityRole="button" disabled={busy||loading} onPress={handleRestore} style={{minHeight:44,alignItems:'center',justifyContent:'center',opacity:busy||loading?0.6:1}}>
     <Text style={{fontFamily:fontFamilies.medium,fontSize:fontSizes.body,color:colors.household}}>Restore purchases</Text>
    </Pressable>:null}
