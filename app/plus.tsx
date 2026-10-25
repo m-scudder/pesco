@@ -63,26 +63,31 @@ export default function Plus(){
     await refreshEntitlement();
     if(billingConfigured&&user?.id&&household?.id){
      const available=await getPlusPlans(user.id);
+     const customerInfo=await getPlusCustomerInfo(user.id);
      if(!active)return;
+     setPurchaseAwaitingVerification(hasActivePlusEntitlement(customerInfo));
      setPlans(available);
      setSelectedPlan(current=>current&&available.some(p=>p.id===current)?current:available[0]?.id??null);
     }else{
-     setPlans([]);setSelectedPlan(null);
+     setPlans([]);setSelectedPlan(null);setPurchaseAwaitingVerification(false);
     }
    }catch(e){
     if(active)setError(e instanceof Error?e.message:'Could not load PESCO Plus details.');
    }finally{if(active)setLoading(false)}
   })();
   return()=>{active=false};
- },[billingConfigured,user?.id,refreshEntitlement]);
+ },[billingConfigured,user?.id,household?.id,refreshEntitlement]);
 
  const handlePurchase=async()=>{
   if(!user?.id||!household?.id||!selectedPlan)return;
   const plan=plans.find(p=>p.id===selectedPlan);
   if(!plan)return;
   setBusy(true);setError(null);
+  let storePurchaseCompleted=false;
   try{
-   await purchasePlusPlan(user.id,plan);
+   const customerInfo=await purchasePlusPlan(user.id,plan);
+   storePurchaseCompleted=true;
+   setPurchaseAwaitingVerification(hasActivePlusEntitlement(customerInfo));
    const updated=await waitForVerifiedEntitlement();
    if(updated){
     Alert.alert('PESCO Plus is active','Your household Plus access has been verified.');
@@ -102,7 +107,8 @@ export default function Plus(){
   if(!user?.id||!household?.id)return;
   setBusy(true);setError(null);
   try{
-   await restorePlusPurchases(user.id);
+   const customerInfo=await restorePlusPurchases(user.id);
+   setPurchaseAwaitingVerification(hasActivePlusEntitlement(customerInfo));
    const updated=await waitForVerifiedEntitlement();
    if(updated)
     Alert.alert('Purchases restored','PESCO Plus is active for your household.');
