@@ -48,7 +48,7 @@ export default function Plus(){
   void (async()=>{
    try{
     await refreshEntitlement();
-    if(billingConfigured&&user?.id){
+    if(billingConfigured&&user?.id&&household?.id){
      const available=await getPlusPlans(user.id);
      if(!active)return;
      setPlans(available);
@@ -64,7 +64,7 @@ export default function Plus(){
  },[billingConfigured,user?.id,refreshEntitlement]);
 
  const handlePurchase=async()=>{
-  if(!user?.id||!selectedPlan)return;
+  if(!user?.id||!household?.id||!selectedPlan)return;
   const plan=plans.find(p=>p.id===selectedPlan);
   if(!plan)return;
   setBusy(true);setError(null);
@@ -83,7 +83,7 @@ export default function Plus(){
  };
 
  const handleRestore=async()=>{
-  if(!user?.id)return;
+  if(!user?.id||!household?.id)return;
   setBusy(true);setError(null);
   try{
    await restorePlusPurchases(user.id);
@@ -117,7 +117,7 @@ export default function Plus(){
      <Text style={{fontFamily:fontFamilies.semibold,fontSize:fontSizes.body,color:colors.text}}>PESCO Plus is active</Text>
      <Text style={{fontSize:fontSizes.caption,color:colors.muted}}>Household access is verified by PESCO.</Text>
     </View>:
-    billingConfigured&&plans.length>0?plans.map(plan=>
+    billingConfigured&&!household?<View style={{padding:15,borderRadius:12,borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface,gap:5}}><Text style={{fontFamily:fontFamilies.semibold,fontSize:fontSizes.body,color:colors.text}}>Set up your household first</Text><Text style={{fontSize:fontSizes.caption,color:colors.muted,lineHeight:19}}>Create or join a household before subscribing to a shared plan.</Text></View>:billingConfigured&&plans.length>0?plans.map(plan=>
      <Pressable key={plan.id} accessibilityRole="radio" accessibilityState={{selected:selectedPlan===plan.id}} onPress={()=>setSelectedPlan(plan.id)}
       style={{flexDirection:'row',alignItems:'center',padding:14,borderRadius:12,borderWidth:1,borderColor:selectedPlan===plan.id?colors.household:colors.border,backgroundColor:colors.surface,gap:10}}>
       <Ionicons name={selectedPlan===plan.id?'radio-button-on':'radio-button-off'} size={20} color={selectedPlan===plan.id?colors.household:colors.muted}/>
