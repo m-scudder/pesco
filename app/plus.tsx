@@ -85,9 +85,9 @@ export default function Plus(){
   setBusy(true);setError(null);
   let storePurchaseCompleted=false;
   try{
-   const customerInfo=await purchasePlusPlan(user.id,plan);
+   await purchasePlusPlan(user.id,plan);
    storePurchaseCompleted=true;
-   setPurchaseAwaitingVerification(hasActivePlusEntitlement(customerInfo));
+   setPurchaseAwaitingVerification(true);
    const updated=await waitForVerifiedEntitlement();
    if(updated){
     Alert.alert('PESCO Plus is active','Your household Plus access has been verified.');
