@@ -28,7 +28,8 @@ export default function Plus(){
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState<string|null>(null);
- const [entitlement,setEntitlement]=useState<Entitlement|null>(null);\n const [purchaseAwaitingVerification,setPurchaseAwaitingVerification]=useState(false);
+ const [entitlement,setEntitlement]=useState<Entitlement|null>(null);
+ const [purchaseAwaitingVerification,setPurchaseAwaitingVerification]=useState(false);
  const billingConfigured=isPlusBillingConfigured();
  const plusActive=entitlement?.tier==='plus'&&Boolean(entitlement.valid_until)&&new Date(entitlement!.valid_until!).getTime()>Date.now();
 
