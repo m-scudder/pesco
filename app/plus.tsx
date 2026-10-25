@@ -43,6 +43,18 @@ export default function Plus(){
   return next;
  },[household?.id]);
 
+ const waitForVerifiedEntitlement=useCallback(async()=>{
+  for(let attempt=0;attempt<6;attempt++){
+   const current=await refreshEntitlement();
+   if(current?.tier==='plus'&&current.valid_until&&new Date(current.valid_until).getTime()>Date.now()){
+    setPurchaseAwaitingVerification(false);
+    return current;
+   }
+   if(attempt<5)await new Promise(resolve=>setTimeout(resolve,2000));
+  }
+  return null;
+ },[refreshEntitlement]);
+
  useEffect(()=>{
   let active=true;
   setLoading(true);setError(null);
@@ -71,8 +83,8 @@ export default function Plus(){
   setBusy(true);setError(null);
   try{
    await purchasePlusPlan(user.id,plan);
-   const updated=await refreshEntitlement();
-   if(updated?.tier==='plus'&&updated.valid_until&&new Date(updated.valid_until).getTime()>Date.now()){
+   const updated=await waitForVerifiedEntitlement();
+   if(updated){
     Alert.alert('PESCO Plus is active','Your household Plus access has been verified.');
    }else{
     Alert.alert('Purchase received','Your store purchase completed, but household access is waiting for server verification. Do not purchase again. Check again shortly or contact support if it does not activate.');
@@ -88,8 +100,8 @@ export default function Plus(){
   setBusy(true);setError(null);
   try{
    await restorePlusPurchases(user.id);
-   const updated=await refreshEntitlement();
-   if(updated?.tier==='plus'&&updated.valid_until&&new Date(updated.valid_until).getTime()>Date.now())
+   const updated=await waitForVerifiedEntitlement();
+   if(updated)
     Alert.alert('Purchases restored','PESCO Plus is active for your household.');
    else Alert.alert('Restore checked','No active, server-verified PESCO Plus subscription was found for this household.');
   }catch(e){setError(e instanceof Error?e.message:'Could not restore purchases. Please try again.')}
