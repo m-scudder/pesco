@@ -68,7 +68,7 @@ Deno.serve(async (req: Request) => {
   const expiry = event.expiration_at_ms ? new Date(event.expiration_at_ms).toISOString() : null;
   const active = activeTypes.has(eventType) && Boolean(expiry && new Date(expiry).getTime() > Date.now());
   // Never let a delayed expiration/refund webhook downgrade a newer active subscription.
-  if (inactiveTypes.has(eventType)) {
+  if (eventType === 'EXPIRATION') {
     const {data: current} = await supabase.from('household_entitlements')
       .select('tier,valid_until').eq('household_id', membership.household_id).maybeSingle();
     if (current?.tier === 'plus' && current.valid_until && new Date(current.valid_until).getTime() > Date.now()) {
