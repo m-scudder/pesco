@@ -26,7 +26,7 @@ async function configureForUser(userId: string): Promise<void> {
   if (!isPlusBillingConfigured()) throw new Error('PESCO Plus purchases are not enabled yet. Billing setup is incomplete.');
   if (configured && configuredUserId === userId) return;
   if (configured) {
-    const result = await Purchases.logIn(userId);
+    await Purchases.logIn(userId);
     configuredUserId = userId;
     return;
   }
