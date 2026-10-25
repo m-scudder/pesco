@@ -68,7 +68,12 @@ export async function purchasePlusPlan(userId: string, plan: PlusPlan): Promise<
   return result.customerInfo;
 }
 
-export async function getPlusCustomerInfo(userId: string): Promise<CustomerInfo> {\n  await configureForUser(userId);\n  return Purchases.getCustomerInfo();\n}\n\nexport async function restorePlusPurchases(userId: string): Promise<CustomerInfo> {
+export async function getPlusCustomerInfo(userId: string): Promise<CustomerInfo> {
+  await configureForUser(userId);
+  return Purchases.getCustomerInfo();
+}
+
+export async function restorePlusPurchases(userId: string): Promise<CustomerInfo> {
   await configureForUser(userId);
   return Purchases.restorePurchases();
 }
