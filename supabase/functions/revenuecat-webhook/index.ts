@@ -65,8 +65,17 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  const expiry = event.expiration_at_ms ? new Date(event.expiration_at_ms).toISOString() : null;
-  const active = activeTypes.has(eventType) && Boolean(expiry && new Date(expiry).getTime() > Date.now());
+  const expiryMs = event.expiration_at_ms;
+  const validExpiry = typeof expiryMs === 'number' && Number.isFinite(expiryMs) && expiryMs > Date.now();
+  // Do not turn malformed or delayed purchase/renewal events into a revocation.
+  // Only explicit, verified refund/expiration events may downgrade access.
+  if (activeTypes.has(eventType) && !validExpiry) {
+    return new Response(JSON.stringify({ok: true, ignored: true, reason: 'Purchase event has no future expiration'}), {
+      status: 200, headers: {...corsHeaders, 'Content-Type': 'application/json'},
+    });
+  }
+  const expiry = validExpiry ? new Date(expiryMs).toISOString() : null;
+  const active = activeTypes.has(eventType);
   // Stale refund/expiration events must not revoke a replacement subscription.
   if (inactiveTypes.has(eventType)) {
     const {data: current, error: currentError} = await supabase.from('household_entitlements')
