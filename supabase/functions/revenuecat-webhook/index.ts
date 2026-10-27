@@ -67,12 +67,24 @@ Deno.serve(async (req: Request) => {
 
   const expiry = event.expiration_at_ms ? new Date(event.expiration_at_ms).toISOString() : null;
   const active = activeTypes.has(eventType) && Boolean(expiry && new Date(expiry).getTime() > Date.now());
-  // Never let a delayed expiration/refund webhook downgrade a newer active subscription.
-  if (eventType === 'EXPIRATION') {
-    const {data: current} = await supabase.from('household_entitlements')
-      .select('tier,valid_until').eq('household_id', membership.household_id).maybeSingle();
-    if (current?.tier === 'plus' && current.valid_until && new Date(current.valid_until).getTime() > Date.now()) {
-      return new Response(JSON.stringify({ok: true, ignored: true, reason: 'Newer active entitlement already exists'}), {
+  // Stale refund/expiration events must not revoke a replacement subscription.
+  if (inactiveTypes.has(eventType)) {
+    const {data: current, error: currentError} = await supabase.from('household_entitlements')
+      .select('tier,valid_until,external_subscription_id').eq('household_id', membership.household_id).maybeSingle();
+    if (currentError) return new Response('Could not verify existing entitlement', {status: 500, headers: corsHeaders});
+    if (!current || current.tier !== 'plus') {
+      return new Response(JSON.stringify({ok: true, ignored: true, reason: 'No active Plus entitlement to revoke'}), {
+        status: 200, headers: {...corsHeaders, 'Content-Type': 'application/json'},
+      });
+    }
+    // Fail closed on ambiguous events; a matching transaction is required to revoke Plus.
+    if (!event.original_transaction_id || current.external_subscription_id !== event.original_transaction_id) {
+      return new Response(JSON.stringify({ok: true, ignored: true, reason: 'Subscription transaction does not match'}), {
+        status: 200, headers: {...corsHeaders, 'Content-Type': 'application/json'},
+      });
+    }
+    if (eventType === 'EXPIRATION' && current.valid_until && new Date(current.valid_until).getTime() > Date.now()) {
+      return new Response(JSON.stringify({ok: true, ignored: true, reason: 'Entitlement has a future expiry'}), {
         status: 200, headers: {...corsHeaders, 'Content-Type': 'application/json'},
       });
     }
