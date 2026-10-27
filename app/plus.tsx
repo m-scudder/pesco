@@ -103,6 +103,20 @@ export default function Plus(){
   }finally{setBusy(false)}
  };
 
+ const handleCheckActivation=async()=>{
+  setBusy(true);setError(null);
+  try{
+   const updated=await refreshEntitlement();
+   if(updated?.tier==='plus'&&updated.valid_until&&new Date(updated.valid_until).getTime()>Date.now()){
+    setPurchaseAwaitingVerification(false);
+    Alert.alert('PESCO Plus is active','Your household subscription has been verified.');
+   }else{
+    Alert.alert('Verification pending','PESCO has not received confirmation for this household yet. Do not purchase again. You can restore purchases or check activation later.');
+   }
+  }catch(e){setError(e instanceof Error?e.message:'Could not check subscription activation.')}
+  finally{setBusy(false)}
+ };
+
  const handleRestore=async()=>{
   if(!user?.id||!household?.id)return;
   setBusy(true);setError(null);
@@ -152,6 +166,15 @@ export default function Plus(){
     </View>}
   </View>
   {error?<Text accessibilityRole="alert" style={{fontSize:fontSizes.caption,color:'#C94F4F'}}>{error}</Text>:null}
+  {purchaseAwaitingVerification&&!plusActive?
+   <View style={{backgroundColor:colors.surface,borderColor:colors.border,borderWidth:1,borderRadius:12,padding:15,gap:9}}>
+    <Text style={{fontFamily:fontFamilies.semibold,fontSize:fontSizes.body,color:colors.text}}>Waiting for purchase verification</Text>
+    <Text style={{fontSize:fontSizes.caption,color:colors.muted,lineHeight:19}}>The store reports an active purchase, but PESCO has not confirmed household access. Do not purchase again. You can check activation or restore purchases.</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel="Check Plus activation" disabled={busy||loading} onPress={handleCheckActivation}
+     style={{minHeight:44,borderRadius:10,backgroundColor:colors.secondary,justifyContent:'center',alignItems:'center',opacity:busy||loading?0.6:1}}>
+     {busy?<ActivityIndicator color={colors.household}/>:<Text style={{fontFamily:fontFamilies.semibold,fontSize:fontSizes.body,color:colors.household}}>Check activation</Text>}
+    </Pressable>
+   </View>:null}
   {billingConfigured&&!plusActive&&!purchaseAwaitingVerification?
    <Pressable accessibilityRole="button" disabled={busy||loading||!selectedPlan} onPress={handlePurchase} style={{minHeight:48,backgroundColor:colors.household,borderRadius:10,alignItems:'center',justifyContent:'center',opacity:busy||loading||!selectedPlan?0.6:1}}>
     {busy?<ActivityIndicator color="#FFFFFF"/>:<Text style={{fontFamily:fontFamilies.semibold,fontSize:fontSizes.body,color:'#FFFFFF'}}>Upgrade to Plus</Text>}
