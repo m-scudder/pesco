@@ -71,6 +71,7 @@ export default function Settings(){
   </Pressable>
   <SettingsSection title="Manage">
    {household?<SettingsRow icon="people-outline" label="Household" subtitle="Members, house name and partner invitations" onPress={()=>router.push('/household')}/>:null}
+   <SettingsRow icon="flash-outline" label="Automatic tracking" subtitle="Find payments in your bank and UPI messages" onPress={()=>router.push('/auto-capture')}/>
    <SettingsRow icon="repeat-outline" label="Recurring bills" subtitle="Automatically record monthly personal expenses" onPress={()=>router.push('/recurring')}/>
    <SettingsRow icon="wallet-outline" label="Monthly budgets" subtitle="Manage household and personal limits" onPress={()=>router.push('/budget')}/>
    <SettingsRow icon="pricetags-outline" label="Categories" subtitle="Organize your expenses" onPress={()=>router.push('/categories')} last/>

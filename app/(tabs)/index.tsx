@@ -12,12 +12,14 @@ import {MonthSwipeView} from '@/components/MonthSwipeView';
 import {formatMoney,localDate,monthKey,useData} from '@/data';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {useHouseholdPartnerName} from '@/lib/useHouseholdPartnerName';
+import {useAutoCapture} from '@/lib/AutoCaptureContext';
 
 export default function Home(){
  const {colors,scope}=useAppTheme();
  const {expenses,syncError,currentUserId,demoEnabled}=useData();
  const router=useRouter();
  const partnerName=useHouseholdPartnerName();
+ const {newCount:detectedCount}=useAutoCapture();
  const insets=useSafeAreaInsets();
  const [month,setMonth]=useState(monthKey(localDate()));
  const [search,setSearch]=useState('');
@@ -70,6 +72,12 @@ export default function Home(){
   <Screen style={{paddingHorizontal:0,gap:0}}>
    <View style={{paddingHorizontal:16,paddingBottom:8,gap:8}}>
     <ScopeSwitch/>
+    {detectedCount>0?<Pressable accessibilityRole="button" onPress={()=>router.push('/detected')}
+     style={{flexDirection:'row',alignItems:'center',gap:9,backgroundColor:colors.surface,borderColor:colors.household,borderWidth:1,borderRadius:11,paddingHorizontal:12,paddingVertical:10}}>
+     <Ionicons name="flash-outline" size={17} color={colors.household}/>
+     <Text style={{flex:1,color:colors.text,fontSize:fontSizes.label,fontFamily:fontFamilies.medium}}>{detectedCount} new payment{detectedCount===1?'':'s'} detected</Text>
+     <Text style={{color:colors.household,fontSize:fontSizes.label,fontFamily:fontFamilies.semibold}}>Review</Text>
+    </Pressable>:null}
     {demoEnabled?<Text style={{fontSize:fontSizes.caption,color:colors.muted,fontFamily:fontFamilies.medium}}>DEMO DATA · Sample expenses are read-only</Text>:null}
     <MonthPicker month={month} onChange={setMonth}/>
     <View style={{flexDirection:'row',alignItems:'center',gap:8}}>

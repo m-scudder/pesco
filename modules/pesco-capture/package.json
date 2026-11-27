@@ -1,0 +1,10 @@
+{
+  "name": "pesco-capture",
+  "version": "0.1.0",
+  "description": "Captures bank and UPI transaction messages for PESCO",
+  "main": "index.ts",
+  "license": "UNLICENSED",
+  "private": true,
+  "author": "PESCO",
+  "homepage": "https://github.com/m-scudder/pesco"
+}

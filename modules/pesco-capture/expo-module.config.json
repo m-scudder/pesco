@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["PescoCaptureModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.pescocapture.PescoCaptureModule"]
+  }
+}
