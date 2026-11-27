@@ -14,7 +14,7 @@ export default function GoogleAuthCallback(){
  useEffect(()=>{
   let active=true;
   const fallback=new URLSearchParams();
-  for(const key of ['code','access_token','refresh_token','error','error_description'] as const){
+  for(const key of ['code','error','error_description'] as const){
    const value=params[key];
    if(typeof value==='string')fallback.set(key,value);
   }
@@ -27,7 +27,7 @@ export default function GoogleAuthCallback(){
    if(active)setError(e instanceof Error?e.message:'Unable to complete Google sign-in');
   });
   return()=>{active=false};
- },[url,params.code,params.access_token,params.refresh_token,params.error,params.error_description]);
+ },[url,params.code,params.error,params.error_description]);
  return <View style={{flex:1,justifyContent:'center',alignItems:'center',gap:12,padding:24,backgroundColor:colors.background}}>
   {error?<Text accessibilityRole="alert" style={{color:colors.text,textAlign:'center'}}>{error}</Text>:<>
    <ActivityIndicator color={colors.household}/>

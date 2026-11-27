@@ -170,6 +170,22 @@ export async function fetchAllPersonalExpenses(userId:string):Promise<Expense[]>
  return all;
 }
 
+/** Upload a device-only household expense exactly once, keyed by its local ID,
+ * so a retry after an interrupted import never creates a duplicate. */
+export async function importHouseholdExpense(entry:Expense,householdId:string){
+ const db=client();
+ const {data:{user},error:authError}=await db.auth.getUser();
+ if(authError||!user)throw new Error('Sign in required');
+ assertInput({amountPaise:entry.amountPaise,category:entry.category,note:entry.note,date:entry.date,scope:'household',householdId});
+ const {error}=await db.from('expenses').upsert({
+  owner_id:user.id,scope:'household',household_id:householdId,client_key:entry.id,
+  amount_paise:entry.amountPaise,category:entry.category,note:entry.note,spent_on:entry.date
+ },{onConflict:'owner_id,client_key',ignoreDuplicates:true});
+ if(error)throw error;
+ const existing=await db.from('expenses').select('id').eq('owner_id',user.id).eq('client_key',entry.id).maybeSingle();
+ if(existing.error||!existing.data)throw existing.error??new Error('Cloud import was not confirmed');
+}
+
 export async function importPersonalExpense(entry:Expense){
  const db=client();
  const {data:{user},error:authError}=await db.auth.getUser();

@@ -4,13 +4,14 @@ import {ensureGoogleProfile} from './profileName';
 
 const redirectTo='pesco://auth/callback';
 
-function callbackTokens(url:string){
+function callbackCode(url:string){
  const hash=url.includes('#')?url.slice(url.indexOf('#')+1):'';
  const query=url.includes('?')?url.slice(url.indexOf('?')+1).split('#')[0]:'';
- const params=new URLSearchParams(hash||query);
- const failure=params.get('error_description')||params.get('error');
+ const params=new URLSearchParams(query);
+ const fragment=new URLSearchParams(hash);
+ const failure=params.get('error_description')||params.get('error')||fragment.get('error_description')||fragment.get('error');
  if(failure)throw new Error(failure);
- return {accessToken:params.get('access_token'),refreshToken:params.get('refresh_token'),code:params.get('code')};
+ return params.get('code');
 }
 export async function googleAuth(mode:'link'|'sign-in'){
  if(!supabase)throw new Error('Supabase is not configured.');
@@ -36,14 +37,12 @@ export function completeGoogleSignIn(url:string,mode:'link'|'sign-in'='sign-in',
  if(existing)return existing;
  const attempt=(async()=>{
   if(!supabase)throw new Error('Supabase is not configured.');
-  const {accessToken,refreshToken,code}=callbackTokens(url);
-  if(code){
-   const {error}=await supabase.auth.exchangeCodeForSession(code);
-   if(error)throw error;
-  }else if(accessToken&&refreshToken){
-   const {error}=await supabase.auth.setSession({access_token:accessToken,refresh_token:refreshToken});
-   if(error)throw error;
-  }else throw new Error('Provider did not return a valid authorization response');
+  // Raw access/refresh tokens in a deep link are never accepted: any app or web
+  // page can open pesco://auth/callback. Only a PKCE code started on this device works.
+  const code=callbackCode(url);
+  if(!code)throw new Error('Provider did not return a valid authorization response');
+  const {error:exchangeError}=await supabase.auth.exchangeCodeForSession(code);
+  if(exchangeError)throw exchangeError;
   const {data,error}=await supabase.auth.getUser();
   if(error||!data.user)throw error??new Error('Unable to verify sign-in');
   if(mode==='link'&&before&&data.user.id!==before)throw new Error('Account identity unexpectedly changed. Stop and contact support.');

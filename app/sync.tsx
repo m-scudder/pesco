@@ -8,7 +8,7 @@ import {Ionicons} from '@expo/vector-icons';
 
 export default function PendingUploads(){
  const {colors}=useAppTheme();
- const {pendingEntries,pendingMutations,discardPendingMutation,household,syncing,syncError,refresh,remove}=useData();
+ const {pendingEntries,pendingMutations,discardPendingMutation,household,syncing,syncError,refresh,remove,keepPendingAsPersonal}=useData();
  return <Screen modal style={{gap:13}}>
   <View style={{gap:5}}>
    <Text style={{color:colors.text,fontFamily:fontFamilies.semibold,fontSize:fontSizes.section}}>
@@ -57,6 +57,10 @@ export default function PendingUploads(){
     ])} style={{paddingVertical:7,alignSelf:'flex-start'}}>
      <Text style={{color:'#C94F4F',fontSize:fontSizes.label}}>Discard pending expense</Text>
     </Pressable>
+    {oldHousehold?<Pressable accessibilityRole="button" onPress={()=>{void keepPendingAsPersonal(entry.id).catch(e=>Alert.alert('Could not move expense',e instanceof Error?e.message:'Try again'))}}
+     style={{paddingVertical:7,alignSelf:'flex-start'}}>
+     <Text style={{color:colors.text,fontSize:fontSizes.label,fontFamily:fontFamilies.semibold}}>Keep as personal expense</Text>
+    </Pressable>:null}
    </View>
   })}
  </Screen>;

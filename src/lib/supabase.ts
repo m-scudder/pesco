@@ -13,7 +13,11 @@ export const supabase:SupabaseClient|null=isSupabaseConfigured
        storage:AsyncStorage,
        autoRefreshToken:true,
        persistSession:true,
-       detectSessionInUrl:false
+       detectSessionInUrl:false,
+       // PKCE: the redirect carries only a one-time code that is useless without
+       // the verifier stored on this device, so a forged or intercepted
+       // pesco:// link cannot sign the user in to another account.
+       flowType:'pkce'
      }
    })
  : null;

@@ -6,11 +6,28 @@ import {supabase} from './supabase';
 import type {Scope} from '@/theme/palette';
 
 export type CategoryBudget={category:string;amountPaise:number};
-const PERSONAL_KEY='pesco:personal-category-budgets:v1';
+// Earlier versions kept personal limits in one device-wide key that every
+// account on the phone shared. Limits now live under the signed-in account.
+const LEGACY_PERSONAL_KEY='pesco:personal-category-budgets:v1';
+const personalKey=(userId:string)=>'pesco:personal-category-budgets:'+userId+':v2';
+async function readPersonal(userId:string):Promise<CategoryBudget[]>{
+ let raw=await AsyncStorage.getItem(personalKey(userId));
+ if(raw===null){
+  const legacy=await AsyncStorage.getItem(LEGACY_PERSONAL_KEY);
+  if(legacy!==null){
+   // Adopt the old device-wide limits once, for the first account that opens them.
+   await AsyncStorage.setItem(personalKey(userId),legacy);
+   await AsyncStorage.removeItem(LEGACY_PERSONAL_KEY);
+   raw=legacy;
+  }
+ }
+ const data=raw?JSON.parse(raw):[];
+ return Array.isArray(data)?data:[];
+}
 let nextBudgetChannelId=0;
 
 export function useCategoryBudgets(scope:Scope){
- const {household}=useData();
+ const {household,currentUserId}=useData();
  const householdId=household?.id;
  const [items,setItems]=useState<CategoryBudget[]>([]);
  const [loading,setLoading]=useState(false);
@@ -19,9 +36,7 @@ export function useCategoryBudgets(scope:Scope){
   setLoading(true);
   try{
    if(scope==='personal'){
-    const raw=await AsyncStorage.getItem(PERSONAL_KEY);
-    const data=raw?JSON.parse(raw):[];
-    setItems(Array.isArray(data)?data:[]);
+    setItems(currentUserId?await readPersonal(currentUserId):[]);
    }else if(householdId&&supabase){
     const {data,error}=await supabase.from('category_budgets').select('category_name,amount_paise').eq('household_id',householdId);
     if(error)throw error;
@@ -30,7 +45,7 @@ export function useCategoryBudgets(scope:Scope){
    setError(null);
   }catch(e){setError(e instanceof Error?e.message:'Could not load budgets')}
   finally{setLoading(false)}
- },[scope,householdId]);
+ },[scope,householdId,currentUserId]);
  useEffect(()=>{
   void refresh();
   const app=AppState.addEventListener('change',state=>{if(state==='active')void refresh()});
@@ -43,11 +58,11 @@ export function useCategoryBudgets(scope:Scope){
  },[refresh,scope,householdId]);
  const save=useCallback(async(category:string,amountPaise:number|null)=>{
   if(scope==='personal'){
-   const raw=await AsyncStorage.getItem(PERSONAL_KEY);
-   const previous:CategoryBudget[]=raw?JSON.parse(raw):[];
+   if(!currentUserId)throw new Error('Sign in required');
+   const previous=await readPersonal(currentUserId);
    const next=previous.filter(x=>x.category!==category);
    if(amountPaise!==null)next.push({category,amountPaise});
-   await AsyncStorage.setItem(PERSONAL_KEY,JSON.stringify(next));
+   await AsyncStorage.setItem(personalKey(currentUserId),JSON.stringify(next));
   }else{
    if(!householdId||!supabase)throw new Error('A household is required');
    if(amountPaise===null){
@@ -61,6 +76,6 @@ export function useCategoryBudgets(scope:Scope){
    }
   }
   await refresh();
- },[scope,householdId,refresh]);
+ },[scope,householdId,currentUserId,refresh]);
  return {items,loading,error,refresh,save};
 }

@@ -6,7 +6,7 @@ import {Body,Card} from '@/components/UI';
 import {useAppTheme} from '@/theme/ThemeContext';
 import {useAuth} from '@/lib/AuthContext';
 import {useData} from '@/data';
-import {createHousehold,createJoiningKey,getMyHousehold,joinWithKey,getHouseholdMembers,renameHousehold,removeHouseholdPartner,type Household,type HouseholdMember} from '@/lib/households';
+import {createHousehold,createJoiningKey,getMyHousehold,joinWithKey,getHouseholdMembers,renameHousehold,removeHouseholdPartner,leaveHousehold,type Household,type HouseholdMember} from '@/lib/households';
 
 const SIX=/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
 export default function HouseholdSetup(){
@@ -89,6 +89,17 @@ export default function HouseholdSetup(){
      </View>)}
      {members.length===1?<Body muted>No partner has joined yet.</Body>:null}
     </Card>
+    {members.length>1?<Card>
+     <Pressable accessibilityRole="button" disabled={busy} onPress={()=>Alert.alert('Leave '+household.name+'?',
+      household.created_by===user.id
+       ?'Your partner will become the household creator. You will lose access to shared expenses. Expenses you added stay in the household, and your recurring bills there will stop.'
+       :'You will lose access to shared expenses. Expenses you added stay in the household, and your recurring bills there will stop.',[
+       {text:'Cancel',style:'cancel'},
+       {text:'Leave',style:'destructive',onPress:()=>{void submit(()=>leaveHousehold())}}
+      ])} style={{paddingVertical:7,alignSelf:'flex-start',opacity:busy?0.5:1}}>
+      <Text style={{color:'#C94F4F',fontSize:fontSizes.label,fontWeight:fontWeights.semibold}}>Leave household</Text>
+     </Pressable>
+    </Card>:null}
     {household.created_by===user.id&&members.length<2?<Card>
      {action('Invite Partner',()=>{void submit(async()=>{const issued=await createJoiningKey(household.id);if(!SIX.test(issued))throw new Error('Server is not using 6-character keys');setInvite(issued)})})}
      {invite?<View style={{gap:9,alignItems:'center',paddingVertical:6}}>

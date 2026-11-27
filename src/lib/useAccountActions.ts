@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useData} from '@/data';
 import {useAuth} from '@/lib/AuthContext';
 import {supabase} from '@/lib/supabase';
+import {clearHouseholdLedger} from '@/lib/localLedger';
 
 export function useAccountActions(){
  const router=useRouter();
@@ -53,6 +54,8 @@ export function useAccountActions(){
      clearAll();
      await supabase.auth.signOut({scope:'local'}).catch(()=>{});
      await AsyncStorage.clear();
+     // The household ledger lives in SQLite, which AsyncStorage.clear() does not touch.
+     await clearHouseholdLedger().catch(e=>console.warn('Could not clear local ledger',e));
      router.replace('/onboarding');
     }catch(e){Alert.alert('Could not delete account',e instanceof Error?e.message:'Please retry. Your account was not confirmed deleted.')}
     finally{setDeleting(false)}
