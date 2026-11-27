@@ -3,7 +3,7 @@ import {supabase} from './supabase';
 function db(){if(!supabase)throw new Error('Supabase is not configured');return supabase}
 async function requireUser(){
  const {data,error}=await db().auth.getUser();
- if(error||!data.user)throw new Error('Could not establish your anonymous account');
+ if(error||!data.user)throw new Error('Sign in required');
  return data.user.id;
 }
 export type Household={id:string;name:string;created_by:string};
@@ -50,5 +50,11 @@ export async function renameHousehold(householdId:string,newName:string):Promise
 export async function removeHouseholdPartner(householdId:string,partnerId:string):Promise<void>{
  await requireUser();
  const {error}=await db().rpc('remove_household_partner',{target_household:householdId,partner_id:partnerId});
+ if(error)throw error;
+}
+/** Leave the current household. A creator's ownership passes to the partner. */
+export async function leaveHousehold():Promise<void>{
+ await requireUser();
+ const {error}=await db().rpc('leave_household');
  if(error)throw error;
 }

@@ -1,13 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Crypto from 'expo-crypto';
 import {addCloudExpenseBatch,type CloudExpenseInput} from './cloudExpenses';
 
 export type PendingExpense={id:string;userId:string;draft:CloudExpenseInput;queuedAt:string};
 const key=(userId:string)=>'pesco:pending-household:'+userId;
-function uuid(){
- return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
-  const r=Math.floor(Math.random()*16);return (c==='x'?r:(r&3|8)).toString(16);
- });
-}
+// The ID becomes the server primary key, so it must come from a secure random source.
+const uuid=()=>Crypto.randomUUID();
 export async function loadPending(userId:string):Promise<PendingExpense[]>{
  const raw=await AsyncStorage.getItem(key(userId));
  if(!raw)return [];

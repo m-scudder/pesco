@@ -19,6 +19,10 @@ npx expo run:ios
 
 For Android, use `npx expo run:android`.
 
+## Database tests
+
+`./scripts/test-database.sh` applies every migration in `supabase/migrations` to a throwaway PostgreSQL database and runs the regression tests in `supabase/tests` (account deletion, leaving a household, delete permissions, joining keys, recurring dates). It uses the standard `PGHOST`/`PGUSER`/`PGPASSWORD` variables and runs automatically in CI.
+
 If the dependencies have already been installed locally, retain your tested `package-lock.json` and commit it after checking that the Expo versions match. Do not commit credentials or private signing material.
 
 ## Development practices

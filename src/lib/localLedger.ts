@@ -92,3 +92,7 @@ export async function removeSyncedHouseholdExpense(userId:string,id:string):Prom
   "UPDATE expense_ledger SET is_deleted=1,seen_at=? WHERE user_id=? AND expense_id=? AND sync_state='synced'",
   Date.now(),userId,id);
 }
+// Account deletion: remove every cached household row from this device.
+export async function clearHouseholdLedger():Promise<void>{
+ await (await db()).runAsync('DELETE FROM expense_ledger');
+}
