@@ -128,6 +128,20 @@ using (
 -- (5) Joining keys: anonymous sessions are rejected (the app requires Google or
 -- Apple sign-in). Without this, throwaway anonymous accounts bypass the
 -- per-account attempt limit and can guess the 6-character key space.
+-- The member limit comes from household_member_limit() (2, or more for paid
+-- households on the feat/pesco-plus branch). Provide the basic version only
+-- where that function does not exist yet, so an existing one is never replaced.
+do $$
+begin
+ if to_regprocedure('public.household_member_limit(uuid)') is null then
+  create function public.household_member_limit(target_household uuid)
+  returns integer language sql stable security definer set search_path=''
+  as 'select 2';
+  revoke all on function public.household_member_limit(uuid) from public,anon;
+  grant execute on function public.household_member_limit(uuid) to authenticated;
+ end if;
+end $$;
+
 create or replace function public.join_household_with_key(joining_key text)
 returns uuid language plpgsql security definer set search_path=''
 as $$
@@ -167,7 +181,8 @@ begin
    where id=invite_id and accepted_at is null and revoked_at is null
     and expires_at>now() for update;
   if active_household is null then return null; end if;
-  if (select count(*) from public.household_members where household_id=active_household) >= 2 then return null; end if;
+  if (select count(*) from public.household_members where household_id=active_household)
+     >= public.household_member_limit(active_household) then return null; end if;
   insert into public.household_members(household_id,user_id)
     values(active_household,caller);
   update public.household_invitations set accepted_at=now(),accepted_by=caller where id=invite_id;
